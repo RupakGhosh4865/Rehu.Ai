@@ -1,0 +1,26 @@
+# SuperHuman AI Persona Platform — Python Dependencies (Python 3.14 compatible)
+# No pipecat / numba — uses direct SDK calls instead
+
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.18
+aiofiles==24.1.0
+pydantic>=2.0
+pydantic-settings>=2.0
+python-dotenv>=1.0
+httpx>=0.27
+websockets>=12.0
+
+# AI Services — all Python 3.14 compatible
+openai>=1.74.0
+deepgram-sdk>=3.0.0
+elevenlabs>=1.0.0
+
+# Knowledge base — pure Python, no GPU required
+rank-bm25>=0.2.2
+
+# Web scraping for URL knowledge ingestion
+beautifulsoup4>=4.12
+
+# PDF support
+pypdf>=4.0.0

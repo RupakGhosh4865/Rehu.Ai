@@ -1,0 +1,35 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # ── Required API keys — copy from .env.example ──
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - HEYGEN_API_KEY=${HEYGEN_API_KEY}
+      - DAILY_API_KEY=${DAILY_API_KEY}
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      # ── Optional overrides ──
+      - DEBUG=${DEBUG:-false}
+      - HEYGEN_AVATAR_ID=${HEYGEN_AVATAR_ID:-Angela-inblackskirt-20220820}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID:-21m00Tcm4TlvDq8ikWAM}
+    volumes:
+      # Persist ChromaDB knowledge base across container restarts
+      - chromadb_data:/app/data/chromadb
+      # Mount frontend for live editing (development only)
+      - ./frontend:/app/../frontend:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  chromadb_data:

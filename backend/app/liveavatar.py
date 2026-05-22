@@ -1,0 +1,242 @@
+"""
+SuperHuman AI Persona Platform -- LiveAvatar Client
+New HeyGen API: https://api.liveavatar.com  (replaces deprecated api.heygen.com)
+
+Flow:
+  1. Backend: POST /v1/sessions/token  (X-API-KEY auth) -> session_token
+  2. Backend: POST /v1/sessions/start  (Bearer session_token) -> livekit_url + livekit_client_token
+  3. Frontend: connect to LiveKit room with those credentials
+  4. Avatar video/audio streams via LiveKit tracks
+  5. Events via LiveKit data channel topics: agent-control / agent-response
+
+Sandbox mode:
+  - is_sandbox=True, avatar_id=SANDBOX_AVATAR_ID (Wayne)
+  - Free, no credits, ~1 min sessions
+  - Perfect for development/testing
+"""
+import logging
+from typing import Optional
+import httpx
+
+from .config import settings
+
+logger = logging.getLogger(__name__)
+
+LA_BASE          = "https://api.liveavatar.com"
+SANDBOX_AVATAR_ID = "dd73ea75-1218-4ef3-92ce-606d5f7fbc0a"   # Wayne - free sandbox avatar
+
+
+def _headers() -> dict:
+    return {
+        "X-API-KEY": settings.LIVEAVATAR_API_KEY,
+        "Content-Type": "application/json",
+    }
+
+
+def _bearer(token: str) -> dict:
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+
+# ── Context (persona personality + knowledge) ─────────────────────────────────
+
+async def create_context(
+    prompt: str,
+    opening_text: str = "",
+    display_name: str = "Maya Context",
+) -> Optional[str]:
+    """
+    Create a LiveAvatar context (system prompt + opening greeting).
+    Returns context_id, or None if creation fails.
+    """
+    if not settings.LIVEAVATAR_API_KEY:
+        return None
+
+    payload = {
+        "name": display_name,      # API field is 'name', not 'display_name'
+        "prompt": prompt,
+    }
+    if opening_text:
+        payload["opening_text"] = opening_text
+
+    try:
+        async with httpx.AsyncClient(timeout=20) as c:
+            r = await c.post(f"{LA_BASE}/v1/contexts", headers=_headers(), json=payload)
+            data = r.json()
+
+        if r.status_code in (200, 201) and data.get("code") == 1000:
+            ctx_id = data.get("data", {}).get("id")
+            logger.info("LiveAvatar context created: %s", ctx_id)
+            return ctx_id
+        else:
+            logger.error("Context creation failed %s: %s", r.status_code, data)
+            return None
+    except Exception as e:
+        logger.warning("LiveAvatar context error: %s", e)
+        return None
+
+
+async def delete_context(context_id: str) -> bool:
+    """Clean up a context after session ends."""
+    if not context_id or not settings.LIVEAVATAR_API_KEY:
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.delete(f"{LA_BASE}/v1/contexts/{context_id}", headers=_headers())
+            return r.status_code in (200, 204)
+    except Exception:
+        return False
+
+
+# ── Session lifecycle ──────────────────────────────────────────────────────────
+
+async def create_session_token(
+    avatar_id: Optional[str] = None,
+    context_id: Optional[str] = None,
+    voice_id: Optional[str] = None,
+    language: str = "en",
+    is_sandbox: bool = False,
+) -> dict:
+    """
+    Create a short-lived session token on the backend.
+    Returns: {session_token, session_id} or empty dict on failure.
+    """
+    if not settings.LIVEAVATAR_API_KEY:
+        logger.warning("LIVEAVATAR_API_KEY not set")
+        return {}
+
+    use_sandbox  = is_sandbox or settings.LIVEAVATAR_USE_SANDBOX
+    use_avatar   = SANDBOX_AVATAR_ID if use_sandbox else (avatar_id or settings.LIVEAVATAR_AVATAR_ID or SANDBOX_AVATAR_ID)
+
+    avatar_persona: dict = {"language": language}
+    if voice_id:
+        avatar_persona["voice_id"] = voice_id
+    if context_id:
+        avatar_persona["context_id"] = context_id
+
+    payload = {
+        "mode":           "FULL",
+        "avatar_id":      use_avatar,
+        "is_sandbox":     use_sandbox,
+        "avatar_persona": avatar_persona,
+        "video_settings": {"quality": "high", "encoding": "H264"},
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=20) as c:
+            r = await c.post(f"{LA_BASE}/v1/sessions/token", headers=_headers(), json=payload)
+            data = r.json()
+
+        if r.status_code == 200 and data.get("code") == 1000:
+            session_data = data["data"]
+            logger.info("LiveAvatar session token created (sandbox=%s)", use_sandbox)
+            return {
+                "session_token": session_data["session_token"],
+                "session_id":    session_data.get("session_id", ""),
+            }
+        else:
+            logger.error("Session token failed %s: %s", r.status_code, data)
+            return {}
+    except Exception as e:
+        logger.error("LiveAvatar create_session_token error: %s", e)
+        return {}
+
+
+async def start_session(session_token: str) -> dict:
+    """
+    Start the session and get LiveKit room credentials.
+    Returns: {session_id, livekit_url, livekit_client_token} or empty dict.
+    """
+    if not session_token:
+        return {}
+    try:
+        async with httpx.AsyncClient(timeout=30) as c:
+            r = await c.post(
+                f"{LA_BASE}/v1/sessions/start",
+                headers=_bearer(session_token),
+            )
+            data = r.json()
+
+        if r.status_code in (200, 201) and data.get("code") == 1000:
+            sd = data["data"]
+            logger.info("LiveAvatar session started: %s", sd.get("session_id"))
+            return {
+                "session_id":           sd["session_id"],
+                "livekit_url":          sd["livekit_url"],
+                "livekit_client_token": sd["livekit_client_token"],
+            }
+        else:
+            logger.error("Session start failed %s: %s", r.status_code, data)
+            return {}
+    except Exception as e:
+        logger.error("LiveAvatar start_session error: %s", e)
+        return {}
+
+
+async def stop_session(session_id: str, session_token: str = "") -> bool:
+    """End a LiveAvatar session."""
+    if not session_id:
+        return True
+    try:
+        headers = _bearer(session_token) if session_token else _headers()
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.delete(f"{LA_BASE}/v1/sessions/{session_id}", headers=headers)
+        logger.info("LiveAvatar session stopped: %s", session_id)
+        return r.status_code in (200, 204)
+    except Exception as e:
+        logger.warning("LiveAvatar stop_session error: %s", e)
+        return False
+
+
+# ── Avatars ────────────────────────────────────────────────────────────────────
+
+async def list_public_avatars(page_size: int = 20) -> list:
+    """
+    List public stock avatars. No API key required.
+    Each avatar has: id, name, preview_url, default_voice
+    """
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.get(
+                f"{LA_BASE}/v1/avatars/public",
+                params={"page_size": page_size},
+                headers={"Content-Type": "application/json"},
+            )
+            data = r.json()
+        if r.status_code == 200:
+            return data.get("data", {}).get("results", [])
+    except Exception as e:
+        logger.warning("LiveAvatar list_public_avatars error: %s", e)
+    return []
+
+
+async def list_user_avatars() -> list:
+    """List avatars owned by this account (requires API key)."""
+    if not settings.LIVEAVATAR_API_KEY:
+        return []
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.get(f"{LA_BASE}/v1/avatars", headers=_headers())
+            data = r.json()
+        if r.status_code == 200:
+            return data.get("data", {}).get("results", [])
+    except Exception as e:
+        logger.warning("LiveAvatar list_user_avatars error: %s", e)
+    return []
+
+
+# ── Keep-alive ─────────────────────────────────────────────────────────────────
+
+async def keep_alive(session_token: str) -> bool:
+    """Ping to prevent session timeout (call every 30s for long sessions)."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.post(
+                f"{LA_BASE}/v1/sessions/keep-alive",
+                headers=_bearer(session_token),
+            )
+        return r.status_code == 200
+    except Exception:
+        return False

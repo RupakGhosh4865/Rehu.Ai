@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SuperHuman — Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <style>
+    body { background: var(--gray-100); padding: 0; }
+
+    /* ── Sidebar layout ─────────────────────────────────────────── */
+    .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+    .sidebar { background: var(--navy); color: white; padding: 24px 0; display: flex; flex-direction: column; }
+    .sidebar-logo { padding: 0 20px 24px; font-size: 1.3rem; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-logo span { color: #7EC8E3; }
+    .sidebar-menu { padding: 16px 0; flex: 1; }
+    .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+    .menu-item:hover, .menu-item.active { color: white; background: rgba(255,255,255,0.08); border-left: 3px solid #7EC8E3; }
+    .menu-item.active { background: rgba(255,255,255,0.1); }
+    .menu-section { padding: 12px 20px 4px; font-size: 0.72rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+
+    .main { padding: 32px; overflow-y: auto; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Page header ─────────────────────────────────────────────── */
+    .page-header { margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between; }
+    .page-header h1 { font-size: 1.6rem; }
+    .page-header p { color: var(--gray-600); margin-top: 4px; }
+
+    /* ── Stats row ───────────────────────────────────────────────── */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: white; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm); }
+    .stat-value { font-size: 2rem; font-weight: 800; color: var(--navy); }
+    .stat-label { font-size: 0.82rem; color: var(--gray-600); margin-top: 4px; }
+    .stat-icon { font-size: 1.5rem; margin-bottom: 8px; }
+
+    /* ── Persona cards ───────────────────────────────────────────── */
+    .personas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .persona-card { background: white; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); transition: box-shadow 0.2s; cursor: pointer; position: relative; }
+    .persona-card:hover { box-shadow: var(--shadow-md); }
+    .persona-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #2E86AB, #1F4E79); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 12px; }
+    .persona-name { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+    .persona-company { font-size: 0.85rem; color: var(--gray-600); }
+    .persona-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .add-persona-card { border: 2px dashed var(--gray-300); background: transparent; box-shadow: none; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 160px; color: var(--gray-600); gap: 8px; }
+    .add-persona-card:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Knowledge panel ─────────────────────────────────────────── */
+    .knowledge-layout { display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start; }
+    .tab-bar { display: flex; gap: 4px; background: var(--gray-100); padding: 4px; border-radius: var(--radius-sm); margin-bottom: 20px; }
+    .tab { flex: 1; text-align: center; padding: 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--gray-600); }
+    .tab.active { background: white; color: var(--navy); box-shadow: var(--shadow-sm); }
+
+    /* ── Knowledge list ──────────────────────────────────────────── */
+    .knowledge-list { display: flex; flex-direction: column; gap: 8px; }
+    .knowledge-item { background: white; border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-sm); }
+    .knowledge-item-title { font-weight: 600; font-size: 0.9rem; }
+    .knowledge-item-meta { font-size: 0.78rem; color: var(--gray-600); margin-top: 2px; }
+
+    /* ── Embed code ──────────────────────────────────────────────── */
+    .code-block { background: #1e293b; color: #e2e8f0; border-radius: var(--radius-sm); padding: 16px; font-family: 'Fira Code', monospace; font-size: 0.82rem; line-height: 1.6; overflow-x: auto; position: relative; }
+    .copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.1); border: none; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
+    .copy-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* ── Responsive ──────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .knowledge-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">Super<span>Human</span></div>
+    <div class="sidebar-menu">
+      <div class="menu-section">Overview</div>
+      <a class="menu-item active" onclick="showPage('dashboard')">📊 Dashboard</a>
+      <div class="menu-section">Personas</div>
+      <a class="menu-item" onclick="showPage('personas')">🤖 Personas</a>
+      <a class="menu-item" onclick="showPage('knowledge')">📚 Knowledge Base</a>
+      <div class="menu-section">Integrations</div>
+      <a class="menu-item" onclick="showPage('embed')">🔗 Embed Widget</a>
+      <a class="menu-item" onclick="showPage('settings')">⚙️ Settings</a>
+    </div>
+    <div style="padding:20px;border-top:1px solid rgba(255,255,255,0.1);">
+      <a href="/" class="menu-item" style="padding:8px 0;font-size:0.82rem;">← Back to Demo</a>
+    </div>
+  </nav>
+
+  <!-- ── Main ────────────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div><h1>Dashboard</h1><p>Your SuperHuman platform overview</p></div>
+        <button class="btn btn-primary" onclick="showPage('personas')">+ New Persona</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">🤖</div>
+          <div class="stat-value" id="stat-personas">—</div>
+          <div class="stat-label">Active Personas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🎙</div>
+          <div class="stat-value" id="stat-sessions">—</div>
+          <div class="stat-label">Live Sessions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📚</div>
+          <div class="stat-value" id="stat-knowledge">—</div>
+          <div class="stat-label">Knowledge Chunks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-value" style="color:var(--green);" id="stat-health">Healthy</div>
+          <div class="stat-label">System Status</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>Quick Start</h3></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+          <div style="text-align:center;padding:20px;">
+            <div style="font-size:2rem;margin-bottom:8px;">1️⃣</div>
+            <div style="font-weight:600;margin-bottom:4px;">Create a Persona</div>
+            <p class="text-sm">Set up your AI expert with a name, company, and tone.</p>
+            <button class="btn btn-ghost" style="margin-top:12px;" onclick="showPage('personas')">Create →</button>
+          </div>
+          <div style="text-align:center;padding:20px;">
+            <div style="font-size:2rem;margin-bottom:8px;">2️⃣</div>
+            <div style="font-weight:600;margin-bottom:4px;">Add Knowledge</div>
+            <p class="text-sm">Upload docs, paste product info, or add URLs.</p>
+            <button class="btn btn-ghost" style="margin-top:12px;" onclick="showPage('knowledge')">Add →</button>
+          </div>
+          <div style="text-align:center;padding:20px;">
+            <div style="font-size:2rem;margin-bottom:8px;">3️⃣</div>
+            <div style="font-weight:600;margin-bottom:4px;">Embed on Website</div>
+            <p class="text-sm">Copy a one-line script tag and paste into your site.</p>
+            <button class="btn btn-ghost" style="margin-top:12px;" onclick="showPage('embed')">Get Code →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personas -->
+    <div class="page" id="page-personas">
+      <div class="page-header">
+        <div><h1>Personas</h1><p>Manage your AI experts</p></div>
+      </div>
+      <div class="personas-grid" id="personas-grid">
+        <div class="persona-card add-persona-card" onclick="openPersonaModal()">
+          <div style="font-size:2rem;">➕</div>
+          <div style="font-weight:600;">Create Persona</div>
+          <div class="text-sm text-muted">Set up a new AI expert</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Knowledge -->
+    <div class="page" id="page-knowledge">
+      <div class="page-header">
+        <div><h1>Knowledge Base</h1><p>Train your personas with product information</p></div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label class="form-label">Select Persona</label>
+        <select class="form-select" id="kb-persona-select" style="max-width:300px;" onchange="loadKnowledgeStats()">
+          <option value="default">Default Persona</option>
+        </select>
+      </div>
+      <div class="knowledge-layout">
+        <div>
+          <div class="tab-bar">
+            <div class="tab active" onclick="switchKbTab('text', this)">✏️ Paste Text</div>
+            <div class="tab" onclick="switchKbTab('url', this)">🌐 From URL</div>
+            <div class="tab" onclick="switchKbTab('file', this)">📄 Upload File</div>
+          </div>
+
+          <!-- Text input -->
+          <div id="kb-tab-text" class="card">
+            <div class="form-group">
+              <label class="form-label">Title (optional)</label>
+              <input type="text" id="kb-title" class="form-input" placeholder="e.g. Product Pricing FAQ" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Content</label>
+              <textarea id="kb-text-content" class="form-textarea" style="min-height:200px;" placeholder="Paste your product documentation, FAQs, pricing details, objection handling scripts..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="addKnowledge('text')">💾 Add to Knowledge Base</button>
+          </div>
+
+          <!-- URL input -->
+          <div id="kb-tab-url" class="card hidden">
+            <div class="form-group">
+              <label class="form-label">URL to scrape</label>
+              <input type="url" id="kb-url" class="form-input" placeholder="https://yoursite.com/product-page" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Title (optional)</label>
+              <input type="text" id="kb-url-title" class="form-input" placeholder="e.g. Product Overview Page" />
+            </div>
+            <button class="btn btn-primary" onclick="addKnowledge('url')">🌐 Fetch & Index URL</button>
+          </div>
+
+          <!-- File upload -->
+          <div id="kb-tab-file" class="card hidden">
+            <div id="drop-zone" style="border:2px dashed var(--gray-300);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;transition:all 0.2s;" onclick="document.getElementById('file-input').click()">
+              <div style="font-size:2.5rem;margin-bottom:8px;">📄</div>
+              <div style="font-weight:600;">Drop file here or click to browse</div>
+              <div class="text-sm text-muted mt-4">Supports .txt, .md, .pdf files</div>
+            </div>
+            <input type="file" id="file-input" style="display:none;" accept=".txt,.md,.pdf" onchange="handleFileUpload()" />
+          </div>
+        </div>
+
+        <!-- Knowledge stats sidebar -->
+        <div>
+          <div class="card">
+            <h3 style="margin-bottom:16px;">📊 Knowledge Stats</h3>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-200);">
+                <span class="text-sm">Indexed Chunks</span>
+                <span class="text-sm" id="kb-chunk-count" style="font-weight:700;color:var(--navy);">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-200);">
+                <span class="text-sm">Status</span>
+                <span class="badge badge-green" id="kb-status">Active</span>
+              </div>
+            </div>
+            <button class="btn btn-danger w-full" style="margin-top:16px;" onclick="clearKnowledge()">🗑 Clear All Knowledge</button>
+          </div>
+
+          <!-- Test retrieval -->
+          <div class="card mt-4">
+            <h3 style="margin-bottom:12px;">🔍 Test Retrieval</h3>
+            <p class="text-sm" style="margin-bottom:12px;">Ask a question to test what your persona knows.</p>
+            <div class="form-group">
+              <input type="text" id="test-query" class="form-input" placeholder="What is your pricing?" />
+            </div>
+            <button class="btn btn-ghost w-full" onclick="testRetrieval()">Test</button>
+            <div id="test-result" class="hidden" style="margin-top:12px;padding:12px;background:var(--gray-100);border-radius:var(--radius-sm);font-size:0.85rem;line-height:1.6;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Embed Widget -->
+    <div class="page" id="page-embed">
+      <div class="page-header">
+        <div><h1>Embed Widget</h1><p>Add your AI persona to any website in 60 seconds</p></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div>
+          <div class="card" style="margin-bottom:20px;">
+            <h3 style="margin-bottom:4px;">1. Choose your persona</h3>
+            <p class="text-sm" style="margin-bottom:12px;">Select which AI expert to show on your website.</p>
+            <select class="form-select" id="embed-persona-select" onchange="updateEmbedCode()">
+              <option value="default">Default Persona</option>
+            </select>
+          </div>
+
+          <div class="card" style="margin-bottom:20px;">
+            <h3 style="margin-bottom:4px;">2. Customize appearance</h3>
+            <p class="text-sm" style="margin-bottom:12px;"></p>
+            <div class="form-group">
+              <label class="form-label">Button position</label>
+              <select class="form-select" id="embed-position" onchange="updateEmbedCode()">
+                <option value="bottom-right">Bottom right</option>
+                <option value="bottom-left">Bottom left</option>
+                <option value="center">Center overlay</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Accent color</label>
+              <input type="color" id="embed-color" value="#2E86AB" style="width:100%;height:40px;border:none;border-radius:6px;cursor:pointer;" onchange="updateEmbedCode()" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Button label</label>
+              <input type="text" id="embed-label" class="form-input" value="Talk to our AI Expert" onchange="updateEmbedCode()" />
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-bottom:4px;">3. Copy & paste this code</h3>
+            <p class="text-sm" style="margin-bottom:12px;">Add this snippet before the closing <code>&lt;/body&gt;</code> tag of your website.</p>
+            <div class="code-block" id="embed-code-block">
+              <button class="copy-btn" onclick="copyEmbedCode()">Copy</button>
+              <pre id="embed-code-pre"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:12px;">Preview</h3>
+          <div style="background:linear-gradient(135deg,#f0f4f8,#e8ecf0);border-radius:12px;height:400px;position:relative;display:flex;align-items:flex-end;justify-content:flex-end;padding:20px;">
+            <div style="text-align:center;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#aaa;">
+              <div style="font-size:2rem;">🌐</div>
+              <div style="font-size:0.85rem;">Your website here</div>
+            </div>
+            <div id="embed-preview-btn" style="background:#2E86AB;color:white;padding:12px 20px;border-radius:24px;font-weight:600;font-size:0.9rem;box-shadow:0 4px 20px rgba(46,134,171,0.4);cursor:pointer;display:flex;align-items:center;gap:8px;">
+              🤖 <span id="preview-btn-label">Talk to our AI Expert</span>
+            </div>
+          </div>
+          <p class="text-sm text-muted mt-4">Widget will appear in the bottom-right corner of your website.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div><h1>Settings</h1><p>Configure your SuperHuman platform</p></div>
+      </div>
+      <div class="card" style="max-width:600px;">
+        <h3 style="margin-bottom:16px;">API Configuration</h3>
+        <div class="form-group">
+          <label class="form-label">Backend URL</label>
+          <input type="url" class="form-input" id="settings-api-url" placeholder="http://localhost:8000" />
+          <div class="text-sm text-muted" style="margin-top:4px;">Your deployed Railway.app URL</div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Persona Modal -->
+<div id="persona-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
+  <div class="card" style="width:100%;max-width:480px;margin:16px;">
+    <h2 style="margin-bottom:20px;" id="modal-title">Create Persona</h2>
+    <input type="hidden" id="modal-persona-id" value="" />
+    <div class="form-group">
+      <label class="form-label">Persona ID (unique, no spaces)</label>
+      <input type="text" id="modal-id" class="form-input" placeholder="e.g. sales-rep" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Display Name</label>
+      <input type="text" id="modal-name" class="form-input" placeholder="e.g. Sarah" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Company Name</label>
+      <input type="text" id="modal-company" class="form-input" placeholder="e.g. Acme Corp" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tone</label>
+      <select id="modal-tone" class="form-select">
+        <option value="professional">Professional</option>
+        <option value="friendly">Friendly</option>
+        <option value="casual">Casual</option>
+        <option value="formal">Formal</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button class="btn btn-primary flex-1" onclick="savePersona()">Save Persona</button>
+      <button class="btn btn-ghost" onclick="closePersonaModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const API_BASE = localStorage.getItem('sh_api_url') || '';
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+  document.getElementById(`page-${id}`)?.classList.add('active');
+  if (id === 'knowledge') loadKnowledgeStats();
+  if (id === 'dashboard') loadDashboard();
+  if (id === 'personas') loadPersonas();
+  if (id === 'embed') { loadPersonasIntoSelects(); updateEmbedCode(); }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+function toast(msg, type = '') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const [health, personas] = await Promise.all([
+      fetch(`${API_BASE}/health`).then(r => r.json()),
+      fetch(`${API_BASE}/api/personas`).then(r => r.json()),
+    ]);
+    document.getElementById('stat-personas').textContent = personas.personas?.length ?? '—';
+    document.getElementById('stat-sessions').textContent = health.services?.active_sessions ?? 0;
+    document.getElementById('stat-health').textContent = health.status === 'healthy' ? '✅ Healthy' : '⚠ Issue';
+
+    // Get total knowledge chunks across all personas
+    let chunks = 0;
+    for (const p of (personas.personas || [])) {
+      const stats = await fetch(`${API_BASE}/api/knowledge/stats/${p.persona_id}`).then(r => r.json());
+      chunks += stats.chunk_count || 0;
+    }
+    document.getElementById('stat-knowledge').textContent = chunks;
+  } catch (e) { /* backend not connected yet */ }
+}
+
+// ── Personas ──────────────────────────────────────────────────────────────
+async function loadPersonas() {
+  try {
+    const data = await fetch(`${API_BASE}/api/personas`).then(r => r.json());
+    const grid = document.getElementById('personas-grid');
+    grid.innerHTML = '';
+
+    for (const p of data.personas || []) {
+      const card = document.createElement('div');
+      card.className = 'persona-card';
+      card.innerHTML = `
+        <div class="persona-avatar">🤖</div>
+        <div class="persona-name">${p.persona_name}</div>
+        <div class="persona-company">${p.company_name}</div>
+        <div class="persona-actions">
+          <a class="btn btn-ghost" href="/?persona=${p.persona_id}" target="_blank">▶ Demo</a>
+          <button class="btn btn-ghost" onclick="editPersona('${p.persona_id}')">Edit</button>
+          ${p.persona_id !== 'default' ? `<button class="btn btn-danger" onclick="deletePersona('${p.persona_id}')">Delete</button>` : ''}
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+
+    // Add card
+    const addCard = document.createElement('div');
+    addCard.className = 'persona-card add-persona-card';
+    addCard.innerHTML = `<div style="font-size:2rem;">➕</div><div style="font-weight:600;">Create Persona</div>`;
+    addCard.onclick = openPersonaModal;
+    grid.appendChild(addCard);
+
+    loadPersonasIntoSelects();
+  } catch (e) { toast('Could not load personas — is the backend running?', 'error'); }
+}
+
+async function loadPersonasIntoSelects() {
+  try {
+    const data = await fetch(`${API_BASE}/api/personas`).then(r => r.json());
+    ['kb-persona-select', 'embed-persona-select'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      sel.innerHTML = '';
+      for (const p of data.personas || []) {
+        const opt = document.createElement('option');
+        opt.value = p.persona_id;
+        opt.textContent = `${p.persona_name} (${p.company_name})`;
+        sel.appendChild(opt);
+      }
+    });
+  } catch (e) {}
+}
+
+function openPersonaModal(personaId = null) {
+  document.getElementById('modal-id').value = '';
+  document.getElementById('modal-name').value = '';
+  document.getElementById('modal-company').value = '';
+  document.getElementById('modal-persona-id').value = personaId || '';
+  document.getElementById('modal-title').textContent = personaId ? 'Edit Persona' : 'Create Persona';
+  document.getElementById('persona-modal').style.display = 'flex';
+}
+
+function closePersonaModal() {
+  document.getElementById('persona-modal').style.display = 'none';
+}
+
+async function editPersona(personaId) {
+  const p = await fetch(`${API_BASE}/api/personas/${personaId}`).then(r => r.json());
+  document.getElementById('modal-persona-id').value = personaId;
+  document.getElementById('modal-id').value = personaId;
+  document.getElementById('modal-name').value = p.persona_name;
+  document.getElementById('modal-company').value = p.company_name;
+  document.getElementById('modal-tone').value = p.tone || 'professional';
+  document.getElementById('modal-title').textContent = 'Edit Persona';
+  document.getElementById('persona-modal').style.display = 'flex';
+}
+
+async function savePersona() {
+  const id = document.getElementById('modal-id').value.trim().replace(/\s+/g, '-').toLowerCase();
+  const existing = document.getElementById('modal-persona-id').value;
+  if (!id) { toast('Persona ID is required', 'error'); return; }
+
+  const payload = {
+    persona_id: id,
+    persona_name: document.getElementById('modal-name').value.trim() || 'Alex',
+    company_name: document.getElementById('modal-company').value.trim() || 'our company',
+    tone: document.getElementById('modal-tone').value,
+  };
+
+  const method = existing ? 'PUT' : 'POST';
+  const url = existing ? `${API_BASE}/api/personas/${existing}` : `${API_BASE}/api/personas`;
+
+  try {
+    const resp = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!resp.ok) throw new Error(await resp.text());
+    closePersonaModal();
+    loadPersonas();
+    toast('Persona saved!', 'success');
+  } catch (e) { toast(`Error: ${e.message}`, 'error'); }
+}
+
+async function deletePersona(personaId) {
+  if (!confirm(`Delete persona ${personaId}? This also deletes all their knowledge.`)) return;
+  await fetch(`${API_BASE}/api/personas/${personaId}`, { method: 'DELETE' });
+  loadPersonas();
+  toast('Persona deleted');
+}
+
+// ── Knowledge ─────────────────────────────────────────────────────────────
+function switchKbTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('kb-tab-text').classList.add('hidden');
+  document.getElementById('kb-tab-url').classList.add('hidden');
+  document.getElementById('kb-tab-file').classList.add('hidden');
+  document.getElementById(`kb-tab-${tab}`).classList.remove('hidden');
+}
+
+async function loadKnowledgeStats() {
+  const personaId = document.getElementById('kb-persona-select')?.value || 'default';
+  try {
+    const stats = await fetch(`${API_BASE}/api/knowledge/stats/${personaId}`).then(r => r.json());
+    document.getElementById('kb-chunk-count').textContent = stats.chunk_count;
+    document.getElementById('kb-status').textContent = stats.chunk_count > 0 ? 'Active' : 'Empty';
+  } catch (e) {}
+}
+
+async function addKnowledge(type) {
+  const personaId = document.getElementById('kb-persona-select').value || 'default';
+  let payload;
+
+  if (type === 'text') {
+    const content = document.getElementById('kb-text-content').value.trim();
+    if (!content) { toast('Please paste some content first', 'error'); return; }
+    payload = { persona_id: personaId, source_type: 'text', content, title: document.getElementById('kb-title').value.trim() };
+  } else if (type === 'url') {
+    const url = document.getElementById('kb-url').value.trim();
+    if (!url) { toast('Please enter a URL', 'error'); return; }
+    payload = { persona_id: personaId, source_type: 'url', content: url, title: document.getElementById('kb-url-title').value.trim() };
+  }
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/knowledge/add`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const data = await resp.json();
+    toast(`✅ Added ${data.chunks_stored} knowledge chunks`, 'success');
+    loadKnowledgeStats();
+  } catch (e) { toast(`Error: ${e.message}`, 'error'); }
+}
+
+async function handleFileUpload() {
+  const file = document.getElementById('file-input').files[0];
+  if (!file) return;
+  const personaId = document.getElementById('kb-persona-select').value || 'default';
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('persona_id', personaId);
+  formData.append('title', file.name);
+
+  try {
+    toast('Uploading and indexing file...');
+    const resp = await fetch(`${API_BASE}/api/knowledge/upload`, { method: 'POST', body: formData });
+    const data = await resp.json();
+    toast(`✅ Indexed ${data.chunks_stored} chunks from ${file.name}`, 'success');
+    loadKnowledgeStats();
+  } catch (e) { toast(`Upload failed: ${e.message}`, 'error'); }
+}
+
+async function clearKnowledge() {
+  const personaId = document.getElementById('kb-persona-select').value || 'default';
+  if (!confirm(`Clear ALL knowledge for persona "${personaId}"? This cannot be undone.`)) return;
+  await fetch(`${API_BASE}/api/knowledge/${personaId}`, { method: 'DELETE' });
+  loadKnowledgeStats();
+  toast('Knowledge cleared');
+}
+
+async function testRetrieval() {
+  const query = document.getElementById('test-query').value.trim();
+  const personaId = document.getElementById('kb-persona-select').value || 'default';
+  if (!query) return;
+
+  const resp = await fetch(`${API_BASE}/api/knowledge/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ persona_id: personaId, query, top_k: 3 }),
+  });
+  const data = await resp.json();
+  const result = document.getElementById('test-result');
+  result.classList.remove('hidden');
+  result.textContent = data.combined_context || 'No relevant knowledge found.';
+}
+
+// ── Embed code ────────────────────────────────────────────────────────────
+function updateEmbedCode() {
+  const personaId = document.getElementById('embed-persona-select')?.value || 'default';
+  const position = document.getElementById('embed-position')?.value || 'bottom-right';
+  const color = document.getElementById('embed-color')?.value || '#2E86AB';
+  const label = document.getElementById('embed-label')?.value || 'Talk to our AI Expert';
+  const apiUrl = API_BASE || 'https://your-railway-app.up.railway.app';
+
+  const code = `<!-- SuperHuman AI Widget -->
+<script src="${apiUrl}/sdk/superhuman-widget.js"
+  data-persona="${personaId}"
+  data-position="${position}"
+  data-color="${encodeURIComponent(color)}"
+  data-label="${encodeURIComponent(label)}"
+  data-api="${apiUrl}">
+<\/script>`;
+
+  document.getElementById('embed-code-pre').textContent = code;
+  const previewBtn = document.getElementById('embed-preview-btn');
+  previewBtn.style.background = color;
+  document.getElementById('preview-btn-label').textContent = label;
+}
+
+function copyEmbedCode() {
+  const code = document.getElementById('embed-code-pre').textContent;
+  navigator.clipboard.writeText(code).then(() => toast('Embed code copied!', 'success'));
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────
+function saveSettings() {
+  const url = document.getElementById('settings-api-url').value.trim();
+  localStorage.setItem('sh_api_url', url);
+  toast('Settings saved — reload to apply', 'success');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.getElementById('settings-api-url').value = localStorage.getItem('sh_api_url') || '';
+loadDashboard();
+updateEmbedCode();
+</script>
+</body>
+</html>

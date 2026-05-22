@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SuperHuman — Meet Maya</title>
+<!-- LiveKit Web SDK — handles mic + avatar video in LiveAvatar FULL mode -->
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000;--surface:#0e0e0e;--border:rgba(255,255,255,0.08);
+  --accent:#7c4ff7;--accent2:#a07cf8;--glow:rgba(124,79,247,0.4);
+  --green:#22c55e;--red:#e0443a;
+  --text:#fff;--muted:rgba(255,255,255,0.45);
+}
+html,body{height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden}
+
+/* LANDING */
+#landing{display:grid;grid-template-columns:42% 58%;height:100vh}
+.l-left{display:flex;flex-direction:column;justify-content:center;padding:60px 52px;z-index:2}
+.brand{font-size:.7rem;font-weight:700;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-bottom:44px}
+.headline{font-size:clamp(2rem,3.4vw,3.1rem);font-weight:800;line-height:1.1;letter-spacing:-.025em;margin-bottom:18px}
+.headline span{color:var(--accent2)}
+.sub{font-size:.96rem;line-height:1.78;color:var(--muted);margin-bottom:52px;max-width:340px}
+
+/* CALL BUTTON */
+.call-btn{display:flex;align-items:center;gap:14px;width:fit-content;cursor:pointer;
+  background:var(--green);border:none;border-radius:60px;padding:18px 38px 18px 26px;
+  animation:callpulse 2.4s ease-in-out infinite;transition:all .2s;color:#fff;font-size:1.05rem;font-weight:700}
+.call-btn:hover{background:#16a34a;transform:translateY(-2px);box-shadow:0 8px 40px rgba(34,197,94,.5)}
+.call-btn:disabled{opacity:.5;cursor:not-allowed;animation:none;transform:none}
+.call-btn .ph{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+@keyframes callpulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.45)}
+  50%{box-shadow:0 0 0 16px rgba(34,197,94,0)}}
+
+.feature-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:36px}
+.fpill{font-size:.69rem;font-weight:600;color:var(--muted);letter-spacing:.04em;
+  border:1px solid var(--border);padding:5px 14px;border-radius:20px}
+.l-links{margin-top:30px;display:flex;gap:22px}
+.l-links a{font-size:.76rem;color:var(--muted);text-decoration:none;
+  border-bottom:1px solid var(--border);padding-bottom:2px;transition:color .15s}
+.l-links a:hover{color:#fff}
+.status-badge{display:inline-flex;align-items:center;gap:7px;font-size:.71rem;font-weight:600;
+  border-radius:20px;padding:5px 13px;margin-bottom:22px}
+.status-badge.warn{color:#f0b429;background:rgba(240,180,41,.09);border:1px solid rgba(240,180,41,.25)}
+.status-badge.ok{color:var(--green);background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2)}
+.status-badge.hidden{display:none}
+
+/* Avatar panel */
+.l-right{position:relative;padding:20px 28px 20px 12px}
+.av-frame{position:relative;width:100%;height:calc(100vh - 40px);border-radius:20px;
+  overflow:hidden;border:1px solid rgba(255,255,255,0.07);background:#080810}
+#hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:none}
+.av-ph{position:absolute;inset:0;background:#0d0d14}
+.av-ph svg{width:100%;height:100%}
+.av-label{position:absolute;bottom:18px;left:18px;display:flex;align-items:center;gap:10px;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(12px);border:1px solid var(--border);
+  border-radius:12px;padding:10px 16px;z-index:3}
+.av-dot{width:8px;height:8px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 6px var(--green);animation:blink 2s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.av-nm{font-size:.94rem;font-weight:700}
+.av-st{font-size:.7rem;color:var(--muted);margin-top:1px}
+
+/* CALL SCREEN */
+#call-screen{display:none;position:fixed;inset:0;background:#000;z-index:100}
+#av-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#080808}
+#call-screen.maya-speaks::after{content:'';position:absolute;inset:0;pointer-events:none;
+  border:3px solid var(--accent2);opacity:.55;animation:sring .7s ease-in-out infinite alternate;z-index:5}
+@keyframes sring{from{opacity:.25}to{opacity:.65}}
+
+.cs-top{position:absolute;top:0;left:0;right:0;padding:20px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(180deg,rgba(0,0,0,.8) 0%,transparent 100%);z-index:10}
+.cs-id{display:flex;align-items:center;gap:11px;background:rgba(0,0,0,.55);
+  backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:30px;padding:8px 18px 8px 12px}
+.cs-dot{width:8px;height:8px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 6px var(--green);animation:blink 2s infinite;flex-shrink:0}
+.cs-nm{font-size:.88rem;font-weight:700}
+.cs-co{font-size:.7rem;color:var(--muted);margin-top:1px}
+.cs-chip{font-size:.7rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);background:rgba(0,0,0,.55);backdrop-filter:blur(12px);
+  border:1px solid var(--border);padding:7px 16px;border-radius:20px;transition:all .3s}
+.cs-chip.listening{color:var(--green);border-color:rgba(34,197,94,.35)}
+.cs-chip.speaking{color:var(--accent2);border-color:rgba(160,124,248,.4)}
+.cs-chip.thinking{color:#f0b429;border-color:rgba(240,180,41,.35)}
+.cs-chip.muted{color:var(--red);border-color:rgba(224,68,58,.35)}
+
+/* Transcript */
+.transcript{position:absolute;bottom:130px;left:28px;
+  width:min(440px,calc(100vw - 56px));max-height:220px;overflow-y:auto;
+  display:flex;flex-direction:column;gap:7px;z-index:10;scrollbar-width:none}
+.transcript::-webkit-scrollbar{display:none}
+.tmsg{max-width:92%;padding:9px 14px;border-radius:14px;font-size:.86rem;
+  line-height:1.55;backdrop-filter:blur(16px);animation:msgup .2s ease}
+@keyframes msgup{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.tmsg.ai{background:rgba(20,10,40,.85);border:1px solid rgba(124,79,247,.3);color:#fff;align-self:flex-start}
+.tmsg.me{background:rgba(28,28,28,.85);border:1px solid var(--border);color:rgba(255,255,255,.82);align-self:flex-end}
+
+/* CALL CONTROLS */
+.cs-ctrl{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:18px;z-index:10}
+.cbtn{width:58px;height:58px;border-radius:50%;border:1px solid rgba(255,255,255,.12);
+  background:rgba(20,20,20,.8);backdrop-filter:blur(16px);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .22s;color:#fff;flex-shrink:0}
+.cbtn:hover{background:rgba(50,50,50,.9);transform:scale(1.06)}
+#mute-btn.muted{background:rgba(224,68,58,.15);border-color:rgba(224,68,58,.4);color:var(--red)}
+#mute-btn.user-speaking{box-shadow:0 0 0 4px rgba(34,197,94,.5);border-color:rgba(34,197,94,.6)}
+#end-btn{width:66px;height:66px;background:var(--red);border:none;box-shadow:0 4px 20px rgba(224,68,58,.4)}
+#end-btn:hover{background:#c53030;transform:scale(1.08)}
+
+/* LOADING OVERLAY */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;
+  flex-direction:column;align-items:center;justify-content:center;gap:22px}
+#overlay.show{display:flex}
+.spinner{width:50px;height:50px;border:3px solid rgba(255,255,255,.08);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ov-txt{font-size:1rem;color:var(--muted)}
+.ov-sub{font-size:.78rem;color:rgba(255,255,255,.25);margin-top:-14px}
+
+/* CATALOG MODAL */
+#cat-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:300;
+  align-items:center;justify-content:center}
+#cat-modal.show{display:flex}
+.modal{background:#0f0f0f;border:1px solid var(--border);border-radius:20px;
+  padding:40px;width:min(520px,94vw);max-height:90vh;overflow-y:auto}
+.modal h2{font-size:1.35rem;font-weight:800;margin-bottom:8px}
+.modal p{color:var(--muted);font-size:.87rem;line-height:1.65;margin-bottom:26px}
+.flbl{font-size:.73rem;font-weight:600;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
+.fi{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;
+  color:#fff;padding:12px 16px;font-size:.87rem;outline:none;margin-bottom:16px;transition:border-color .2s;font-family:inherit}
+.fi:focus{border-color:var(--accent)}
+textarea.fi{resize:vertical;min-height:120px}
+.ma{display:flex;gap:12px;margin-top:6px}
+.mb{flex:1;padding:13px;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;border:none;transition:all .2s}
+.mb.p{background:var(--accent);color:#fff}.mb.p:hover{background:#6a3de8}
+.mb.s{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.mb.s:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+.m-ok{display:none;text-align:center;padding:20px 0}
+.m-ok svg{color:var(--green);margin-bottom:14px}
+.m-ok h3{font-size:1.1rem;font-weight:700;margin-bottom:7px}
+.m-ok p{font-size:.85rem;color:var(--muted);line-height:1.6}
+
+@media(max-width:720px){
+  #landing{grid-template-columns:1fr}
+  .l-right{display:none}
+  .l-left{padding:40px 28px;justify-content:flex-start;padding-top:18vh}
+}
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div id="landing">
+  <div class="l-left">
+    <div class="brand">SuperHuman</div>
+    <div class="status-badge hidden" id="status-badge"></div>
+
+    <h1 class="headline">Meet <span id="disp-name">Maya</span>,<br>Your AI Expert</h1>
+    <p class="sub" id="disp-sub">Always on. Knows your product inside out. Demos live, answers every question, and qualifies leads — like your best rep, 24/7.</p>
+
+    <!-- CALL BUTTON -->
+    <button class="call-btn" id="call-btn" onclick="startCall()">
+      <div class="ph">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.53 2 2 0 0 1 3.6 1.5h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.13a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.5 16.4z"/>
+        </svg>
+      </div>
+      <span>Call <span id="btn-name">Maya</span></span>
+    </button>
+
+    <div class="feature-row">
+      <div class="fpill">🎙 Real-time voice</div>
+      <div class="fpill">🧠 Product expert</div>
+      <div class="fpill">⚡ 60-sec auto-demo</div>
+    </div>
+    <div class="l-links">
+      <a href="#" onclick="openCatalog();return false">⚙ Configure product knowledge</a>
+      <a href="/admin">Admin panel</a>
+    </div>
+  </div>
+
+  <div class="l-right">
+    <div class="av-frame">
+      <div class="av-ph" id="av-ph">
+        <svg viewBox="0 0 400 560" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="bg1" cx="60%" cy="40%" r="70%"><stop offset="0%" stop-color="#2a2035"/><stop offset="100%" stop-color="#0d0d12"/></radialGradient>
+            <linearGradient id="sk" x1="0%" y1="0%" x2="30%" y2="100%"><stop offset="0%" stop-color="#f0c9a0"/><stop offset="50%" stop-color="#e8b88a"/><stop offset="100%" stop-color="#d4a070"/></linearGradient>
+            <radialGradient id="sksh" cx="50%" cy="60%" r="55%"><stop offset="0%" stop-color="#c89060" stop-opacity="0"/><stop offset="100%" stop-color="#a06838" stop-opacity="0.45"/></radialGradient>
+            <linearGradient id="hr" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#4a2c14"/><stop offset="30%" stop-color="#3a2010"/><stop offset="60%" stop-color="#5c3820"/><stop offset="100%" stop-color="#2a1808"/></linearGradient>
+            <radialGradient id="ir" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#8b6040"/><stop offset="40%" stop-color="#6b4828"/><stop offset="100%" stop-color="#3d2810"/></radialGradient>
+            <linearGradient id="jk" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a2a"/><stop offset="100%" stop-color="#0a0a14"/></linearGradient>
+            <linearGradient id="sr" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#e8e0d4"/><stop offset="100%" stop-color="#c8c0b4"/></linearGradient>
+            <filter id="bl"><feGaussianBlur stdDeviation="8"/></filter>
+          </defs>
+          <rect width="400" height="560" fill="url(#bg1)"/>
+          <circle cx="320" cy="80" r="60" fill="#3a2850" opacity=".5" filter="url(#bl)"/>
+          <circle cx="60" cy="180" r="45" fill="#1e1830" opacity=".6" filter="url(#bl)"/>
+          <path d="M 40 560 L 40 420 Q 80 370 120 350 L 155 335 L 200 560 Z" fill="url(#jk)"/>
+          <path d="M 360 560 L 360 420 Q 320 370 280 350 L 245 335 L 200 560 Z" fill="url(#jk)"/>
+          <path d="M 175 350 Q 190 340 200 340 Q 210 340 225 350 L 215 410 L 200 430 L 185 410 Z" fill="url(#sr)" opacity=".9"/>
+          <ellipse cx="200" cy="195" rx="90" ry="108" fill="url(#sk)"/>
+          <ellipse cx="200" cy="195" rx="90" ry="108" fill="url(#sksh)"/>
+          <ellipse cx="200" cy="168" rx="96" ry="80" fill="url(#hr)"/>
+          <path d="M 110 168 Q 108 100 130 75 Q 155 55 200 52 Q 245 55 270 75 Q 292 100 290 168 Z" fill="url(#hr)"/>
+          <path d="M 111 195 Q 108 240 112 285 Q 114 310 118 330" stroke="#3a2010" stroke-width="18" fill="none" opacity=".85" stroke-linecap="round"/>
+          <path d="M 289 195 Q 292 240 288 285 Q 286 310 282 330" stroke="#3a2010" stroke-width="18" fill="none" opacity=".85" stroke-linecap="round"/>
+          <ellipse cx="112" cy="210" rx="12" ry="16" fill="#d8a070"/>
+          <ellipse cx="288" cy="210" rx="12" ry="16" fill="#d8a070"/>
+          <path d="M 148 158 Q 162 152 178 155" stroke="#3a2010" stroke-width="4" fill="none" stroke-linecap="round" opacity=".9"/>
+          <path d="M 222 155 Q 238 152 252 158" stroke="#3a2010" stroke-width="4" fill="none" stroke-linecap="round" opacity=".9"/>
+          <path d="M 143 186 Q 152 178 163 178 Q 174 178 183 186 Q 174 196 163 196 Q 152 196 143 186 Z" fill="#f4f0ec"/>
+          <circle cx="163" cy="186" r="10" fill="url(#ir)"/>
+          <circle cx="163" cy="186" r="5" fill="#1a0e08"/>
+          <circle cx="159" cy="182" r="2.5" fill="white" opacity=".9"/>
+          <path d="M 143 186 Q 152 177 163 177 Q 174 177 183 186" stroke="#2a1808" stroke-width="1.8" fill="none" opacity=".8"/>
+          <path d="M 217 186 Q 226 178 237 178 Q 248 178 257 186 Q 248 196 237 196 Q 226 196 217 186 Z" fill="#f4f0ec"/>
+          <circle cx="237" cy="186" r="10" fill="url(#ir)"/>
+          <circle cx="237" cy="186" r="5" fill="#1a0e08"/>
+          <circle cx="233" cy="182" r="2.5" fill="white" opacity=".9"/>
+          <path d="M 217 186 Q 226 177 237 177 Q 248 177 257 186" stroke="#2a1808" stroke-width="1.8" fill="none" opacity=".8"/>
+          <path d="M 176 252 Q 186 248 193 250 Q 200 248 207 250 Q 214 248 224 252 Q 214 256 207 255 Q 200 256 193 255 Q 186 256 176 252 Z" fill="#cc7878"/>
+          <path d="M 176 252 Q 186 256 200 264 Q 214 256 224 252 Q 212 270 200 272 Q 188 270 176 252 Z" fill="#e09090"/>
+        </svg>
+      </div>
+      <img id="hero-img" src="" alt=""/>
+      <div class="av-label">
+        <div class="av-dot"></div>
+        <div><div class="av-nm" id="av-nm">Maya</div><div class="av-st">AI Expert · Available Now</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CALL SCREEN -->
+<div id="call-screen">
+  <video id="av-video" autoplay playsinline></video>
+
+  <div class="cs-top">
+    <div class="cs-id">
+      <div class="cs-dot"></div>
+      <div><div class="cs-nm" id="cs-nm">Maya</div><div class="cs-co" id="cs-co">AI Expert</div></div>
+    </div>
+    <div class="cs-chip" id="cs-chip">Connecting</div>
+  </div>
+
+  <div class="transcript" id="transcript"></div>
+
+  <div class="cs-ctrl">
+    <!-- Interrupt -->
+    <button class="cbtn" title="Interrupt Maya" onclick="interrupt()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
+      </svg>
+    </button>
+
+    <!-- Mute / Unmute -->
+    <button class="cbtn" id="mute-btn" title="Mute / Unmute mic" onclick="toggleMute()">
+      <svg id="mic-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+      </svg>
+      <svg id="mic-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="display:none">
+        <line x1="1" y1="1" x2="23" y2="23"/>
+        <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/>
+        <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+      </svg>
+    </button>
+
+    <!-- End call -->
+    <button class="cbtn" id="end-btn" title="End call" onclick="endCall()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+        <path d="M18.36 5.64a9 9 0 0 0-12.73 0L1.22 10.05a1 1 0 0 0 0 1.41l2.83 2.83a1 1 0 0 0 1.41 0l1.42-1.42a1 1 0 0 1 1.41 0l3.54 3.54a1 1 0 0 1 0 1.41l-1.42 1.42a1 1 0 0 0 0 1.41l2.83 2.83a1 1 0 0 0 1.41 0l4.42-4.41a9 9 0 0 0 0-12.73z" transform="rotate(135 12 12)"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="overlay">
+  <div class="spinner"></div>
+  <div class="ov-txt" id="ov-txt">Connecting…</div>
+  <div class="ov-sub" id="ov-sub">Preparing your call</div>
+</div>
+
+<!-- Catalog modal -->
+<div id="cat-modal" onclick="if(event.target===this)closeCatalog()">
+  <div class="modal">
+    <div id="cat-form">
+      <h2>Configure Product Knowledge</h2>
+      <p>Give Maya your product catalog, and she'll automatically demo it the moment someone calls — a live 60-second pitch, personalized to your product.</p>
+      <div class="flbl">Company Name</div>
+      <input class="fi" id="c-co" type="text" placeholder="e.g. Acme Corp"/>
+      <div class="flbl">Product / Service Description</div>
+      <textarea class="fi" id="c-txt" placeholder="Paste your product description, features, pricing, use cases, FAQs…"></textarea>
+      <div class="flbl">Website URL (optional — Maya will read it)</div>
+      <input class="fi" id="c-url" type="url" placeholder="https://yourwebsite.com"/>
+      <div class="ma">
+        <button class="mb s" onclick="closeCatalog()">Cancel</button>
+        <button class="mb p" id="c-save" onclick="saveCatalog()">Train Maya</button>
+      </div>
+    </div>
+    <div class="m-ok" id="cat-ok">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/>
+      </svg>
+      <h3>Maya is trained and ready!</h3>
+      <p>She now knows everything about your product.<br>Click Call to start the live demo.</p>
+      <div class="ma" style="margin-top:22px">
+        <button class="mb p" onclick="closeCatalog();startCall()">Call Maya Now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════ STATE ═══════════════
+let sessionId   = null;
+let livekitRoom = null;
+let wsConn      = null;
+let sessionMode = 'liveavatar';
+let micEnabled  = true;
+let personaName = 'Maya';
+let companyName = 'our company';
+let mediaRec    = null;
+let isRecording = false;
+
+// ═══════════════ INIT ═══════════════
+window.addEventListener('load', async () => {
+  await loadPersona();
+  loadAvatarPhoto();
+});
+
+async function loadPersona() {
+  try {
+    const p = await fetch('/api/personas/default').then(r=>r.json());
+    personaName = p.persona_name || 'Maya';
+    companyName = p.company_name || 'our company';
+    setNames(personaName);
+    document.getElementById('cs-co').textContent = companyName;
+
+    const st = await fetch('/api/knowledge/stats/default').then(r=>r.json());
+    if (st.chunk_count > 0)
+      document.getElementById('disp-sub').textContent =
+        `${personaName} knows everything about ${companyName}. She demos live, handles every question, and qualifies leads — 24/7.`;
+
+    const h = await fetch('/health').then(r=>r.json());
+    const b = document.getElementById('status-badge');
+    if (!h.services.liveavatar_key_set) {
+      b.className='status-badge warn'; b.innerHTML='⚠ Add LIVEAVATAR_API_KEY to enable video avatar'; b.classList.remove('hidden');
+    } else if (h.services.sandbox_mode) {
+      b.className='status-badge ok'; b.innerHTML='● Sandbox mode active — free testing'; b.classList.remove('hidden');
+    }
+  } catch(e) {}
+}
+
+function setNames(n) {
+  ['disp-name','btn-name','av-nm','cs-nm'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=n;});
+}
+
+async function loadAvatarPhoto() {
+  try {
+    const d   = await fetch('/api/avatar/list').then(r=>r.json());
+    const avs = d.avatars || [];
+    if (!avs.length) return;
+    const pick = avs.find(a=>/ann|sarah|emma|maya|sofia|angela|lily|grace|woman|female/i.test(a.name))
+                 || avs[Math.floor(Math.random()*Math.min(6,avs.length))];
+    if (pick?.preview_url) {
+      const img = document.getElementById('hero-img');
+      img.src = pick.preview_url;
+      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:none';
+      img.onload = () => { img.style.display='block'; document.getElementById('av-ph').style.display='none'; };
+    }
+  } catch(e) {}
+}
+
+// ═══════════════ START CALL ═══════════════
+async function startCall() {
+  const btn = document.getElementById('call-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="ph"><div class="spinner" style="width:24px;height:24px;border-width:2px"></div></div><span>Connecting…</span>`;
+  showOv('Creating your session…', 'Just a moment');
+
+  try {
+    const res = await fetch('/api/sessions', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({persona_id:'default'}),
+    });
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+
+    sessionId   = data.session_id;
+    personaName = data.persona_name || personaName;
+    sessionMode = data.mode || 'voice_only';
+
+    setNames(personaName);
+    document.getElementById('cs-co').textContent = data.company_name || companyName;
+    document.getElementById('landing').style.display    = 'none';
+    document.getElementById('call-screen').style.display = 'block';
+    setChip('connecting');
+
+    if (sessionMode==='liveavatar' && data.livekit_url && data.livekit_client_token) {
+      updateOv('Connecting to '+ personaName +'…', 'Opening live video stream');
+      await connectLiveKit(data.livekit_url, data.livekit_client_token);
+    } else {
+      updateOv('Starting voice call…', 'Video unavailable — voice mode active');
+      await connectVoiceWS(data.opening_text||'');
+      hideOv();
+    }
+  } catch(e) {
+    console.error(e);
+    hideOv(); resetBtn();
+    document.getElementById('call-screen').style.display = 'none';
+    document.getElementById('landing').style.display     = 'grid';
+    alert('Could not start call. Make sure the server is running.\n\nFor video, set LIVEAVATAR_API_KEY in .env\nGet key at: app.liveavatar.com');
+  }
+}
+
+// ═══════════════ LIVEKIT (LiveAvatar FULL mode) ═══════════════
+async function connectLiveKit(lkUrl, lkToken) {
+  const LC = window.LivekitClient;
+  if (!LC) throw new Error('LiveKit SDK not loaded');
+
+  livekitRoom = new LC.Room({adaptiveStream:true, dynacast:true});
+
+  // ── Receive avatar video + audio ──────────────────────────────────────────
+  livekitRoom.on(LC.RoomEvent.TrackSubscribed, (track, pub, participant) => {
+    console.log('Track subscribed:', track.kind, participant.identity);
+    if (track.kind === 'video') {
+      track.attach(document.getElementById('av-video'));
+      hideOv();
+      setChip('listening');
+    }
+    if (track.kind === 'audio') {
+      // CRITICAL: set autoplay + call play() — browsers block audio without this
+      const el = track.attach();
+      el.autoplay = true;
+      el.style.display = 'none';
+      document.body.appendChild(el);
+      el.play().catch(err => console.warn('Audio play blocked:', err));
+    }
+  });
+
+  // ── Agent events (speaking/transcript) ───────────────────────────────────
+  livekitRoom.on(LC.RoomEvent.DataReceived, (data, participant, kind, topic) => {
+    // Log all incoming data so we can see what topic LiveAvatar uses
+    const text = new TextDecoder().decode(data);
+    console.log('DataReceived topic:', topic, 'data:', text.slice(0, 120));
+    try {
+      const evt = JSON.parse(text);
+      handleAgentEvt(evt);   // handle regardless of topic
+    } catch(e) {}
+  });
+
+  livekitRoom.on(LC.RoomEvent.Disconnected, () => { if(sessionId) endCall(); });
+
+  // Connect to LiveKit room
+  await livekitRoom.connect(lkUrl, lkToken, {autoSubscribe:true});
+  console.log('✓ LiveKit connected, room state:', livekitRoom.state);
+
+  // CRITICAL: Resume browser AudioContext — must be called inside a user gesture
+  // (we are here because the user clicked the Call button, so this is safe)
+  try {
+    await livekitRoom.startAudio();
+    console.log('✓ AudioContext resumed');
+  } catch(e) {
+    console.warn('startAudio failed:', e);
+  }
+
+  // Publish user microphone so the LiveAvatar agent can hear and respond
+  await enableMic();
+}
+
+async function enableMic() {
+  try {
+    updateOv('Opening microphone…', 'Allow mic access when your browser asks');
+    await livekitRoom.localParticipant.setMicrophoneEnabled(true);
+    micEnabled = true;
+    updateMicUI();
+    hideOv();
+    console.log('✓ Mic published — real-time conversation active');
+  } catch(e) {
+    console.warn('Mic access denied:', e);
+    hideOv();
+  }
+}
+
+function handleAgentEvt(evt) {
+  const cs = document.getElementById('call-screen');
+  switch(evt.event_type) {
+    case 'avatar.speak_started':
+      setChip('speaking'); cs.classList.add('maya-speaks'); break;
+    case 'avatar.speak_ended':
+      setChip('listening'); cs.classList.remove('maya-speaks'); break;
+    case 'user.speak_started':
+      const mb = document.getElementById('mute-btn');
+      if (!mb.classList.contains('muted')) {
+        mb.classList.add('user-speaking');
+        setTimeout(()=>mb.classList.remove('user-speaking'), 1500);
+      }
+      break;
+    case 'transcript.user':
+      if (evt.data?.text) addMsg('me', evt.data.text); break;
+    case 'transcript.avatar':
+      if (evt.data?.text) addMsg('ai', evt.data.text); break;
+    case 'avatar.ready':
+      hideOv(); setChip('listening'); break;
+  }
+}
+
+function sendCtrl(type, extra={}) {
+  if (!livekitRoom) return;
+  livekitRoom.localParticipant.publishData(
+    new TextEncoder().encode(JSON.stringify({
+      event_id: crypto.randomUUID(), event_type: type, session_id: sessionId, ...extra
+    })),
+    {reliable:true, topic:'agent-control'}
+  ).catch(()=>{});
+}
+
+function interrupt() {
+  sendCtrl('avatar.interrupt');
+  document.getElementById('call-screen').classList.remove('maya-speaks');
+  setChip('listening');
+}
+
+async function toggleMute() {
+  micEnabled = !micEnabled;
+  if (livekitRoom) {
+    try { await livekitRoom.localParticipant.setMicrophoneEnabled(micEnabled); } catch(e){}
+  } else {
+    // voice-only fallback
+    micEnabled ? startVoiceRec() : stopVoiceRec();
+  }
+  updateMicUI();
+}
+
+function updateMicUI() {
+  const btn = document.getElementById('mute-btn');
+  document.getElementById('mic-on').style.display  = micEnabled ? '' : 'none';
+  document.getElementById('mic-off').style.display = micEnabled ? 'none' : '';
+  if (micEnabled) { btn.classList.remove('muted'); if(document.getElementById('cs-chip').textContent==='Muted') setChip('listening'); }
+  else { btn.classList.add('muted'); setChip('muted'); }
+}
+
+// ═══════════════ VOICE-ONLY FALLBACK ═══════════════
+async function connectVoiceWS(openingText) {
+  const proto = location.protocol==='https:'?'wss:':'ws:';
+  wsConn = new WebSocket(`${proto}//${location.host}/ws/voice/${sessionId}`);
+  wsConn.onopen = () => {
+    setTimeout(()=>wsConn?.readyState===1 && wsConn.send(JSON.stringify({type:'start_demo'})), 400);
+    setChip('listening');
+    startVoiceRec(); // auto-start continuous mic
+  };
+  wsConn.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type==='transcript') addMsg(m.role==='assistant'?'ai':'me', m.text);
+    else if (m.type==='audio') playAudio(m.data);
+    else if (m.type==='status') {
+      const s = (m.message||'').toLowerCase();
+      setChip(s.includes('speak')?'speaking':s.includes('think')?'thinking':'listening');
+    }
+  };
+  wsConn.onclose = () => { if(sessionId) endCall(); };
+}
+
+async function startVoiceRec() {
+  if (isRecording) return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRec = new MediaRecorder(stream, {mimeType:'audio/webm'});
+    mediaRec.ondataavailable = e => {
+      if (e.data.size>0 && wsConn?.readyState===1 && micEnabled) {
+        const rd = new FileReader();
+        rd.onloadend = () => wsConn.send(JSON.stringify({type:'audio_chunk',data:rd.result.split(',')[1]}));
+        rd.readAsDataURL(e.data);
+      }
+    };
+    mediaRec.start(300);
+    isRecording = true;
+  } catch(e) { console.warn('Mic denied for voice mode'); }
+}
+
+function stopVoiceRec() {
+  if (!isRecording||!mediaRec) return;
+  mediaRec.stop(); mediaRec.stream?.getTracks().forEach(t=>t.stop()); isRecording=false;
+}
+
+function playAudio(b64) {
+  const url = URL.createObjectURL(new Blob([Uint8Array.from(atob(b64),c=>c.charCodeAt(0))],{type:'audio/mpeg'}));
+  const a   = new Audio(url);
+  a.onended = ()=>URL.revokeObjectURL(url);
+  a.play().catch(()=>{});
+}
+
+// ═══════════════ END CALL ═══════════════
+async function endCall() {
+  const sid = sessionId; sessionId = null;
+  if (livekitRoom) { try{await livekitRoom.disconnect();}catch(e){} livekitRoom=null; }
+  if (wsConn)      { try{wsConn.send(JSON.stringify({type:'end'}));wsConn.close();}catch(e){} wsConn=null; }
+  stopVoiceRec();
+  const v = document.getElementById('av-video');
+  if (v) try{v.srcObject=null;}catch(e){}
+  document.getElementById('call-screen').classList.remove('maya-speaks');
+  if (sid) fetch(`/api/sessions/${sid}`,{method:'DELETE'}).catch(()=>{});
+  document.getElementById('call-screen').style.display = 'none';
+  document.getElementById('landing').style.display     = 'grid';
+  document.getElementById('transcript').innerHTML = '';
+  micEnabled = true; updateMicUI(); resetBtn();
+}
+
+// ═══════════════ UI ═══════════════
+function setChip(state) {
+  const c = document.getElementById('cs-chip');
+  c.className='cs-chip';
+  c.textContent = {connecting:'Connecting…',listening:'Listening',speaking:'Maya is speaking',thinking:'Thinking…',muted:'Muted'}[state]||state;
+  if (state!=='connecting') c.classList.add(state);
+}
+function addMsg(role,text) {
+  const w=document.getElementById('transcript'),el=document.createElement('div');
+  el.className='tmsg '+role; el.textContent=text; w.appendChild(el);
+  while(w.children.length>5) w.removeChild(w.firstChild);
+  w.scrollTop=w.scrollHeight;
+}
+function showOv(t,s='')  { document.getElementById('ov-txt').textContent=t; document.getElementById('ov-sub').textContent=s; document.getElementById('overlay').classList.add('show'); }
+function updateOv(t,s='') { document.getElementById('ov-txt').textContent=t; document.getElementById('ov-sub').textContent=s; }
+function hideOv()         { document.getElementById('overlay').classList.remove('show'); }
+function resetBtn() {
+  const btn=document.getElementById('call-btn'); btn.disabled=false;
+  btn.innerHTML=`<div class="ph"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.53 2 2 0 0 1 3.6 1.5h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.13a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.5 16.4z"/></svg></div><span>Call <span id="btn-name">${personaName}</span></span>`;
+}
+
+// ═══════════════ CATALOG MODAL ═══════════════
+function openCatalog()  { document.getElementById('cat-modal').classList.add('show'); }
+function closeCatalog() {
+  document.getElementById('cat-modal').classList.remove('show');
+  document.getElementById('cat-form').style.display='';
+  document.getElementById('cat-ok').style.display='none';
+  const b=document.getElementById('c-save');b.disabled=false;b.textContent='Train Maya';
+}
+async function saveCatalog() {
+  const co=document.getElementById('c-co').value.trim();
+  const tx=document.getElementById('c-txt').value.trim();
+  const ur=document.getElementById('c-url').value.trim();
+  if (!tx&&!ur) { alert('Please enter a description or URL.'); return; }
+  const btn=document.getElementById('c-save'); btn.disabled=true; btn.textContent='Training…';
+  try {
+    if (co) { await fetch('/api/personas/default',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:'default',persona_name:personaName,company_name:co})}); companyName=co; }
+    if (tx) await fetch('/api/knowledge/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:'default',source_type:'text',content:tx,title:`${co||'Product'} Knowledge`})});
+    if (ur) await fetch('/api/knowledge/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:'default',source_type:'url',content:ur,title:co||'Website'})});
+    if (co) document.getElementById('disp-sub').textContent=`${personaName} knows everything about ${co}. She demos live, handles every question, and qualifies leads — 24/7.`;
+    document.getElementById('cat-form').style.display='none';
+    document.getElementById('cat-ok').style.display='block';
+  } catch(e) { alert('Error: '+e.message); btn.disabled=false; btn.textContent='Train Maya'; }
+}
+</script>
+</body>
+</html>
