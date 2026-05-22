@@ -38,8 +38,15 @@ async def stop_voice_pipeline(session_id: str) -> bool:
 
 def build_system_prompt(
     persona_name: str, company_name: str,
-    knowledge_context: str, tone: str = "professional"
+    knowledge_context: str, tone: str = "professional",
+    prompt_override: Optional[str] = None,
 ) -> str:
+    if prompt_override:
+        return (
+            f"{prompt_override}\n\n"
+            f"Current knowledge about {company_name}:\n"
+            f"{knowledge_context or 'No documents uploaded yet — use general expertise and ask clarifying questions.'}"
+        )
     tone_map = {
         "professional": "You are polished, confident, and knowledgeable — like a top sales executive.",
         "friendly":     "You are warm, enthusiastic, and personable. Like a trusted friend who is an expert.",
@@ -62,26 +69,65 @@ async def generate_opening_pitch(
     company_name: str,
     knowledge_context: str,
     visitor_name: Optional[str] = None,
+    role_hint: str = "sales",
+    opening_fallback: Optional[str] = None,
 ) -> str:
     """
     Generate a compelling 60-second spoken auto-demo pitch from the knowledge base.
     Used as opening_text in LiveAvatar context — avatar speaks this the moment it appears.
     """
     if not settings.OPENAI_API_KEY:
+        if opening_fallback:
+            addr = f"Hi {visitor_name}! " if visitor_name else ""
+            return f"{addr}{opening_fallback}" if not visitor_name else opening_fallback.replace("Hi,", f"Hi {visitor_name},")
         addr = f"Hi {visitor_name}! " if visitor_name else "Hi there! "
         return f"{addr}I'm {persona_name} from {company_name}. What would you like to know?"
 
     address = f"Hi {visitor_name}!" if visitor_name else "Hi there!"
+    role_instructions = {
+        "hr": (
+            f"Write a spoken HR screening opener (80-100 words) for {persona_name} at {company_name}.\n"
+            f"1. Opens with '{address} I'm {persona_name} from the talent team...'\n"
+            f"2. Sets expectations for a brief structured interview\n"
+            f"3. Asks if they're ready to begin\n"
+            f"Professional, welcoming, no sales pitch."
+        ),
+        "onboarding": (
+            f"Write a spoken onboarding welcome (80-100 words) for buddy {persona_name} at {company_name}.\n"
+            f"1. Opens with '{address} I'm {persona_name}, your onboarding guide...'\n"
+            f"2. Mentions you help with tools, policies, and first-week tasks\n"
+            f"3. Invites them to ask anything\n"
+            f"Warm, encouraging tone."
+        ),
+        "support": (
+            f"Write a spoken support greeting (60-80 words) for {persona_name} at {company_name}.\n"
+            f"1. Opens with '{address} I'm {persona_name} from support...'\n"
+            f"2. Offers to help resolve their issue\n"
+            f"Empathetic, efficient."
+        ),
+        "demo": (
+            f"Write a spoken product demo intro (100-120 words) for {persona_name} at {company_name}.\n"
+            f"1. Opens with '{address} I'm {persona_name}...'\n"
+            f"2. Brief value prop from knowledge below\n"
+            f"3. Invites questions during the walkthrough"
+        ),
+    }
+    instructions = role_instructions.get(
+        role_hint,
+        (
+            f"Write a compelling spoken pitch (120-150 words, ~60 seconds when spoken) that:\n"
+            f"1. Opens with '{address} I'm {persona_name}...' — warm and human\n"
+            f"2. States what {company_name} does and who it helps\n"
+            f"3. Highlights 2-3 specific standout features or benefits with real specifics\n"
+            f"4. Creates genuine excitement — your best rep on their best day\n"
+            f"5. Ends with an open invitation like 'What would you like to know more about?'"
+        ),
+    )
     prompt = (
-        f"You are {persona_name}, the expert for {company_name}.\n"
+        f"You are {persona_name} representing {company_name}.\n"
         f"Based on this knowledge:\n{knowledge_context[:2500]}\n\n"
-        f"Write a compelling spoken pitch (120-150 words, ~60 seconds when spoken) that:\n"
-        f"1. Opens with '{address} I'm {persona_name}...' — warm and human\n"
-        f"2. States what {company_name} does and who it helps\n"
-        f"3. Highlights 2-3 specific standout features or benefits with real specifics\n"
-        f"4. Creates genuine excitement — your best rep on their best day\n"
-        f"5. Ends with an open invitation like 'What would you like to know more about?'\n\n"
-        f"ONLY the spoken words. No stage directions. Natural speech rhythm. Real enthusiasm."
+        f"{instructions}\n\n"
+        f"ONLY the spoken words. No stage directions. Natural speech rhythm."
     )
 
     try:
@@ -92,10 +138,11 @@ async def generate_opening_pitch(
             max_tokens=300,
             temperature=0.8,
         )
-        return resp.choices[0].message.content or f"Hi! I'm {persona_name} from {company_name}. How can I help?"
+        text = resp.choices[0].message.content
+        return text or (opening_fallback or f"Hi! I'm {persona_name} from {company_name}. How can I help?")
     except Exception as e:
         logger.error("Opening pitch generation failed: %s", e)
-        return f"Hi! I'm {persona_name}, your expert at {company_name}. I'm here to answer any question you have!"
+        return opening_fallback or f"Hi! I'm {persona_name}, your expert at {company_name}. I'm here to answer any question you have!"
 
 
 # ── Voice-only WebSocket fallback ─────────────────────────────────────────────
@@ -107,6 +154,7 @@ async def handle_voice_session(
     persona_name: str = "Maya",
     company_name: str = "our company",
     tone: str = "professional",
+    prompt_override: Optional[str] = None,
     heygen_session_id: Optional[str] = None,
     visitor_name: Optional[str] = None,
     opening_text: str = "",
@@ -125,7 +173,9 @@ async def handle_voice_session(
             pass
 
     knowledge_ctx = await query_knowledge(persona_id, "overview products services features")
-    system_prompt = build_system_prompt(persona_name, company_name, knowledge_ctx, tone)
+    system_prompt = build_system_prompt(
+        persona_name, company_name, knowledge_ctx, tone, prompt_override=prompt_override,
+    )
     conversation_history.append({"role": "system", "content": system_prompt})
 
     await send({"type": "status", "message": "connected"})
@@ -151,7 +201,8 @@ async def handle_voice_session(
                 user_text = msg.get("text", "").strip()
                 if user_text:
                     await _process_input(user_text, openai_client, el_client, conversation_history,
-                                        persona_name, company_name, tone, persona_id, send)
+                                        persona_name, company_name, tone, persona_id, send,
+                                        prompt_override=prompt_override)
 
             elif msg_type == "audio":
                 audio_data = base64.b64decode(msg.get("data", ""))
@@ -159,7 +210,8 @@ async def handle_voice_session(
                     transcript = await _transcribe(dg_client, audio_data)
                     if transcript and len(transcript.strip()) > 2:
                         await _process_input(transcript, openai_client, el_client, conversation_history,
-                                            persona_name, company_name, tone, persona_id, send)
+                                            persona_name, company_name, tone, persona_id, send,
+                                            prompt_override=prompt_override)
 
     except WebSocketDisconnect:
         logger.info("Voice session %s disconnected", session_id)
@@ -170,11 +222,14 @@ async def handle_voice_session(
 
 
 async def _process_input(user_text, openai_client, el_client, history,
-                         persona_name, company_name, tone, persona_id, send):
+                         persona_name, company_name, tone, persona_id, send,
+                         prompt_override: Optional[str] = None):
     await send({"type": "transcript", "role": "user", "text": user_text})
     await send({"type": "status", "message": "thinking"})
     ctx = await query_knowledge(persona_id, user_text)
-    history[0]["content"] = build_system_prompt(persona_name, company_name, ctx, tone)
+    history[0]["content"] = build_system_prompt(
+        persona_name, company_name, ctx, tone, prompt_override=prompt_override,
+    )
     history.append({"role": "user", "content": user_text})
     response = await _llm(openai_client, history)
     history.append({"role": "assistant", "content": response})

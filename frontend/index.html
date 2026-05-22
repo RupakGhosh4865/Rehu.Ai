@@ -1,164 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="call-page">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SuperHuman — Meet Maya</title>
+<title>Rehu.ai — Live Conversation</title>
 <!-- LiveKit Web SDK — handles mic + avatar video in LiveAvatar FULL mode -->
 <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#000;--surface:#0e0e0e;--border:rgba(255,255,255,0.08);
-  --accent:#7c4ff7;--accent2:#a07cf8;--glow:rgba(124,79,247,0.4);
-  --green:#22c55e;--red:#e0443a;
-  --text:#fff;--muted:rgba(255,255,255,0.45);
-}
-html,body{height:100%;background:var(--bg);color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden}
-
-/* LANDING */
-#landing{display:grid;grid-template-columns:42% 58%;height:100vh}
-.l-left{display:flex;flex-direction:column;justify-content:center;padding:60px 52px;z-index:2}
-.brand{font-size:.7rem;font-weight:700;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-bottom:44px}
-.headline{font-size:clamp(2rem,3.4vw,3.1rem);font-weight:800;line-height:1.1;letter-spacing:-.025em;margin-bottom:18px}
-.headline span{color:var(--accent2)}
-.sub{font-size:.96rem;line-height:1.78;color:var(--muted);margin-bottom:52px;max-width:340px}
-
-/* CALL BUTTON */
-.call-btn{display:flex;align-items:center;gap:14px;width:fit-content;cursor:pointer;
-  background:var(--green);border:none;border-radius:60px;padding:18px 38px 18px 26px;
-  animation:callpulse 2.4s ease-in-out infinite;transition:all .2s;color:#fff;font-size:1.05rem;font-weight:700}
-.call-btn:hover{background:#16a34a;transform:translateY(-2px);box-shadow:0 8px 40px rgba(34,197,94,.5)}
-.call-btn:disabled{opacity:.5;cursor:not-allowed;animation:none;transform:none}
-.call-btn .ph{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.2);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0}
-@keyframes callpulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.45)}
-  50%{box-shadow:0 0 0 16px rgba(34,197,94,0)}}
-
-.feature-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:36px}
-.fpill{font-size:.69rem;font-weight:600;color:var(--muted);letter-spacing:.04em;
-  border:1px solid var(--border);padding:5px 14px;border-radius:20px}
-.l-links{margin-top:30px;display:flex;gap:22px}
-.l-links a{font-size:.76rem;color:var(--muted);text-decoration:none;
-  border-bottom:1px solid var(--border);padding-bottom:2px;transition:color .15s}
-.l-links a:hover{color:#fff}
-.status-badge{display:inline-flex;align-items:center;gap:7px;font-size:.71rem;font-weight:600;
-  border-radius:20px;padding:5px 13px;margin-bottom:22px}
-.status-badge.warn{color:#f0b429;background:rgba(240,180,41,.09);border:1px solid rgba(240,180,41,.25)}
-.status-badge.ok{color:var(--green);background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2)}
-.status-badge.hidden{display:none}
-
-/* Avatar panel */
-.l-right{position:relative;padding:20px 28px 20px 12px}
-.av-frame{position:relative;width:100%;height:calc(100vh - 40px);border-radius:20px;
-  overflow:hidden;border:1px solid rgba(255,255,255,0.07);background:#080810}
-#hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:none}
-.av-ph{position:absolute;inset:0;background:#0d0d14}
-.av-ph svg{width:100%;height:100%}
-.av-label{position:absolute;bottom:18px;left:18px;display:flex;align-items:center;gap:10px;
-  background:rgba(0,0,0,.6);backdrop-filter:blur(12px);border:1px solid var(--border);
-  border-radius:12px;padding:10px 16px;z-index:3}
-.av-dot{width:8px;height:8px;border-radius:50%;background:var(--green);
-  box-shadow:0 0 6px var(--green);animation:blink 2s infinite;flex-shrink:0}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
-.av-nm{font-size:.94rem;font-weight:700}
-.av-st{font-size:.7rem;color:var(--muted);margin-top:1px}
-
-/* CALL SCREEN */
-#call-screen{display:none;position:fixed;inset:0;background:#000;z-index:100}
-#av-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#080808}
-#call-screen.maya-speaks::after{content:'';position:absolute;inset:0;pointer-events:none;
-  border:3px solid var(--accent2);opacity:.55;animation:sring .7s ease-in-out infinite alternate;z-index:5}
-@keyframes sring{from{opacity:.25}to{opacity:.65}}
-
-.cs-top{position:absolute;top:0;left:0;right:0;padding:20px 28px;
-  display:flex;align-items:center;justify-content:space-between;
-  background:linear-gradient(180deg,rgba(0,0,0,.8) 0%,transparent 100%);z-index:10}
-.cs-id{display:flex;align-items:center;gap:11px;background:rgba(0,0,0,.55);
-  backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:30px;padding:8px 18px 8px 12px}
-.cs-dot{width:8px;height:8px;border-radius:50%;background:var(--green);
-  box-shadow:0 0 6px var(--green);animation:blink 2s infinite;flex-shrink:0}
-.cs-nm{font-size:.88rem;font-weight:700}
-.cs-co{font-size:.7rem;color:var(--muted);margin-top:1px}
-.cs-chip{font-size:.7rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
-  color:var(--muted);background:rgba(0,0,0,.55);backdrop-filter:blur(12px);
-  border:1px solid var(--border);padding:7px 16px;border-radius:20px;transition:all .3s}
-.cs-chip.listening{color:var(--green);border-color:rgba(34,197,94,.35)}
-.cs-chip.speaking{color:var(--accent2);border-color:rgba(160,124,248,.4)}
-.cs-chip.thinking{color:#f0b429;border-color:rgba(240,180,41,.35)}
-.cs-chip.muted{color:var(--red);border-color:rgba(224,68,58,.35)}
-
-/* Transcript */
-.transcript{position:absolute;bottom:130px;left:28px;
-  width:min(440px,calc(100vw - 56px));max-height:220px;overflow-y:auto;
-  display:flex;flex-direction:column;gap:7px;z-index:10;scrollbar-width:none}
-.transcript::-webkit-scrollbar{display:none}
-.tmsg{max-width:92%;padding:9px 14px;border-radius:14px;font-size:.86rem;
-  line-height:1.55;backdrop-filter:blur(16px);animation:msgup .2s ease}
-@keyframes msgup{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-.tmsg.ai{background:rgba(20,10,40,.85);border:1px solid rgba(124,79,247,.3);color:#fff;align-self:flex-start}
-.tmsg.me{background:rgba(28,28,28,.85);border:1px solid var(--border);color:rgba(255,255,255,.82);align-self:flex-end}
-
-/* CALL CONTROLS */
-.cs-ctrl{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
-  display:flex;align-items:center;gap:18px;z-index:10}
-.cbtn{width:58px;height:58px;border-radius:50%;border:1px solid rgba(255,255,255,.12);
-  background:rgba(20,20,20,.8);backdrop-filter:blur(16px);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;transition:all .22s;color:#fff;flex-shrink:0}
-.cbtn:hover{background:rgba(50,50,50,.9);transform:scale(1.06)}
-#mute-btn.muted{background:rgba(224,68,58,.15);border-color:rgba(224,68,58,.4);color:var(--red)}
-#mute-btn.user-speaking{box-shadow:0 0 0 4px rgba(34,197,94,.5);border-color:rgba(34,197,94,.6)}
-#end-btn{width:66px;height:66px;background:var(--red);border:none;box-shadow:0 4px 20px rgba(224,68,58,.4)}
-#end-btn:hover{background:#c53030;transform:scale(1.08)}
-
-/* LOADING OVERLAY */
-#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;
-  flex-direction:column;align-items:center;justify-content:center;gap:22px}
-#overlay.show{display:flex}
-.spinner{width:50px;height:50px;border:3px solid rgba(255,255,255,.08);
-  border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.ov-txt{font-size:1rem;color:var(--muted)}
-.ov-sub{font-size:.78rem;color:rgba(255,255,255,.25);margin-top:-14px}
-
-/* CATALOG MODAL */
-#cat-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:300;
-  align-items:center;justify-content:center}
-#cat-modal.show{display:flex}
-.modal{background:#0f0f0f;border:1px solid var(--border);border-radius:20px;
-  padding:40px;width:min(520px,94vw);max-height:90vh;overflow-y:auto}
-.modal h2{font-size:1.35rem;font-weight:800;margin-bottom:8px}
-.modal p{color:var(--muted);font-size:.87rem;line-height:1.65;margin-bottom:26px}
-.flbl{font-size:.73rem;font-weight:600;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
-.fi{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;
-  color:#fff;padding:12px 16px;font-size:.87rem;outline:none;margin-bottom:16px;transition:border-color .2s;font-family:inherit}
-.fi:focus{border-color:var(--accent)}
-textarea.fi{resize:vertical;min-height:120px}
-.ma{display:flex;gap:12px;margin-top:6px}
-.mb{flex:1;padding:13px;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;border:none;transition:all .2s}
-.mb.p{background:var(--accent);color:#fff}.mb.p:hover{background:#6a3de8}
-.mb.s{background:transparent;color:var(--muted);border:1px solid var(--border)}
-.mb.s:hover{color:#fff;border-color:rgba(255,255,255,.2)}
-.m-ok{display:none;text-align:center;padding:20px 0}
-.m-ok svg{color:var(--green);margin-bottom:14px}
-.m-ok h3{font-size:1.1rem;font-weight:700;margin-bottom:7px}
-.m-ok p{font-size:.85rem;color:var(--muted);line-height:1.6}
-
-@media(max-width:720px){
-  #landing{grid-template-columns:1fr}
-  .l-right{display:none}
-  .l-left{padding:40px 28px;justify-content:flex-start;padding-top:18vh}
-}
-</style>
+<link rel="stylesheet" href="/static/rehu-light.css"/>
 </head>
-<body>
+<body class="call-page">
 
 <!-- LANDING -->
 <div id="landing">
   <div class="l-left">
-    <div class="brand">SuperHuman</div>
+    <div class="brand"><strong>Rehu.ai</strong> · Live conversation</div>
     <div class="status-badge hidden" id="status-badge"></div>
 
     <h1 class="headline">Meet <span id="disp-name">Maya</span>,<br>Your AI Expert</h1>
@@ -180,7 +35,8 @@ textarea.fi{resize:vertical;min-height:120px}
       <div class="fpill">⚡ 60-sec auto-demo</div>
     </div>
     <div class="l-links">
-      <a href="#" onclick="openCatalog();return false">⚙ Configure product knowledge</a>
+      <a href="/">← Home</a>
+      <a href="#" onclick="openCatalog();return false">⚙ Configure knowledge</a>
       <a href="/admin">Admin panel</a>
     </div>
   </div>
@@ -328,8 +184,19 @@ let livekitRoom = null;
 let wsConn      = null;
 let sessionMode = 'liveavatar';
 let micEnabled  = true;
+let personaId   = new URLSearchParams(location.search).get('persona') || 'default';
 let personaName = 'Maya';
 let companyName = 'our company';
+
+const PERSONA_SUBS = {
+  'hr-interviewer': (n, c) => `${n} conducts structured first-round interviews for ${c}. Upload job descriptions in Admin for best results.`,
+  'onboarding-guide': (n, c) => `${n} is your onboarding buddy at ${c} — policies, IT, benefits, and first-week help, 24/7.`,
+  'human-chatbot': (n, c) => `${n} replaces boring chatbots with a real face and voice for ${c}. Tier-1 support that feels human.`,
+  'support-agent': (n, c) => `${n} handles tier-1 support for ${c} — empathetic, fast, and always available.`,
+  'demo-host': (n, c) => `${n} hosts live product demos for ${c}. Watch the walkthrough, then ask anything.`,
+  'meeting-assistant': (n, c) => `${n} is your meeting assistant for ${c}. (Zoom/Teams join coming soon on Enterprise.)`,
+  'default': (n, c) => `${n} knows everything about ${c}. Live demos, Q&A, and lead qualification — 24/7.`,
+};
 let mediaRec    = null;
 let isRecording = false;
 
@@ -341,14 +208,20 @@ window.addEventListener('load', async () => {
 
 async function loadPersona() {
   try {
-    const p = await fetch('/api/personas/default').then(r=>r.json());
+    const p = await fetch(`/api/personas/${personaId}`).then(r => {
+      if (!r.ok) { personaId = 'default'; return fetch('/api/personas/default').then(x => x.json()); }
+      return r.json();
+    });
     personaName = p.persona_name || 'Maya';
     companyName = p.company_name || 'our company';
     setNames(personaName);
     document.getElementById('cs-co').textContent = companyName;
+    document.title = `Rehu.ai — Meet ${personaName}`;
 
-    const st = await fetch('/api/knowledge/stats/default').then(r=>r.json());
-    if (st.chunk_count > 0)
+    const subFn = PERSONA_SUBS[personaId] || PERSONA_SUBS.default;
+    const st = await fetch(`/api/knowledge/stats/${personaId}`).then(r=>r.json()).catch(()=>({chunk_count:0}));
+    document.getElementById('disp-sub').textContent = subFn(personaName, companyName);
+    if (st.chunk_count > 0 && personaId === 'default')
       document.getElementById('disp-sub').textContent =
         `${personaName} knows everything about ${companyName}. She demos live, handles every question, and qualifies leads — 24/7.`;
 
@@ -392,7 +265,7 @@ async function startCall() {
   try {
     const res = await fetch('/api/sessions', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({persona_id:'default'}),
+      body: JSON.stringify({persona_id: personaId}),
     });
     if (!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
@@ -653,9 +526,9 @@ async function saveCatalog() {
   if (!tx&&!ur) { alert('Please enter a description or URL.'); return; }
   const btn=document.getElementById('c-save'); btn.disabled=true; btn.textContent='Training…';
   try {
-    if (co) { await fetch('/api/personas/default',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:'default',persona_name:personaName,company_name:co})}); companyName=co; }
-    if (tx) await fetch('/api/knowledge/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:'default',source_type:'text',content:tx,title:`${co||'Product'} Knowledge`})});
-    if (ur) await fetch('/api/knowledge/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:'default',source_type:'url',content:ur,title:co||'Website'})});
+    if (co) { await fetch(`/api/personas/${personaId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:personaId,persona_name:personaName,company_name:co})}); companyName=co; }
+    if (tx) await fetch('/api/knowledge/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:personaId,source_type:'text',content:tx,title:`${co||'Product'} Knowledge`})});
+    if (ur) await fetch('/api/knowledge/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:personaId,source_type:'url',content:ur,title:co||'Website'})});
     if (co) document.getElementById('disp-sub').textContent=`${personaName} knows everything about ${co}. She demos live, handles every question, and qualifies leads — 24/7.`;
     document.getElementById('cat-form').style.display='none';
     document.getElementById('cat-ok').style.display='block';

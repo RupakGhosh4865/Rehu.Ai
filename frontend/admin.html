@@ -3,24 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SuperHuman — Admin Panel</title>
+  <title>Rehu.ai — Admin Panel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/styles.css" />
   <style>
-    body { background: var(--gray-100); padding: 0; }
+    body { background: #FAFBFC; padding: 0; }
 
-    /* ── Sidebar layout ─────────────────────────────────────────── */
     .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
 
-    .sidebar { background: var(--navy); color: white; padding: 24px 0; display: flex; flex-direction: column; }
-    .sidebar-logo { padding: 0 20px 24px; font-size: 1.3rem; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .sidebar-logo span { color: #7EC8E3; }
+    .sidebar { background: #FFFFFF; color: var(--gray-900); padding: 24px 0; display: flex; flex-direction: column; border-right: 1px solid var(--gray-200); }
+    .sidebar-logo { padding: 0 20px 24px; font-size: 1.2rem; font-weight: 800; border-bottom: 1px solid var(--gray-200); color: var(--gray-900); }
+    .sidebar-logo span { color: #0F766E; }
     .sidebar-menu { padding: 16px 0; flex: 1; }
-    .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; }
-    .menu-item:hover, .menu-item.active { color: white; background: rgba(255,255,255,0.08); border-left: 3px solid #7EC8E3; }
-    .menu-item.active { background: rgba(255,255,255,0.1); }
-    .menu-section { padding: 12px 20px 4px; font-size: 0.72rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+    .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--gray-600); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; border-left: 3px solid transparent; }
+    .menu-item:hover { color: var(--gray-900); background: var(--gray-100); }
+    .menu-item.active { color: #0F766E; background: #ECFDF5; border-left-color: #0F766E; }
+    .menu-section { padding: 12px 20px 4px; font-size: 0.72rem; color: var(--gray-600); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 
     .main { padding: 32px; overflow-y: auto; }
     .page { display: none; }
@@ -42,7 +41,7 @@
     .personas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
     .persona-card { background: white; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); transition: box-shadow 0.2s; cursor: pointer; position: relative; }
     .persona-card:hover { box-shadow: var(--shadow-md); }
-    .persona-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #2E86AB, #1F4E79); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 12px; }
+    .persona-avatar { width: 56px; height: 56px; border-radius: 50%; background: #ECFDF5; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 12px; }
     .persona-name { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
     .persona-company { font-size: 0.85rem; color: var(--gray-600); }
     .persona-actions { display: flex; gap: 8px; margin-top: 16px; }
@@ -80,19 +79,20 @@
 
   <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
   <nav class="sidebar">
-    <div class="sidebar-logo">Super<span>Human</span></div>
+    <div class="sidebar-logo">Rehu<span>.ai</span></div>
     <div class="sidebar-menu">
       <div class="menu-section">Overview</div>
       <a class="menu-item active" onclick="showPage('dashboard')">📊 Dashboard</a>
       <div class="menu-section">Personas</div>
       <a class="menu-item" onclick="showPage('personas')">🤖 Personas</a>
+      <a class="menu-item" onclick="showPage('templates')">📋 Solution Templates</a>
       <a class="menu-item" onclick="showPage('knowledge')">📚 Knowledge Base</a>
       <div class="menu-section">Integrations</div>
       <a class="menu-item" onclick="showPage('embed')">🔗 Embed Widget</a>
       <a class="menu-item" onclick="showPage('settings')">⚙️ Settings</a>
     </div>
-    <div style="padding:20px;border-top:1px solid rgba(255,255,255,0.1);">
-      <a href="/" class="menu-item" style="padding:8px 0;font-size:0.82rem;">← Back to Demo</a>
+    <div style="padding:20px;border-top:1px solid var(--gray-200);">
+      <a href="/" class="menu-item" style="padding:8px 0;font-size:0.82rem;">← Back to site</a>
     </div>
   </nav>
 
@@ -155,6 +155,13 @@
     </div>
 
     <!-- Personas -->
+    <div class="page" id="page-templates">
+      <div class="page-header">
+        <div><h1>Solution Templates</h1><p>Pre-built vertical personas — HR, onboarding, support, sales, and more</p></div>
+      </div>
+      <div class="personas-grid" id="templates-grid"></div>
+    </div>
+
     <div class="page" id="page-personas">
       <div class="page-header">
         <div><h1>Personas</h1><p>Manage your AI experts</p></div>
@@ -342,6 +349,12 @@
   <div class="card" style="width:100%;max-width:480px;margin:16px;">
     <h2 style="margin-bottom:20px;" id="modal-title">Create Persona</h2>
     <input type="hidden" id="modal-persona-id" value="" />
+    <div class="form-group" id="modal-template-group">
+      <label class="form-label">Start from template (optional)</label>
+      <select id="modal-template" class="form-select" onchange="applyTemplate()">
+        <option value="">— Blank persona —</option>
+      </select>
+    </div>
     <div class="form-group">
       <label class="form-label">Persona ID (unique, no spaces)</label>
       <input type="text" id="modal-id" class="form-input" placeholder="e.g. sales-rep" />
@@ -383,6 +396,7 @@ function showPage(id) {
   if (id === 'knowledge') loadKnowledgeStats();
   if (id === 'dashboard') loadDashboard();
   if (id === 'personas') loadPersonas();
+  if (id === 'templates') loadTemplates();
   if (id === 'embed') { loadPersonasIntoSelects(); updateEmbedCode(); }
 }
 
@@ -417,6 +431,53 @@ async function loadDashboard() {
   } catch (e) { /* backend not connected yet */ }
 }
 
+// ── Solution templates ────────────────────────────────────────────────────
+async function loadTemplates() {
+  try {
+    const data = await fetch(`${API_BASE}/api/solutions`).then(r => r.json());
+    const grid = document.getElementById('templates-grid');
+    grid.innerHTML = '';
+    for (const s of data.solutions || []) {
+      const card = document.createElement('div');
+      card.className = 'persona-card';
+      card.innerHTML = `
+        <div class="persona-avatar">${s.icon}</div>
+        <div class="persona-name">${s.title}</div>
+        <div class="persona-company">${s.tagline}</div>
+        <div class="persona-actions">
+          ${s.coming_soon
+            ? '<span class="btn btn-ghost" style="opacity:.5">Coming soon</span>'
+            : `<a class="btn btn-primary" href="/call?persona=${s.persona_id}" target="_blank">▶ Try live</a>`}
+          <a class="btn btn-ghost" href="/solutions/${s.slug}" target="_blank">Details</a>
+        </div>`;
+      grid.appendChild(card);
+    }
+    const sel = document.getElementById('modal-template');
+    if (sel && sel.options.length <= 1) {
+      for (const s of data.solutions || []) {
+        const opt = document.createElement('option');
+        opt.value = s.slug;
+        opt.textContent = `${s.icon} ${s.title}`;
+        sel.appendChild(opt);
+      }
+    }
+  } catch (e) { toast('Could not load templates', 'error'); }
+}
+
+function applyTemplate() {
+  const slug = document.getElementById('modal-template')?.value;
+  if (!slug) return;
+  fetch(`${API_BASE}/api/solutions/${slug}`)
+    .then(r => r.json())
+    .then(s => {
+      if (!document.getElementById('modal-persona-id').value) {
+        document.getElementById('modal-id').value = s.persona_id + '-copy';
+        document.getElementById('modal-name').value = s.persona_name;
+      }
+      toast(`Template "${s.title}" applied — customize ID and company`, '');
+    });
+}
+
 // ── Personas ──────────────────────────────────────────────────────────────
 async function loadPersonas() {
   try {
@@ -432,7 +493,7 @@ async function loadPersonas() {
         <div class="persona-name">${p.persona_name}</div>
         <div class="persona-company">${p.company_name}</div>
         <div class="persona-actions">
-          <a class="btn btn-ghost" href="/?persona=${p.persona_id}" target="_blank">▶ Demo</a>
+          <a class="btn btn-ghost" href="/call?persona=${p.persona_id}" target="_blank">▶ Demo</a>
           <button class="btn btn-ghost" onclick="editPersona('${p.persona_id}')">Edit</button>
           ${p.persona_id !== 'default' ? `<button class="btn btn-danger" onclick="deletePersona('${p.persona_id}')">Delete</button>` : ''}
         </div>
@@ -472,9 +533,12 @@ function openPersonaModal(personaId = null) {
   document.getElementById('modal-id').value = '';
   document.getElementById('modal-name').value = '';
   document.getElementById('modal-company').value = '';
+  document.getElementById('modal-tone').value = 'professional';
+  if (document.getElementById('modal-template')) document.getElementById('modal-template').value = '';
   document.getElementById('modal-persona-id').value = personaId || '';
   document.getElementById('modal-title').textContent = personaId ? 'Edit Persona' : 'Create Persona';
   document.getElementById('persona-modal').style.display = 'flex';
+  loadTemplates();
 }
 
 function closePersonaModal() {

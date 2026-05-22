@@ -19,19 +19,48 @@ from .models import (
     KnowledgeQueryRequest, KnowledgeQueryResponse, KnowledgeQueryResult,
     HealthResponse, PersonaConfig,
 )
-from . import liveavatar, agent, knowledge
+from . import liveavatar, agent, knowledge, persona_templates
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s -- %(message)s")
 logger = logging.getLogger(__name__)
 
 _sessions: dict[str, dict] = {}
+_default_template = persona_templates.get_template("sales-demo")
 _personas: dict[str, PersonaConfig] = {
     "default": PersonaConfig(
         persona_id="default",
         persona_name=settings.DEFAULT_PERSONA_NAME,
         company_name="our company",
-    )
+        system_prompt_override=_default_template.system_prompt if _default_template else None,
+    ),
+    **persona_templates.get_persona_configs(),
 }
+
+
+def _role_hint_for_persona(persona_id: str) -> str:
+    hints = {
+        "hr-interviewer": "hr",
+        "onboarding-guide": "onboarding",
+        "support-agent": "support",
+        "human-chatbot": "support",
+        "demo-host": "demo",
+        "meeting-assistant": "demo",
+    }
+    return hints.get(persona_id, "sales")
+
+
+def _opening_fallback_for_persona(persona_id: str) -> str:
+    for t in persona_templates.get_all_templates():
+        if t.persona_id == persona_id:
+            return t.opening_fallback
+    return ""
+
+
+def _knowledge_query_for_persona(persona_id: str) -> str:
+    for t in persona_templates.get_all_templates():
+        if t.persona_id == persona_id:
+            return t.knowledge_query
+    return "overview products services features pricing"
 
 
 @asynccontextmanager
@@ -105,6 +134,16 @@ async def call_page():
     return FileResponse(idx) if os.path.isfile(idx) else {"status": "call interface not found"}
 
 
+@app.get("/solutions/{slug}", tags=["System"])
+async def solution_page(slug: str):
+    if not persona_templates.get_template(slug):
+        raise HTTPException(404, f"Solution '{slug}' not found")
+    p = os.path.join(FRONTEND_DIR, "solution.html")
+    if os.path.isfile(p):
+        return FileResponse(p)
+    raise HTTPException(404, "Solution page not found")
+
+
 @app.get("/admin", tags=["System"])
 async def admin():
     p = os.path.join(FRONTEND_DIR, "admin.html")
@@ -143,11 +182,50 @@ async def update_persona(persona_id: str, config: PersonaConfig):
 
 @app.delete("/api/personas/{persona_id}", tags=["Personas"])
 async def delete_persona(persona_id: str):
-    if persona_id == "default":
-        raise HTTPException(400, "Cannot delete the default persona")
+    protected = {"default", "hr-interviewer", "onboarding-guide", "support-agent",
+                 "human-chatbot", "demo-host", "meeting-assistant"}
+    if persona_id in protected:
+        raise HTTPException(400, f"Cannot delete built-in persona '{persona_id}'")
     _personas.pop(persona_id, None)
     await knowledge.delete_persona_knowledge(persona_id)
     return {"persona_id": persona_id, "status": "deleted"}
+
+
+# ── Solutions & templates ─────────────────────────────────────────────────────
+
+@app.get("/api/solutions", tags=["Solutions"])
+async def list_solutions():
+    return {"solutions": [t.to_api_dict() for t in persona_templates.get_all_templates()]}
+
+
+@app.get("/api/solutions/{slug}", tags=["Solutions"])
+async def get_solution(slug: str):
+    t = persona_templates.get_template(slug)
+    if not t:
+        raise HTTPException(404, f"Solution '{slug}' not found")
+    data = t.to_api_dict()
+    data["system_prompt_preview"] = t.system_prompt[:200] + "…"
+    return data
+
+
+@app.get("/api/templates", tags=["Solutions"])
+async def list_templates():
+    return {"templates": [t.to_api_dict() for t in persona_templates.get_all_templates()]}
+
+
+@app.post("/api/personas/from-template/{slug}", tags=["Personas"])
+async def create_persona_from_template(slug: str, company_name: Optional[str] = None):
+    """Clone a solution template into a new custom persona (optional company name)."""
+    t = persona_templates.get_template(slug)
+    if not t:
+        raise HTTPException(404, f"Template '{slug}' not found")
+    new_id = f"{t.persona_id}-custom-{uuid.uuid4().hex[:6]}"
+    cfg = t.to_persona_config()
+    cfg.persona_id = new_id
+    if company_name:
+        cfg.company_name = company_name
+    _personas[new_id] = cfg
+    return {"persona_id": new_id, "status": "created", "template": slug}
 
 
 # ── Sessions (LiveAvatar) ─────────────────────────────────────────────────────
@@ -169,18 +247,24 @@ async def create_session(req: CreateSessionRequest):
     company_name = persona.company_name
 
     # Build system prompt with knowledge
-    knowledge_ctx = await knowledge.query_knowledge(req.persona_id, "overview products services features pricing")
-    system_prompt = agent.build_system_prompt(persona_name, company_name, knowledge_ctx, persona.tone.value)
+    kb_query = _knowledge_query_for_persona(req.persona_id)
+    knowledge_ctx = await knowledge.query_knowledge(req.persona_id, kb_query)
+    system_prompt = agent.build_system_prompt(
+        persona_name, company_name, knowledge_ctx, persona.tone.value,
+        prompt_override=persona.system_prompt_override,
+    )
 
     # Generate opening pitch (auto-demo)
-    opening_text = ""
+    role_hint = _role_hint_for_persona(req.persona_id)
+    fallback = _opening_fallback_for_persona(req.persona_id)
+    opening_text = fallback or f"Hi! I'm {persona_name} from {company_name}. How can I help?"
     if knowledge_ctx and len(knowledge_ctx.strip()) > 100 and settings.OPENAI_API_KEY:
         opening_text = await agent.generate_opening_pitch(
-            persona_name, company_name, knowledge_ctx, req.visitor_name
+            persona_name, company_name, knowledge_ctx, req.visitor_name,
+            role_hint=role_hint, opening_fallback=fallback or None,
         )
-    else:
-        addr = f"Hi {req.visitor_name}! " if req.visitor_name else "Hi there! "
-        opening_text = f"{addr}I'm {persona_name}, your expert guide at {company_name}. What would you like to know?"
+    elif req.visitor_name and fallback:
+        opening_text = fallback.replace("Hi,", f"Hi {req.visitor_name},")
 
     la_context_id = None
     la_session_token = ""
@@ -229,6 +313,7 @@ async def create_session(req: CreateSessionRequest):
 
     return {
         "session_id":           session_id,
+        "persona_id":           req.persona_id,
         "persona_name":         persona_name,
         "company_name":         company_name,
         "livekit_url":          livekit_url,
@@ -263,6 +348,7 @@ async def voice_websocket(websocket: WebSocket, session_id: str):
     if not session:
         await websocket.close(code=4004, reason="Session not found")
         return
+    persona = _personas.get(session["persona_id"], _personas["default"])
     await agent.handle_voice_session(
         websocket=websocket,
         session_id=session_id,
@@ -270,6 +356,7 @@ async def voice_websocket(websocket: WebSocket, session_id: str):
         persona_name=session["persona_name"],
         company_name=session["company_name"],
         tone=session["tone"],
+        prompt_override=persona.system_prompt_override,
         heygen_session_id=None,
         visitor_name=session.get("visitor_name"),
         opening_text=session.get("opening_text", ""),
