@@ -5,12 +5,6 @@ window.RehuCall = (function () {
   let experience = null;
   let connectTimer = null;
   let connectStep = 0;
-  const CONNECT_STEPS = [
-    'Securing your session',
-    'Initializing voice & video',
-    'Loading persona knowledge',
-    'Finalizing connection',
-  ];
 
   async function loadExperience(personaId) {
     try {
@@ -24,9 +18,9 @@ window.RehuCall = (function () {
 
   function applyLanding(personaName, roleTitle) {
     const st = document.getElementById('av-st');
-    if (st) st.textContent = roleTitle || 'SuperHuman Specialist · Available';
+    if (st) st.textContent = roleTitle || 'Available now';
     const co = document.getElementById('cs-co');
-    if (co && experience?.role_title) co.textContent = experience.role_title;
+    if (co) co.textContent = roleTitle || experience?.role_title || 'SuperHuman Specialist';
   }
 
   function setPreviewImage(url) {
@@ -34,13 +28,16 @@ window.RehuCall = (function () {
     const img = document.getElementById('hero-img');
     const sk = document.getElementById('av-skeleton');
     if (!img) return;
-    const preload = new Image();
-    preload.onload = () => {
-      img.src = url;
+
+    img.src = url;
+    img.onload = () => {
       img.classList.add('loaded');
       if (sk) sk.classList.add('hidden');
     };
-    preload.src = url;
+    img.onerror = () => {
+      if (sk) sk.classList.remove('hidden');
+    };
+
     const connectImg = document.getElementById('connect-photo');
     if (connectImg) connectImg.src = url;
   }
@@ -48,46 +45,45 @@ window.RehuCall = (function () {
   function showConnectOverlay(personaName) {
     const el = document.getElementById('connect-overlay');
     if (!el) return;
+
     const messages = experience?.connecting_messages || [
-      `SuperHuman ${personaName} is joining the call in a few seconds…`,
-      'Connecting you with your AI specialist…',
+      "Hold on — we're connecting you to your smartest AI person…",
+      'Your specialist is joining now…',
+      'Preparing your real-time conversation experience…',
     ];
+
     const photo = document.getElementById('connect-photo');
     const hero = document.getElementById('hero-img');
-    if (photo && hero?.src) photo.src = hero.src;
+    if (photo) {
+      photo.src = hero?.src || experience?.preview_url || '';
+    }
 
     el.classList.add('show');
     document.body.classList.add('connecting');
     connectStep = 0;
     rotateConnectMessage(messages, personaName);
-    updateConnectSteps(0);
+
     connectTimer = setInterval(() => {
       connectStep = (connectStep + 1) % messages.length;
       rotateConnectMessage(messages, personaName);
-      updateConnectSteps(Math.min(3, Math.floor(connectStep / 1) + 1));
-    }, 2800);
+    }, 3200);
   }
 
   function rotateConnectMessage(messages, personaName) {
     const title = document.getElementById('connect-title');
     const sub = document.getElementById('connect-sub');
     if (!title) return;
-    const msg = messages[connectStep % messages.length];
-    title.textContent = msg;
+    title.textContent = messages[connectStep % messages.length];
     if (sub) {
       sub.textContent = experience?.role_title
-        ? `${experience.role_title} · ${personaName}`
-        : `SuperHuman ${personaName}`;
+        ? `${personaName} · ${experience.role_title}`
+        : personaName;
     }
     const bar = document.querySelector('.connect-progress-bar');
-    if (bar) bar.style.width = `${Math.min(95, 25 + connectStep * 22)}%`;
-  }
-
-  function updateConnectSteps(active) {
-    document.querySelectorAll('.connect-step').forEach((li, i) => {
-      li.classList.toggle('done', i < active);
-      li.classList.toggle('active', i === active);
-    });
+    if (bar) {
+      const pct = 20 + ((connectStep + 1) / messages.length) * 75;
+      bar.style.width = `${Math.min(95, pct)}%`;
+    }
   }
 
   function hideConnectOverlay() {
@@ -108,12 +104,30 @@ window.RehuCall = (function () {
     const call = document.getElementById('call-screen');
     if (landing) {
       landing.classList.add('fade-out');
-      setTimeout(() => { landing.style.display = 'none'; landing.classList.remove('fade-out'); }, 400);
+      setTimeout(() => {
+        landing.style.display = 'none';
+        landing.classList.remove('fade-out');
+      }, 400);
     }
     if (call) {
       call.style.display = 'block';
       call.classList.add('fade-in');
     }
+  }
+
+  function initAlivePersona(selector) {
+    const frame = document.querySelector(selector);
+    const img = frame?.querySelector('img');
+    if (!frame || !img) return;
+    frame.addEventListener('mousemove', (e) => {
+      const r = frame.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width - 0.5) * 6;
+      const y = ((e.clientY - r.top) / r.height - 0.5) * 4;
+      img.style.transform = `scale(1.04) translate(${x}px, ${y}px)`;
+    });
+    frame.addEventListener('mouseleave', () => {
+      img.style.transform = '';
+    });
   }
 
   return {
@@ -123,6 +137,7 @@ window.RehuCall = (function () {
     showConnectOverlay,
     hideConnectOverlay,
     transitionToCall,
+    initAlivePersona,
     getExperience: () => experience,
   };
 })();

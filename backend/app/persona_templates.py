@@ -22,6 +22,7 @@ class SolutionTemplate:
         benefits: list[str],
         roi_label: str,
         roi_value: str,
+        cost_saving: str = "",
         knowledge_query: str = "overview products services policies",
         coming_soon: bool = False,
     ):
@@ -39,6 +40,7 @@ class SolutionTemplate:
         self.benefits = benefits
         self.roi_label = roi_label
         self.roi_value = roi_value
+        self.cost_saving = cost_saving
         self.knowledge_query = knowledge_query
         self.coming_soon = coming_soon
 
@@ -66,6 +68,7 @@ class SolutionTemplate:
             "benefits": self.benefits,
             "roi_label": self.roi_label,
             "roi_value": self.roi_value,
+            "cost_saving": self.cost_saving,
             "coming_soon": self.coming_soon,
             "demo_url": f"/call?persona={self.persona_id}",
             "try_url": f"/call?persona={self.persona_id}",
@@ -114,6 +117,7 @@ _register(SolutionTemplate(
     ],
     roi_label="Conversion lift",
     roi_value="3× vs text chat",
+    cost_saving="Save $4,000–6,000/mo vs hiring an SDR",
     knowledge_query="products features pricing benefits customers",
 ))
 
@@ -121,8 +125,8 @@ _register(SolutionTemplate(
 
 _register(SolutionTemplate(
     slug="hr-interviews",
-    title="AI Interview Screening",
-    tagline="Run consistent first-round interviews 24/7 — HR joins only qualified candidates.",
+    title="Interview Screening",
+    tagline="Run consistent first-round interviews 24/7 — your team joins only qualified candidates.",
     icon="hr",
     category="People",
     persona_id="hr-interviewer",
@@ -151,6 +155,7 @@ _register(SolutionTemplate(
     ],
     roi_label="Recruiter time saved",
     roi_value="60–80% on round 1",
+    cost_saving="Save $3,000–5,000/mo in recruiter screening time",
     knowledge_query="job description role requirements company values interview rubric",
 ))
 
@@ -185,6 +190,7 @@ _register(SolutionTemplate(
     ],
     roi_label="HR ticket reduction",
     roi_value="40–50%",
+    cost_saving="Save $2,000–3,000/mo in HR and IT interruptions",
     knowledge_query="onboarding handbook policies benefits IT setup first week",
 ))
 
@@ -219,6 +225,7 @@ _register(SolutionTemplate(
     ],
     roi_label="Support deflection",
     roi_value="Up to 70%",
+    cost_saving="Save $3,000–5,000/mo vs L1 support headcount",
     knowledge_query="support FAQ billing troubleshooting product help",
 ))
 
@@ -249,6 +256,7 @@ _register(SolutionTemplate(
     ],
     roi_label="Ticket volume",
     roi_value="−68% typical",
+    cost_saving="Save $3,000–5,000/mo in support staffing",
     knowledge_query="support troubleshooting FAQ policies returns",
 ))
 
@@ -257,7 +265,7 @@ _register(SolutionTemplate(
 _register(SolutionTemplate(
     slug="product-demo",
     title="Interactive Product Demo",
-    tagline="SuperHuman AI walks prospects through your product live — explains features, answers questions, and adapts to each visitor.",
+    tagline="Your specialist walks prospects through your product live — explains features, answers questions, adapts to each visitor.",
     icon="demo",
     category="Revenue",
     persona_id="product-demo",
@@ -283,6 +291,7 @@ _register(SolutionTemplate(
     ],
     roi_label="Demo coverage",
     roi_value="100% of traffic",
+    cost_saving="Save $5,000+/mo vs dedicated demo engineers",
     knowledge_query="product demo features walkthrough benefits use cases",
 ))
 
@@ -349,6 +358,7 @@ _register(SolutionTemplate(
     ],
     roi_label="Call deflection",
     roi_value="35–45%",
+    cost_saving="Save $2,000–4,000/mo in front-desk call volume",
     knowledge_query="healthcare services appointments insurance patient FAQ procedures",
 ))
 

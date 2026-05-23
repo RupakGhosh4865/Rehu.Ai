@@ -26,6 +26,14 @@ LA_BASE          = "https://api.liveavatar.com"
 SANDBOX_AVATAR_ID = "dd73ea75-1218-4ef3-92ce-606d5f7fbc0a"   # Wayne - free sandbox avatar
 
 
+def sandbox_preview_url(avatars: list) -> str:
+    """Preview image for Wayne — matches sandbox live stream."""
+    for a in avatars:
+        if a.get("id") == SANDBOX_AVATAR_ID:
+            return a.get("preview_url") or ""
+    return ""
+
+
 def _headers() -> dict:
     return {
         "X-API-KEY": settings.LIVEAVATAR_API_KEY,
@@ -101,14 +109,28 @@ async def create_session_token(
 ) -> dict:
     """
     Create a short-lived session token on the backend.
-    Returns: {session_token, session_id} or empty dict on failure.
+    Returns: {session_token, session_id, avatar_id} or empty dict on failure.
+
+    Sandbox mode only supports the Wayne avatar for video — if a persona avatar
+    is rejected, we automatically retry with Wayne so video still streams.
     """
     if not settings.LIVEAVATAR_API_KEY:
         logger.warning("LIVEAVATAR_API_KEY not set")
         return {}
 
-    use_sandbox  = is_sandbox or settings.LIVEAVATAR_USE_SANDBOX
-    use_avatar   = SANDBOX_AVATAR_ID if use_sandbox else (avatar_id or settings.LIVEAVATAR_AVATAR_ID or SANDBOX_AVATAR_ID)
+    use_sandbox = is_sandbox or settings.LIVEAVATAR_USE_SANDBOX
+
+    # Sandbox: Wayne only — persona avatars are rejected and custom voices can break speech
+    if use_sandbox:
+        candidates = [SANDBOX_AVATAR_ID]
+        voice_id = None
+    else:
+        candidates = []
+        for aid in (avatar_id, settings.LIVEAVATAR_AVATAR_ID):
+            if aid and aid not in candidates:
+                candidates.append(aid)
+        if SANDBOX_AVATAR_ID not in candidates:
+            candidates.append(SANDBOX_AVATAR_ID)
 
     avatar_persona: dict = {"language": language}
     if voice_id:
@@ -116,32 +138,48 @@ async def create_session_token(
     if context_id:
         avatar_persona["context_id"] = context_id
 
-    payload = {
-        "mode":           "FULL",
-        "avatar_id":      use_avatar,
-        "is_sandbox":     use_sandbox,
-        "avatar_persona": avatar_persona,
-        "video_settings": {"quality": "high", "encoding": "H264"},
-    }
+    last_error = None
+    for try_avatar in candidates:
+        payload = {
+            "mode":           "FULL",
+            "avatar_id":      try_avatar,
+            "is_sandbox":     use_sandbox,
+            "avatar_persona": avatar_persona,
+            "video_settings": {"quality": "high", "encoding": "H264"},
+        }
+        try:
+            async with httpx.AsyncClient(timeout=20) as c:
+                r = await c.post(f"{LA_BASE}/v1/sessions/token", headers=_headers(), json=payload)
+                data = r.json()
 
-    try:
-        async with httpx.AsyncClient(timeout=20) as c:
-            r = await c.post(f"{LA_BASE}/v1/sessions/token", headers=_headers(), json=payload)
-            data = r.json()
+            if r.status_code == 200 and data.get("code") == 1000:
+                session_data = data["data"]
+                if try_avatar != (avatar_id or try_avatar):
+                    logger.info(
+                        "Sandbox fallback: using avatar %s (requested %s)",
+                        try_avatar[:8], (avatar_id or "")[:8],
+                    )
+                logger.info("LiveAvatar session token created (sandbox=%s avatar=%s)", use_sandbox, try_avatar[:8])
+                return {
+                    "session_token": session_data["session_token"],
+                    "session_id":    session_data.get("session_id", ""),
+                    "avatar_id":     try_avatar,
+                }
 
-        if r.status_code == 200 and data.get("code") == 1000:
-            session_data = data["data"]
-            logger.info("LiveAvatar session token created (sandbox=%s)", use_sandbox)
-            return {
-                "session_token": session_data["session_token"],
-                "session_id":    session_data.get("session_id", ""),
-            }
-        else:
+            last_error = data
+            msg = str(data.get("message", "")) + str(data.get("data", ""))
+            if use_sandbox and try_avatar != SANDBOX_AVATAR_ID and "sandbox" in msg.lower():
+                logger.warning("Avatar %s not in sandbox — trying Wayne", try_avatar[:8])
+                continue
             logger.error("Session token failed %s: %s", r.status_code, data)
+            break
+        except Exception as e:
+            logger.error("LiveAvatar create_session_token error: %s", e)
             return {}
-    except Exception as e:
-        logger.error("LiveAvatar create_session_token error: %s", e)
-        return {}
+
+    if last_error:
+        logger.error("All avatar candidates failed: %s", last_error)
+    return {}
 
 
 async def start_session(session_token: str) -> dict:

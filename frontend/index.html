@@ -20,14 +20,14 @@
     <p class="headline-role" id="disp-role">Sales &amp; Product Specialist</p>
     <p class="sub" id="disp-sub">Always on. Knows your product inside out. Demos live, answers every question, and qualifies leads — like your best rep, 24/7.</p>
 
-    <!-- CALL BUTTON -->
+    <!-- START CONVERSATION -->
     <button class="call-btn" id="call-btn" onclick="startCall()">
       <div class="ph">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.53 2 2 0 0 1 3.6 1.5h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.13a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.5 16.4z"/>
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
       </div>
-      <span>Call <span id="btn-name">Maya</span></span>
+      <span id="call-btn-label">Start Conversation</span>
     </button>
 
     <div class="feature-row">
@@ -43,9 +43,9 @@
   </div>
 
   <div class="l-right">
-    <div class="av-frame">
+    <div class="av-frame persona-alive">
       <div class="av-skeleton" id="av-skeleton"></div>
-      <img id="hero-img" src="" alt="" loading="eager"/>
+      <img id="hero-img" class="persona-poster" src="" alt="" loading="eager"/>
       <div class="av-label">
         <div class="av-dot"></div>
         <div><div class="av-nm" id="av-nm">Maya</div><div class="av-st" id="av-st">SuperHuman Specialist · Available</div></div>
@@ -56,6 +56,7 @@
 
 <!-- CALL SCREEN -->
 <div id="call-screen">
+  <img id="call-poster" class="call-poster" alt="" />
   <video id="av-video" autoplay playsinline></video>
 
   <div class="cs-top">
@@ -108,14 +109,8 @@
       <img id="connect-photo" src="" alt=""/>
     </div>
     <div class="connect-progress"><div class="connect-progress-bar"></div></div>
-    <p class="connect-title" id="connect-title">SuperHuman Maya is joining the call in a few seconds…</p>
+    <p class="connect-title" id="connect-title">Hold on — we're connecting you to your smartest AI person…</p>
     <p class="connect-sub" id="connect-sub">Sales & Product Specialist</p>
-    <ul class="connect-steps">
-      <li class="connect-step active">Securing your session</li>
-      <li class="connect-step">Initializing voice &amp; video</li>
-      <li class="connect-step">Loading persona knowledge</li>
-      <li class="connect-step">Finalizing connection</li>
-    </ul>
   </div>
 </div>
 
@@ -152,10 +147,12 @@
 </div>
 
 <script src="/static/call-experience.js"></script>
+<script src="/static/persona-live.js"></script>
 <script>
 // ═══════════════ STATE ═══════════════
 let sessionId   = null;
 let livekitRoom = null;
+let avatarAudioEl = null;
 let wsConn      = null;
 let sessionMode = 'liveavatar';
 let micEnabled  = true;
@@ -183,6 +180,12 @@ let isRecording = false;
 window.addEventListener('load', async () => {
   await loadPersona();
   await initExperience();
+  if (window.RehuCall) RehuCall.initAlivePersona('.av-frame');
+  // Live idle preview only on homepage — call page starts preview after session to avoid conflicts
+});
+
+window.addEventListener('pagehide', () => {
+  if (window.RehuPersonaLive) RehuPersonaLive.stop();
 });
 
 async function initExperience() {
@@ -195,7 +198,11 @@ async function initExperience() {
     if (dr) dr.textContent = roleTitle;
   }
   RehuCall.applyLanding(personaName, roleTitle);
-  if (exp?.preview_url) RehuCall.setPreviewImage(exp.preview_url);
+  if (exp?.preview_url) {
+    RehuCall.setPreviewImage(exp.preview_url);
+    const poster = document.getElementById('call-poster');
+    if (poster) poster.src = exp.preview_url;
+  }
 }
 
 async function loadPersona() {
@@ -218,13 +225,17 @@ async function loadPersona() {
     if (!h.services.liveavatar_key_set) {
       b.className='status-badge warn'; b.innerHTML='Add LIVEAVATAR_API_KEY to enable video persona'; b.classList.remove('hidden');
     } else if (h.services.sandbox_mode) {
-      b.className='status-badge ok'; b.innerHTML='Sandbox mode — free testing'; b.classList.remove('hidden');
+      b.className='status-badge ok';
+      b.innerHTML='Sandbox — Wayne demo avatar · persona voice &amp; knowledge active';
+      b.classList.remove('hidden');
     }
   } catch(e) {}
 }
 
 function setNames(n) {
-  ['disp-name','btn-name','av-nm','cs-nm'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=n;});
+  ['disp-name','av-nm','cs-nm'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=n;});
+  const lbl = document.getElementById('call-btn-label');
+  if (lbl) lbl.textContent = `Talk to ${n}`;
 }
 
 
@@ -233,6 +244,11 @@ async function startCall() {
   const btn = document.getElementById('call-btn');
   btn.disabled = true;
   btn.innerHTML = `<div class="ph"><div class="spinner" style="width:22px;height:22px;border-width:2px;border-top-color:#fff;border-color:rgba(255,255,255,.3)"></div></div><span>Connecting…</span>`;
+
+  if (window.RehuPersonaLive) {
+    await RehuPersonaLive.stop();
+    await new Promise((r) => setTimeout(r, 400));
+  }
 
   if (window.RehuCall) RehuCall.showConnectOverlay(personaName);
   RehuCall?.transitionToCall();
@@ -255,6 +271,7 @@ async function startCall() {
 
     if (sessionMode==='liveavatar' && data.livekit_url && data.livekit_client_token) {
       await connectLiveKit(data.livekit_url, data.livekit_client_token);
+      if (data.opening_text) addMsg('ai', data.opening_text);
     } else {
       await connectVoiceWS(data.opening_text||'');
       if (window.RehuCall) RehuCall.hideConnectOverlay();
@@ -270,64 +287,95 @@ async function startCall() {
 }
 
 // ═══════════════ LIVEKIT (LiveAvatar FULL mode) ═══════════════
+function attachAvatarVideo(track) {
+  if (!track || track.kind !== 'video') return;
+  const v = document.getElementById('av-video');
+  if (!v) return;
+  track.attach(v);
+  v.style.opacity = '1';
+  v.style.display = 'block';
+  const poster = document.getElementById('call-poster');
+  if (poster) poster.classList.add('hidden');
+  v.play().catch(() => {});
+  setChip('listening');
+  if (window.RehuCall) RehuCall.hideConnectOverlay();
+}
+
+function attachAvatarAudio(track) {
+  if (!track || track.kind !== 'audio') return;
+  if (avatarAudioEl) {
+    try { track.detach(avatarAudioEl); } catch (e) {}
+    avatarAudioEl.remove();
+    avatarAudioEl = null;
+  }
+  avatarAudioEl = track.attach();
+  avatarAudioEl.autoplay = true;
+  avatarAudioEl.playsInline = true;
+  avatarAudioEl.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0';
+  document.body.appendChild(avatarAudioEl);
+  const playAudio = async () => {
+    try {
+      if (livekitRoom) await livekitRoom.startAudio();
+      await avatarAudioEl.play();
+    } catch (e) {
+      console.warn('Avatar audio play:', e);
+    }
+  };
+  playAudio();
+  setTimeout(playAudio, 400);
+  setTimeout(playAudio, 1200);
+}
+
+function attachRemoteTracks(room, LC) {
+  for (const participant of room.remoteParticipants.values()) {
+    for (const pub of participant.trackPublications.values()) {
+      if (pub.track) {
+        if (pub.kind === 'video') attachAvatarVideo(pub.track);
+        if (pub.kind === 'audio') attachAvatarAudio(pub.track);
+      }
+    }
+  }
+}
+
 async function connectLiveKit(lkUrl, lkToken) {
   const LC = window.LivekitClient;
   if (!LC) throw new Error('LiveKit SDK not loaded');
 
-  livekitRoom = new LC.Room({adaptiveStream:true, dynacast:true});
+  livekitRoom = new LC.Room({ adaptiveStream: true, dynacast: true });
 
-  // ── Receive avatar video + audio ──────────────────────────────────────────
   livekitRoom.on(LC.RoomEvent.TrackSubscribed, (track, pub, participant) => {
-    console.log('Track subscribed:', track.kind, participant.identity);
-    if (track.kind === 'video') {
-      const v = document.getElementById('av-video');
-      track.attach(v);
-      v.style.opacity = '0';
-      v.onloadeddata = () => {
-        v.style.transition = 'opacity .6s ease';
-        v.style.opacity = '1';
-        if (window.RehuCall) RehuCall.hideConnectOverlay();
-      };
-      setChip('listening');
-    }
-    if (track.kind === 'audio') {
-      // CRITICAL: set autoplay + call play() — browsers block audio without this
-      const el = track.attach();
-      el.autoplay = true;
-      el.style.display = 'none';
-      document.body.appendChild(el);
-      el.play().catch(err => console.warn('Audio play blocked:', err));
-    }
+    console.log('Track subscribed:', track.kind, participant?.identity);
+    if (track.kind === 'video') attachAvatarVideo(track);
+    if (track.kind === 'audio') attachAvatarAudio(track);
   });
 
-  // ── Agent events (speaking/transcript) ───────────────────────────────────
   livekitRoom.on(LC.RoomEvent.DataReceived, (data, participant, kind, topic) => {
-    // Log all incoming data so we can see what topic LiveAvatar uses
     const text = new TextDecoder().decode(data);
     console.log('DataReceived topic:', topic, 'data:', text.slice(0, 120));
     try {
-      const evt = JSON.parse(text);
-      handleAgentEvt(evt);   // handle regardless of topic
-    } catch(e) {}
+      handleAgentEvt(JSON.parse(text));
+    } catch (e) {}
   });
 
-  livekitRoom.on(LC.RoomEvent.Disconnected, () => { if(sessionId) endCall(); });
+  livekitRoom.on(LC.RoomEvent.Disconnected, () => { if (sessionId) endCall(); });
 
-  // Connect to LiveKit room
-  await livekitRoom.connect(lkUrl, lkToken, {autoSubscribe:true});
+  await livekitRoom.connect(lkUrl, lkToken, { autoSubscribe: true });
   console.log('✓ LiveKit connected, room state:', livekitRoom.state);
 
-  // CRITICAL: Resume browser AudioContext — must be called inside a user gesture
-  // (we are here because the user clicked the Call button, so this is safe)
+  attachRemoteTracks(livekitRoom, LC);
+
   try {
     await livekitRoom.startAudio();
-    console.log('✓ AudioContext resumed');
-  } catch(e) {
+  } catch (e) {
     console.warn('startAudio failed:', e);
   }
 
-  // Publish user microphone so the LiveAvatar agent can hear and respond
   await enableMic();
+
+  // Fallback: hide overlay even if video track is slow
+  setTimeout(() => {
+    if (window.RehuCall) RehuCall.hideConnectOverlay();
+  }, 8000);
 }
 
 async function enableMic() {
@@ -458,6 +506,7 @@ async function endCall() {
   if (livekitRoom) { try{await livekitRoom.disconnect();}catch(e){} livekitRoom=null; }
   if (wsConn)      { try{wsConn.send(JSON.stringify({type:'end'}));wsConn.close();}catch(e){} wsConn=null; }
   stopVoiceRec();
+  if (avatarAudioEl) { avatarAudioEl.remove(); avatarAudioEl = null; }
   const v = document.getElementById('av-video');
   if (v) try{v.srcObject=null;}catch(e){}
   document.getElementById('call-screen').classList.remove('maya-speaks');
@@ -466,6 +515,8 @@ async function endCall() {
   document.getElementById('landing').style.display     = 'grid';
   document.getElementById('transcript').innerHTML = '';
   micEnabled = true; updateMicUI(); resetBtn();
+  const poster = document.getElementById('call-poster');
+  if (poster) poster.classList.remove('hidden');
 }
 
 // ═══════════════ UI ═══════════════
@@ -498,7 +549,7 @@ function updateOv() {}
 function hideOv() { if (window.RehuCall) RehuCall.hideConnectOverlay(); }
 function resetBtn() {
   const btn=document.getElementById('call-btn'); btn.disabled=false;
-  btn.innerHTML=`<div class="ph"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.53 2 2 0 0 1 3.6 1.5h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.13a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.5 16.4z"/></svg></div><span>Call <span id="btn-name">${personaName}</span></span>`;
+  btn.innerHTML=`<div class="ph"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span id="call-btn-label">Talk to ${personaName}</span>`;
 }
 
 // ═══════════════ CATALOG MODAL ═══════════════

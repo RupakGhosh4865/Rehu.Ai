@@ -66,6 +66,15 @@ def _knowledge_query_for_persona(persona_id: str) -> str:
     return "overview products services features pricing"
 
 
+def _stream_avatar_and_voice(persona_id: str, persona: PersonaConfig) -> tuple[Optional[str], Optional[str]]:
+    """Sandbox always uses Wayne + default voice so video and speech both work."""
+    if settings.LIVEAVATAR_USE_SANDBOX:
+        return liveavatar.SANDBOX_AVATAR_ID, None
+    aid = persona.avatar_id or persona_experience.resolve_avatar_id(persona_id)
+    vid = persona.voice_id or persona_experience.resolve_voice_id(persona_id)
+    return aid, vid
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
@@ -73,6 +82,15 @@ async def lifespan(app: FastAPI):
     logger.info("Sandbox mode: %s", settings.LIVEAVATAR_USE_SANDBOX)
     global _avatar_cache
     _avatar_cache = await liveavatar.list_public_avatars(page_size=48)
+    persona_experience.bind_live_avatars(_avatar_cache)
+    for pid, p in list(_personas.items()):
+        b = persona_experience.get_avatar_binding(pid)
+        if b and b.get("avatar_id"):
+            _personas[pid] = p.model_copy(update={
+                "avatar_id": b["avatar_id"],
+                "voice_id": b.get("voice_id") or p.voice_id,
+            })
+            logger.info("Persona %s -> LiveAvatar %s (%s)", pid, b["avatar_id"][:8], b.get("avatar_name"))
     logger.info("Cached %d public avatars for previews", len(_avatar_cache))
     yield
     logger.info("Shutting down -- cleaning up %d sessions", len(_sessions))
@@ -184,12 +202,88 @@ async def get_persona_experience(persona_id: str):
     """Preview image, role title, and immersive connect messages for the call UI."""
     p = _personas.get(persona_id) or _personas.get("default")
     exp = persona_experience.get_experience(persona_id, p.persona_name)
-    preview = persona_experience.pick_avatar_preview(persona_id, _avatar_cache, p.persona_name)
-    if preview:
-        exp["preview_url"] = preview
+    if settings.LIVEAVATAR_USE_SANDBOX:
+        wayne = liveavatar.sandbox_preview_url(_avatar_cache)
+        if wayne:
+            exp["preview_url"] = wayne
+        exp["sandbox_mode"] = True
+        exp["stream_avatar_name"] = "Wayne"
+    else:
+        preview = persona_experience.pick_avatar_preview(persona_id, _avatar_cache, p.persona_name)
+        if preview:
+            exp["preview_url"] = preview
     exp["persona_name"] = p.persona_name
     exp["company_name"] = p.company_name
     return exp
+
+
+@app.post("/api/personas/{persona_id}/preview-session", tags=["Personas"])
+async def create_preview_session(persona_id: str):
+    """
+    Idle LiveAvatar stream for hero and landing pages.
+    Shows the same persona with natural blinking — video only, no microphone.
+    """
+    persona = _personas.get(persona_id) or _personas.get("default")
+    session_id = str(uuid.uuid4())
+    avatar_id, voice_id = _stream_avatar_and_voice(persona_id, persona)
+
+    la_context_id = None
+    la_session_token = ""
+    la_session_id = ""
+    livekit_url = ""
+    livekit_client_token = ""
+    stream_avatar_id = avatar_id
+
+    if settings.LIVEAVATAR_API_KEY and avatar_id:
+        idle_prompt = (
+            f"You are {persona.persona_name}. Stay in a calm, professional idle state facing the camera. "
+            "Do not speak until the visitor starts a conversation. Maintain natural eye contact."
+        )
+        la_context_id = await liveavatar.create_context(
+            prompt=idle_prompt,
+            opening_text="",
+            display_name=f"{persona.persona_name} preview {session_id[:8]}",
+        )
+        token_data = await liveavatar.create_session_token(
+            avatar_id=avatar_id,
+            context_id=la_context_id,
+            voice_id=voice_id,
+            is_sandbox=settings.LIVEAVATAR_USE_SANDBOX,
+        )
+        if token_data:
+            la_session_token = token_data["session_token"]
+            stream_avatar_id = token_data.get("avatar_id") or avatar_id
+            start_data = await liveavatar.start_session(la_session_token)
+            if start_data:
+                la_session_id = start_data["session_id"]
+                livekit_url = start_data["livekit_url"]
+                livekit_client_token = start_data["livekit_client_token"]
+
+    _sessions[session_id] = {
+        "persona_id": persona_id,
+        "persona_name": persona.persona_name,
+        "company_name": persona.company_name,
+        "tone": persona.tone.value,
+        "la_session_id": la_session_id,
+        "la_session_token": la_session_token,
+        "la_context_id": la_context_id,
+        "opening_text": "",
+        "is_preview": True,
+    }
+
+    exp = persona_experience.get_experience(persona_id, persona.persona_name)
+    return {
+        "session_id": session_id,
+        "persona_id": persona_id,
+        "persona_name": persona.persona_name,
+        "avatar_id": avatar_id,
+        "preview_url": exp.get("preview_url"),
+        "livekit_url": livekit_url,
+        "livekit_client_token": livekit_client_token,
+        "mode": "liveavatar" if livekit_url else "poster_only",
+        "stream_avatar_id": stream_avatar_id,
+        "sandbox_stream": settings.LIVEAVATAR_USE_SANDBOX,
+    }
 
 
 @app.put("/api/personas/{persona_id}", tags=["Personas"])
@@ -288,25 +382,28 @@ async def create_session(req: CreateSessionRequest):
     la_session_id = ""
     livekit_url = ""
     livekit_client_token = ""
+    stream_avatar_id = None
 
     if settings.LIVEAVATAR_API_KEY:
         # Create LiveAvatar context
         la_context_id = await liveavatar.create_context(
             prompt=system_prompt,
             opening_text=opening_text,
-            display_name=f"{persona_name} @ {company_name}",
+            display_name=f"{persona_name} @ {company_name} {session_id[:8]}",
         )
 
-        # Create session token
+        requested_avatar, stream_voice = _stream_avatar_and_voice(req.persona_id, persona)
         token_data = await liveavatar.create_session_token(
-            avatar_id=persona.avatar_id or settings.LIVEAVATAR_AVATAR_ID or None,
+            avatar_id=requested_avatar,
             context_id=la_context_id,
-            voice_id=persona.voice_id or settings.LIVEAVATAR_VOICE_ID or None,
+            voice_id=stream_voice,
             is_sandbox=settings.LIVEAVATAR_USE_SANDBOX,
         )
 
+        stream_avatar_id = requested_avatar
         if token_data:
             la_session_token = token_data["session_token"]
+            stream_avatar_id = token_data.get("avatar_id") or requested_avatar
 
             # Start session to get LiveKit credentials
             start_data = await liveavatar.start_session(la_session_token)
@@ -338,6 +435,8 @@ async def create_session(req: CreateSessionRequest):
         "la_session_id":        la_session_id,
         "opening_text":         opening_text,
         "mode":                 "liveavatar" if livekit_url else "voice_only",
+        "stream_avatar_id":     stream_avatar_id if livekit_url else None,
+        "sandbox_stream":       settings.LIVEAVATAR_USE_SANDBOX,
     }
 
 

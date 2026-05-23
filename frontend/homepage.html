@@ -3,13 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Rehu.ai | Human Digital Workforce Platform</title>
-<meta name="description" content="Rehu.ai — Deploy AI humans for sales, HR, onboarding, and support. Photorealistic personas, 24/7, in 50+ languages."/>
+<title>Rehu.ai | Your Smartest Rep in the Room</title>
+<meta name="description" content="Rehu.ai deploys your smartest rep on every page ? live sales, HR, support, and healthcare specialists that know your business, 24/7."/>
 <link rel="stylesheet" href="/static/rehu-light.css"/>
-<style>
-.hero-right{animation:float 6s ease-in-out infinite}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-</style>
+<script src="/static/call-experience.js" defer></script>
 </head>
 <body>
 
@@ -20,281 +17,150 @@
     <span>Rehu.ai</span>
   </div>
   <ul class="nav-links">
-    <li><a href="#personas">Personas</a></li>
-    <li><a href="#how">How it works</a></li>
-    <li><a href="#usecases">Use Cases</a></li>
-    <li><a href="#demos">Demo Videos</a></li>
+    <li><a href="#personas">Use Cases</a></li>
+    <li><a href="#demos">Demos</a></li>
     <li><a href="#pricing">Pricing</a></li>
-    <li><a href="#demo">Live Demo</a></li>
+    <li><a href="#demo">Try Live</a></li>
   </ul>
   <div class="nav-cta">
-    <a href="/call" class="btn-ghost">Sign In</a>
-    <a href="/call" class="btn-primary">Start free call</a>
+    <a href="/call" class="btn-primary">Start Conversation</a>
   </div>
 </nav>
 
 <!-- HERO -->
-<div class="hero">
+<div class="hero hero-premium">
   <div class="hero-left animate">
-    <div class="hero-badge"><span class="dot"></span> Human Digital Workforce Platform</div>
-    <h1>Deploy AI Humans<br/>For <span class="gradient">Every Job</span><br/>That Talks</h1>
-    <p class="hero-sub">Photorealistic AI personas for sales demos, HR interviews, onboarding, and support — with a face, a voice, and deep knowledge of your business. Live on your site or in meetings, 24/7, in 50+ languages.</p>
+    <p class="hero-eyebrow">Human Digital Workforce</p>
+    <h1>Your <span class="accent">Smartest Rep</span> in the Room</h1>
+    <p class="hero-lead">Deploy specialists who know your business inside out ? live on your website, answering questions and closing gaps, 24/7.</p>
     <div class="hero-actions">
-      <a href="/call" class="btn-hero btn-hero-primary">Talk to Maya</a>
-      <a href="/call?persona=hr-interviewer" class="btn-hero btn-hero-ghost">Try HR Interview</a>
+      <a href="/call" class="btn-hero btn-hero-primary btn-start">Start Conversation</a>
+      <a href="#personas" class="btn-hero btn-hero-ghost">See use cases</a>
     </div>
-    <div class="hero-trust">
-      <div class="avatars">
-        <span>S</span><span>R</span><span>M</span><span>T</span>
-      </div>
-      <span>Trusted by 500+ businesses worldwide</span>
-    </div>
+    <p class="hero-proof">Live voice &amp; video &middot; Trained on your content &middot; Ready in days</p>
   </div>
-  <div class="hero-right">
-    <div class="avatar-card">
-      <div class="floating-badge badge-live">Live now</div>
-      <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80" alt="Maya — SuperHuman sales specialist"/>
-      <div class="avatar-card-overlay">
-        <div class="avatar-name">Maya · SuperHuman Sales</div>
-        <div class="avatar-status"><span class="live"></span> Available for live conversation</div>
-        <a href="/call" class="card-call-btn">Start conversation with Maya</a>
+  <div class="hero-premium-visual animate">
+    <div class="persona-live-frame" id="hero-persona-frame">
+      <div class="persona-live-glow"></div>
+      <span class="persona-live-badge">Live now</span>
+      <img class="persona-alive-img persona-poster" id="hero-maya-poster" src="" alt="Maya ? sales specialist" loading="eager"/>
+      <video class="persona-live-video" id="hero-maya-video" autoplay playsinline muted></video>
+      <div class="persona-live-caption">
+        <strong>Maya ? Business Consultant</strong>
+        <span>Available for live conversation</span>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- LOGOS -->
-<div class="logos" style="position:relative;z-index:1">
-  <p>Trusted by teams at</p>
-  <div class="logos-row">
-    <span>Salesforce</span>
-    <span>HubSpot</span>
-    <span>Shopify</span>
-    <span>Stripe</span>
-    <span>Notion</span>
-    <span>Figma</span>
   </div>
 </div>
 
 <!-- STATS -->
 <section>
   <div class="stats-row">
-    <div class="stat"><div class="stat-num">3×</div><div class="stat-label">More conversions vs live chat</div></div>
-    <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Always available, never tired</div></div>
-    <div class="stat"><div class="stat-num">&lt;2s</div><div class="stat-label">Average response time</div></div>
-    <div class="stat"><div class="stat-num">50+</div><div class="stat-label">Languages supported</div></div>
+    <div class="stat"><div class="stat-num">3&times;</div><div class="stat-label">More engagement vs text chat</div></div>
+    <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Always on, never off-shift</div></div>
+    <div class="stat"><div class="stat-num">&lt;2s</div><div class="stat-label">Response time</div></div>
+    <div class="stat"><div class="stat-num">80%+</div><div class="stat-label">Gross margin for partners</div></div>
   </div>
-</section>
-
-<!-- SUPERHUMAN PERSONAS -->
-<section id="personas">
-  <div class="section-header center">
-    <div class="section-label">SuperHuman Personas</div>
-    <div class="section-title">Dedicated specialists for every role</div>
-    <p class="section-sub">Each persona has a distinct identity, expertise, and photorealistic presence — built for global enterprise use.</p>
-  </div>
-  <div class="persona-showcase" id="persona-showcase"></div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section id="how">
-  <div class="section-header center">
-    <div class="section-label">How it works</div>
-    <div class="section-title">Live in 3 steps</div>
-    <p class="section-sub">No developers needed. Create, train, and deploy your AI persona in under 10 minutes.</p>
-  </div>
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">01</div>
-      <div class="step-icon-letter">01</div>
-      <h3>Create Your Persona</h3>
-      <p>Choose an avatar, give them a name, personality, and voice. Upload your photo to create a digital twin that looks exactly like you.</p>
-    </div>
-    <div class="step">
-      <div class="step-num">02</div>
-      <div class="step-icon-letter">02</div>
-      <h3>Train on Your Data</h3>
-      <p>Upload PDFs, paste your website URL, or write product knowledge directly. Your AI persona becomes an expert on everything about your business.</p>
-    </div>
-    <div class="step">
-      <div class="step-num">03</div>
-      <div class="step-icon-letter">03</div>
-      <h3>Deploy Everywhere</h3>
-      <p>Embed on your website with one line of code. Or let it join Zoom, Google Meet, and Teams calls as a real meeting participant.</p>
-    </div>
-  </div>
-</section>
-
-<!-- DEMO -->
-<section id="demo">
-  <div class="demo-section">
-    <div class="section-label">Live Demo</div>
-    <h2>Speak with a SuperHuman now</h2>
-    <p>No sign-up required. Start a live voice and video conversation with a photorealistic AI specialist in your browser.</p>
-    <a href="/call" class="btn-hero btn-hero-primary" style="font-size:18px;padding:18px 48px">
-      Start free conversation
-    </a>
-    <div class="demo-meta">
-      <span>No account required</span>
-      <span>Works in your browser</span>
-      <span>Real-time voice &amp; video</span>
-      <span>Sandbox — no credits used</span>
-    </div>
-  </div>
-</section>
-
-<!-- DEMO VIDEOS -->
-<section id="demos">
-  <div class="section-header center">
-    <div class="section-label">Demo Videos</div>
-    <div class="section-title">Watch a demo. Or talk live.</div>
-    <p class="section-sub">See how each AI persona works — then start a free live conversation in your browser.</p>
-  </div>
-  <div class="demo-videos-grid" id="demo-cards-row"></div>
 </section>
 
 <!-- USE CASES -->
-<section id="usecases">
+<section id="personas" class="usecase-value-section">
   <div class="section-header center">
     <div class="section-label">Use Cases</div>
-    <div class="section-title">Built for global teams</div>
-    <p class="section-sub">Explore each solution or start a live session with the specialist assigned to that role.</p>
+    <div class="section-title">One platform. Every role.</div>
+    <p class="section-sub">Each specialist saves real money ? and pays for itself fast.</p>
   </div>
-  <div class="usecases-grid" id="usecases-grid"></div>
+  <div class="usecase-value-grid" id="usecase-value-grid"></div>
 </section>
 
-<!-- FEATURES -->
-<section>
+<!-- LIVE DEMO -->
+<section id="demo">
+  <div class="demo-section">
+    <div class="section-label">Try It</div>
+    <h2>Talk to a specialist now</h2>
+    <p>No sign-up. Start a live conversation in your browser.</p>
+    <a href="/call" class="btn-hero btn-hero-primary" style="font-size:18px;padding:18px 48px">Start Conversation</a>
+    <div class="demo-meta">
+      <span>No account required</span>
+      <span>Works in your browser</span>
+      <span>Live voice &amp; video</span>
+    </div>
+  </div>
+</section>
+
+<!-- DEMOS -->
+<section id="demos">
   <div class="section-header center">
-    <div class="section-label">Platform Features</div>
-    <div class="section-title">Everything you need to sound human</div>
+    <div class="section-label">Specialists</div>
+    <div class="section-title">Pick a role. Start talking.</div>
   </div>
-  <div class="features-grid">
-    <div class="feature">
-      <div class="feature-icon"><span class="step-icon-letter">AV</span></div>
-      <h3>Photorealistic Avatars</h3>
-      <p>Real-time lip-sync, facial expressions, and eye contact powered by HeyGen's LiveAvatar engine.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon"><span class="step-icon-letter">VO</span></div>
-      <h3>Natural Voice</h3>
-      <p>ElevenLabs neural voices with &lt;300ms latency. Supports interruptions mid-sentence, just like a real call.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon"><span class="step-icon-letter">KB</span></div>
-      <h3>Deep Product Knowledge</h3>
-      <p>Train on your PDFs, website, and docs. Your AI persona knows your product better than most new hires.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon"><span class="step-icon-letter">GL</span></div>
-      <h3>50+ Languages</h3>
-      <p>Auto-detects visitor language and responds naturally. Reach global customers without translators.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon"><span class="step-icon-letter">AN</span></div>
-      <h3>Conversation Analytics</h3>
-      <p>Full transcripts, call recordings, drop-off analysis, and sentiment scoring — all in one dashboard.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon"><span class="step-icon-letter">EM</span></div>
-      <h3>One-line Embed</h3>
-      <p>Paste a single script tag into any website. Works on Webflow, WordPress, Shopify, custom HTML — everything.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon"><span class="step-icon-letter">TM</span></div>
-      <h3>Solution Templates</h3>
-      <p>Pre-built HR, onboarding, support, and sales personas — deploy a vertical in minutes from Admin.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon"><span class="step-icon-letter">MT</span></div>
-      <h3>Meeting Join (Enterprise)</h3>
-      <p>Zoom, Google Meet, and Teams — your AI joins as a video participant for demos and interviews.</p>
-    </div>
-  </div>
+  <div class="demo-videos-grid" id="demo-cards-row"></div>
 </section>
 
 <!-- PRICING -->
 <section id="pricing">
   <div class="section-header center">
     <div class="section-label">Pricing</div>
-    <div class="section-title">Start free. Scale as you grow.</div>
-    <p class="section-sub">No hidden fees. Cancel anytime.</p>
-  </div>
-  <div class="pricing-toggle">
-    <span>Monthly</span>
-    <div class="toggle" id="pricingToggle" onclick="togglePricing()"></div>
-    <span>Annual</span>
-    <span class="save-badge">Save 30%</span>
+    <div class="section-title">Simple plans. Real ROI.</div>
+    <p class="section-sub">Less than half the cost of one junior hire. Setup fee applies on Professional and above.</p>
   </div>
   <div class="pricing-grid">
     <div class="plan">
-      <div class="plan-name">Starter</div>
-      <div class="plan-price" data-m="49" data-y="34">$49<span>/mo</span></div>
-      <div class="plan-period">Billed monthly</div>
-      <div class="plan-desc">Perfect for freelancers and small businesses testing AI personas.</div>
+      <div class="plan-name">Pilot</div>
+      <div class="plan-price">$997<span>/mo</span></div>
+      <div class="plan-period">30-day proof of value</div>
+      <div class="plan-desc">Test on your staging site before you commit.</div>
       <ul class="plan-features">
-        <li>1 AI Persona</li>
-        <li>100 conversation minutes/mo</li>
-        <li>Sandbox avatar (Wayne)</li>
-        <li>Knowledge base (5 docs)</li>
-        <li>Website embed widget</li>
-        <li class="no">CRM integration</li>
-        <li class="no">Custom avatar photo</li>
-        <li class="no">White-label</li>
+        <li>1 specialist</li>
+        <li>200 conversation minutes</li>
+        <li>Knowledge upload included</li>
+        <li>Staging embed</li>
+        <li class="no">Production avatar</li>
       </ul>
-      <a href="/call" class="plan-btn plan-btn-outline">Start Free Trial</a>
+      <a href="mailto:info@sspmconsultants.com?subject=Rehu%20Pilot" class="plan-btn plan-btn-outline">Book Pilot</a>
     </div>
     <div class="plan featured">
       <div class="plan-badge">Most Popular</div>
-      <div class="plan-name">Growth</div>
-      <div class="plan-price" data-m="199" data-y="139">$199<span>/mo</span></div>
-      <div class="plan-period">Billed monthly</div>
-      <div class="plan-desc">For growing teams that need real conversion power.</div>
+      <div class="plan-name">Professional</div>
+      <div class="plan-price">$1,999<span>/mo</span></div>
+      <div class="plan-period">+ $2,500 setup</div>
+      <div class="plan-desc">One production specialist on your website.</div>
       <ul class="plan-features">
-        <li>5 AI Personas</li>
-        <li>500 conversation minutes/mo</li>
-        <li>Custom avatar upload</li>
+        <li>1 production specialist</li>
+        <li>500 minutes/month</li>
+        <li>Website embed widget</li>
         <li>Unlimited knowledge base</li>
-        <li>CRM integration (HubSpot / Salesforce)</li>
-        <li>Meeting booking (Calendly)</li>
-        <li>Analytics dashboard</li>
-        <li class="no">White-label</li>
+        <li>Email support</li>
       </ul>
-      <a href="/call" class="plan-btn plan-btn-fill">Get Started</a>
+      <a href="mailto:info@sspmconsultants.com?subject=Rehu%20Professional" class="plan-btn plan-btn-fill">Get Started</a>
     </div>
     <div class="plan">
-      <div class="plan-name">Scale</div>
-      <div class="plan-price" data-m="499" data-y="349">$499<span>/mo</span></div>
-      <div class="plan-period">Billed monthly</div>
-      <div class="plan-desc">For agencies and enterprises deploying across multiple clients.</div>
+      <div class="plan-name">Business</div>
+      <div class="plan-price">$3,499<span>/mo</span></div>
+      <div class="plan-period">+ $5,000 setup</div>
+      <div class="plan-desc">Sales, HR, and support ? three roles, one platform.</div>
       <ul class="plan-features">
-        <li>Unlimited Personas</li>
-        <li>2,000 conversation minutes/mo</li>
-        <li>White-label (your own brand)</li>
-        <li>API + Developer SDK</li>
-        <li>Zoom / Teams / Meet join</li>
-        <li>50+ languages</li>
-        <li>Priority support</li>
+        <li>Up to 3 specialists</li>
+        <li>2,000 minutes/month</li>
         <li>Custom domain</li>
+        <li>Priority support</li>
+        <li>Monthly optimization call</li>
       </ul>
-      <a href="/call" class="plan-btn plan-btn-outline">Start Free Trial</a>
+      <a href="mailto:info@sspmconsultants.com?subject=Rehu%20Business" class="plan-btn plan-btn-outline">Contact Sales</a>
     </div>
     <div class="plan">
       <div class="plan-name">Enterprise</div>
       <div class="plan-price">Custom</div>
-      <div class="plan-period">Contact us</div>
-      <div class="plan-desc">Dedicated infrastructure, SLAs, and bespoke development for large organisations.</div>
+      <div class="plan-period">Annual contracts</div>
+      <div class="plan-desc">Dedicated infrastructure, SLAs, and compliance for large teams.</div>
       <ul class="plan-features">
-        <li>Unlimited everything</li>
-        <li>Dedicated cloud infrastructure</li>
-        <li>99.9% uptime SLA</li>
+        <li>Unlimited specialists</li>
+        <li>Dedicated instance</li>
         <li>SSO / SAML</li>
-        <li>HIPAA / GDPR compliance</li>
-        <li>Custom LLM fine-tuning</li>
-        <li>Dedicated account manager</li>
-        <li>On-premise deployment option</li>
+        <li>HIPAA / GDPR review</li>
+        <li>On-premise option</li>
       </ul>
-      <a href="mailto:info@sspmconsultants.com" class="plan-btn plan-btn-outline">Contact Sales</a>
+      <a href="mailto:info@sspmconsultants.com?subject=Rehu%20Enterprise" class="plan-btn plan-btn-outline">Contact Sales</a>
     </div>
   </div>
 </section>
@@ -302,29 +168,29 @@
 <!-- TESTIMONIALS -->
 <section>
   <div class="section-header center">
-    <div class="section-label">Testimonials</div>
-    <div class="section-title">Companies love Rehu.ai</div>
+    <div class="section-label">Results</div>
+    <div class="section-title">Teams that switched</div>
   </div>
   <div class="testimonials-grid">
     <div class="testimonial">
-      <div class="stars">★★★★★</div>
-      <q>We deployed Maya on our pricing page and conversion jumped 3x in the first week. Customers actually enjoy talking to her — she knows our product better than some of our sales reps.</q>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <q>We put Maya on our pricing page and conversion jumped 3&times; in the first week. She knows our product better than some of our reps.</q>
       <div class="testi-author">
         <div class="testi-avatar">SR</div>
         <div><div class="testi-name">Sarah Rahman</div><div class="testi-role">Head of Sales, TechFlow</div></div>
       </div>
     </div>
     <div class="testimonial">
-      <div class="stars">★★★★★</div>
-      <q>Our support ticket volume dropped 68% in 30 days. The AI handles everything from billing questions to technical troubleshooting. It's uncanny how human she sounds.</q>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <q>Support tickets dropped 68% in 30 days. Riley handles billing and how-to before our team ever sees the ticket.</q>
       <div class="testi-author">
         <div class="testi-avatar">MK</div>
         <div><div class="testi-name">Marcus Kim</div><div class="testi-role">CTO, Launchpad SaaS</div></div>
       </div>
     </div>
     <div class="testimonial">
-      <div class="stars">★★★★★</div>
-      <q>We white-labelled it for 12 of our real estate clients in 2 weeks. Each one has a different persona, different property knowledge, and our agency earns recurring revenue on every seat.</q>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <q>We rolled this out to 12 clients in two weeks. Each gets their own specialist and we earn recurring revenue on every seat.</q>
       <div class="testi-author">
         <div class="testi-avatar">JT</div>
         <div><div class="testi-name">James Thornton</div><div class="testi-role">CEO, PropTech Agency</div></div>
@@ -336,16 +202,14 @@
 <!-- FINAL CTA -->
 <section style="padding-bottom:80px">
   <div class="demo-section">
-    <div class="section-label">Get Started Today</div>
-    <h2>Your SuperHuman workforce is ready.</h2>
-    <p>Deploy photorealistic AI specialists for sales, HR, healthcare, and product demos — available 24/7 worldwide.</p>
-    <a href="/call" class="btn-hero btn-hero-primary" style="font-size:18px;padding:18px 48px">
-      Start free conversation
-    </a>
+    <div class="section-label">Get Started</div>
+    <h2>Your smartest rep is ready.</h2>
+    <p>Deploy on your website in days ? trained on your business, live around the clock.</p>
+    <a href="/call" class="btn-hero btn-hero-primary" style="font-size:18px;padding:18px 48px">Start Conversation</a>
     <div class="demo-meta">
-      <span>Free 14-day trial</span>
-      <span>No card required</span>
-      <span>Live in under 10 minutes</span>
+      <span>Pilot from $997/mo</span>
+      <span>Setup in days</span>
+      <span>Cancel after pilot</span>
     </div>
   </div>
 </section>
@@ -355,54 +219,36 @@
   <div class="footer-inner">
     <div class="footer-brand">
       <div class="nav-logo" style="font-size:18px"><span class="logo-dot"></span><span>Rehu.ai</span></div>
-      <p>Human Digital Workforce Platform — deploy photorealistic AI for sales, HR, onboarding, and support. Live on your website or in meetings, in 50+ languages, 24/7.</p>
+      <p>Your smartest rep in the room ? live on your website for sales, HR, support, and healthcare.</p>
     </div>
     <div class="footer-col">
       <h4>Product</h4>
-      <a href="#how">How it Works</a>
-      <a href="#personas">Personas</a>
-      <a href="#usecases">Use Cases</a>
+      <a href="#personas">Use Cases</a>
       <a href="#pricing">Pricing</a>
-      <a href="/admin">Admin Panel</a>
+      <a href="/call">Live Demo</a>
+      <a href="/admin">Admin</a>
     </div>
     <div class="footer-col">
       <h4>Solutions</h4>
-      <a href="/solutions/hr-interviews">HR Interviews</a>
-      <a href="/solutions/onboarding">Onboarding</a>
-      <a href="/solutions/healthcare">Healthcare</a>
-      <a href="/solutions/sales-demo">Sales</a>
-      <a href="/solutions/product-demo">Product Demo</a>
-      <a href="/solutions/meeting-assistant">Zoom / Teams</a>
+      <a href="/call?persona=hr-interviewer">HR</a>
+      <a href="/call?persona=healthcare-guide">Healthcare</a>
+      <a href="/call">Sales</a>
+      <a href="/call?persona=support-agent">Support</a>
+      <a href="/call?persona=product-demo">Product Demo</a>
     </div>
     <div class="footer-col">
       <h4>Company</h4>
-      <a href="mailto:info@sspmconsultants.com">Contact Us</a>
-      <a href="#">Privacy Policy</a>
-      <a href="#">Terms of Service</a>
-      <a href="https://app.liveavatar.com" target="_blank">Powered by HeyGen</a>
+      <a href="mailto:info@sspmconsultants.com">Contact</a>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2026 Rehu.ai — SSPM Consultants. All rights reserved.</span>
-    <span>Powered by LiveAvatar, OpenAI, and ElevenLabs</span>
+    <span>&copy; 2026 Rehu.ai &mdash; SSPM Consultants</span>
   </div>
 </footer>
 
 <script>
-let yearly = false;
-function togglePricing(){
-  yearly = !yearly;
-  document.getElementById('pricingToggle').classList.toggle('yearly', yearly);
-  document.querySelectorAll('.plan-price[data-m]').forEach(el => {
-    const price = yearly ? el.dataset.y : el.dataset.m;
-    el.innerHTML = `$${price}<span>/mo</span>`;
-  });
-  document.querySelectorAll('.plan-period').forEach((el, i) => {
-    if (i < 3) el.textContent = yearly ? 'Billed annually' : 'Billed monthly';
-  });
-}
-
-// Smooth scroll for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
     const target = document.querySelector(a.getAttribute('href'));
@@ -410,26 +256,24 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
   });
 });
 
-// Animate on scroll
 const obs = new IntersectionObserver(entries => {
   entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('animate'); });
 }, {threshold: 0.1});
-document.querySelectorAll('.step, .usecase, .feature, .plan, .testimonial, .stat, .persona-card-pro').forEach(el => obs.observe(el));
+document.querySelectorAll('.usecase-value-card, .plan, .testimonial, .stat, .demo-card').forEach(el => obs.observe(el));
 
-const SHOWCASE_SLUGS = ['hr-interviews', 'sales-demo', 'healthcare', 'product-demo'];
+const VALUE_SLUGS = ['sales-demo', 'hr-interviews', 'healthcare', 'customer-support', 'product-demo', 'onboarding'];
 
 async function loadHomePersonas() {
-  const grid = document.getElementById('persona-showcase');
+  const grid = document.getElementById('usecase-value-grid');
   const demos = document.getElementById('demo-cards-row');
-  const usecases = document.getElementById('usecases-grid');
   if (!grid) return;
   try {
     const { solutions } = await fetch('/api/solutions').then(r => r.json());
     const map = Object.fromEntries((solutions || []).map(s => [s.slug, s]));
     const previews = await Promise.all(
-      SHOWCASE_SLUGS.map(async slug => {
+      VALUE_SLUGS.map(async slug => {
         const s = map[slug];
-        if (!s) return null;
+        if (!s || s.coming_soon) return null;
         let img = '';
         try {
           const ex = await fetch(`/api/personas/${s.persona_id}/experience`).then(r => r.json());
@@ -438,31 +282,31 @@ async function loadHomePersonas() {
         return { ...s, preview_url: img };
       })
     );
-    grid.innerHTML = previews.filter(Boolean).map(s => personaCardHtml(s)).join('');
-
-    const all = (solutions || []).filter(s => !s.coming_soon);
+    grid.innerHTML = previews.filter(Boolean).map(s => useCaseValueHtml(s)).join('');
     if (demos) {
       demos.innerHTML = previews.filter(Boolean).map(s => demoCardHtml(s)).join('');
     }
-    if (usecases) {
-      usecases.innerHTML = all.map(s => usecaseHtml(s)).join('');
-    }
   } catch (e) {
-    grid.innerHTML = '<p style="color:var(--muted);text-align:center">Personas load when the server is running.</p>';
+    grid.innerHTML = '<p style="color:var(--muted);text-align:center">Use cases load when the server is running.</p>';
   }
 }
 
-function personaCardHtml(s) {
+function useCaseValueHtml(s) {
   const img = s.preview_url || '';
-  return `<a href="${s.try_url}" class="persona-card-pro">
-    <div class="persona-card-photo">${img ? `<img src="${img}" alt="${s.persona_name}" loading="lazy"/>` : ''}</div>
-    <div class="persona-card-body">
-      <div class="persona-card-role">${esc(s.title)}</div>
-      <div class="persona-card-name">${esc(s.persona_name)}</div>
-      <p class="persona-card-desc">${esc(s.tagline)}</p>
-      <span class="persona-card-cta">Start live session</span>
+  const benefits = (s.benefits || []).slice(0, 3);
+  const save = s.cost_saving ? `<div class="uv-save">${esc(s.cost_saving)}</div>` : '';
+  return `<article class="usecase-value-card">
+    <div class="uv-visual">${img ? `<img src="${img}" alt="${esc(s.persona_name)}" loading="lazy"/>` : ''}<span class="uv-live">Live specialist</span></div>
+    <div class="uv-body">
+      <div class="uv-category">${esc(s.category || 'Enterprise')}</div>
+      <h3>${esc(s.title)}</h3>
+      <p class="uv-intro">${esc(s.tagline)}</p>
+      ${save}
+      <div class="uv-roi"><span class="uv-roi-val">${esc(s.roi_value || '')}</span><span class="uv-roi-lbl">${esc(s.roi_label || 'Impact')}</span></div>
+      <ul class="uv-benefits">${benefits.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
+      <a href="${s.try_url}" class="uv-cta">Talk to ${esc(s.persona_name)}</a>
     </div>
-  </a>`;
+  </article>`;
 }
 
 function demoCardHtml(s) {
@@ -471,19 +315,10 @@ function demoCardHtml(s) {
     <div class="demo-thumb-photo">${img ? `<img src="${img}" alt="" loading="lazy"/>` : ''}</div>
     <div class="demo-card-body">
       <h3>${esc(s.title)}</h3>
-      <p>Speak with ${esc(s.persona_name)} in a live interactive session.</p>
-      <a href="${s.try_url}">Start live session</a>
+      <p>Speak with ${esc(s.persona_name)} live.</p>
+      <a href="${s.try_url}">Start session</a>
     </div>
   </div>`;
-}
-
-function usecaseHtml(s) {
-  return `<a href="/solutions/${s.slug}" class="usecase">
-    <div class="uc-icon">${esc((s.persona_name || 'AI')[0])}</div>
-    <h3>${esc(s.title)}</h3>
-    <p>${esc(s.tagline)}</p>
-    <span class="usecase-tag">Meet ${esc(s.persona_name)}</span>
-  </a>`;
 }
 
 function esc(t) {
@@ -493,6 +328,14 @@ function esc(t) {
 }
 
 loadHomePersonas();
+window.addEventListener('load', async () => {
+  if (window.RehuCall) RehuCall.initAlivePersona('#hero-persona-frame');
+  try {
+    const ex = await fetch('/api/personas/default/experience').then(r => r.json());
+    const poster = document.getElementById('hero-maya-poster');
+    if (poster && ex.preview_url) poster.src = ex.preview_url;
+  } catch (e) {}
+});
 </script>
 </body>
 </html>

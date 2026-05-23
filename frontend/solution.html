@@ -33,7 +33,7 @@ async function load() {
     document.title = `${sol.title} — Rehu.ai`;
     const tryBtn = sol.coming_soon
       ? `<span class="btn-hero btn-hero-ghost" style="opacity:.65;cursor:not-allowed">Coming soon — Scale plan</span>`
-      : `<a href="${sol.try_url}" class="btn-hero btn-hero-primary">Try ${sol.persona_name} live</a>`;
+      : `<a href="${sol.try_url}" class="btn-hero btn-hero-primary">Start Conversation</a>`;
     app.className = 'sol-page';
     app.innerHTML = `
       <div class="sol-badge ${sol.coming_soon ? 'soon' : ''}">${sol.coming_soon ? 'Coming soon' : sol.category}</div>
