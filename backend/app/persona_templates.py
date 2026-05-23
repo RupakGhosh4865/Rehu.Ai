@@ -52,6 +52,8 @@ class SolutionTemplate:
         )
 
     def to_api_dict(self) -> dict:
+        from . import persona_experience
+        exp = persona_experience.get_experience(self.persona_id, self.persona_name)
         return {
             "slug": self.slug,
             "title": self.title,
@@ -60,6 +62,7 @@ class SolutionTemplate:
             "category": self.category,
             "persona_id": self.persona_id,
             "persona_name": self.persona_name,
+            "role_title": exp["role_title"],
             "benefits": self.benefits,
             "roi_label": self.roi_label,
             "roi_value": self.roi_value,
@@ -88,7 +91,7 @@ _register(SolutionTemplate(
     slug="sales-demo",
     title="Sales Demo Agent",
     tagline="Demo your product to every lead, 24/7 — qualify interest and book meetings automatically.",
-    icon="💼",
+    icon="sales",
     category="Revenue",
     persona_id="default",
     persona_name="Maya",
@@ -97,7 +100,9 @@ _register(SolutionTemplate(
     system_prompt=(
         "You are Maya, a top-performing sales executive representing the visitor's company. "
         "You know every product, feature, price, and competitor angle. "
-        "Your job: deliver a compelling live demo, answer objections, and guide toward a meeting or trial. "
+        "Your job: deliver a compelling live demo, answer objections, qualify leads, and capture name, email, "
+        "company, and intent — then confirm data will be logged to Smartsheet for the sales team. "
+        "Ask discovery questions before pitching. Guide toward a meeting or trial. "
         + _COMMON_RULES
     ),
     opening_fallback="Hi! I'm Maya — I'll walk you through what we offer and answer anything. What brought you here today?",
@@ -118,7 +123,7 @@ _register(SolutionTemplate(
     slug="hr-interviews",
     title="AI Interview Screening",
     tagline="Run consistent first-round interviews 24/7 — HR joins only qualified candidates.",
-    icon="👔",
+    icon="hr",
     category="People",
     persona_id="hr-interviewer",
     persona_name="Alex",
@@ -155,7 +160,7 @@ _register(SolutionTemplate(
     slug="onboarding",
     title="Employee Onboarding Guide",
     tagline="Day-one buddy that knows your handbook, tools, and policies — in any language.",
-    icon="🚀",
+    icon="onboard",
     category="People",
     persona_id="onboarding-guide",
     persona_name="Sam",
@@ -189,7 +194,7 @@ _register(SolutionTemplate(
     slug="human-chatbot",
     title="Human Chatbot Replacement",
     tagline="Replace text widgets with a face and voice customers actually trust.",
-    icon="💬",
+    icon="chat",
     category="Revenue",
     persona_id="human-chatbot",
     persona_name="Jordan",
@@ -223,7 +228,7 @@ _register(SolutionTemplate(
     slug="customer-support",
     title="Customer Support Agent",
     tagline="Tier-1 support with a face — empathetic, knowledgeable, always on.",
-    icon="🎧",
+    icon="support",
     category="Operations",
     persona_id="support-agent",
     persona_name="Riley",
@@ -250,24 +255,56 @@ _register(SolutionTemplate(
 # ── Demo videos / async demos ───────────────────────────────────────────────────
 
 _register(SolutionTemplate(
-    slug="demo-videos",
-    title="Live & Recorded Product Demos",
-    tagline="Watch a demo clip or talk live — your product explained by a human face, not slides.",
-    icon="🎬",
+    slug="product-demo",
+    title="Interactive Product Demo",
+    tagline="SuperHuman AI walks prospects through your product live — explains features, answers questions, and adapts to each visitor.",
+    icon="demo",
     category="Revenue",
-    persona_id="demo-host",
-    persona_name="Riley",
+    persona_id="product-demo",
+    persona_name="Casey",
     company_name="your company",
     tone=PersonaTone.professional,
     system_prompt=(
-        "You are Riley, a product demo specialist hosting live walkthroughs. "
+        "You are Casey, a product demo specialist hosting interactive live presentations. "
+        "Structure every demo: problem → solution → three key features → proof → next step. "
+        "Pause for questions; adapt depth to technical or business audiences. "
+        "Use clear transitions: 'Let me show you…' and 'The reason teams choose this is…' "
+        + _COMMON_RULES
+    ),
+    opening_fallback=(
+        "Welcome — I'm Casey, your product demo specialist. I'll walk you through how this works "
+        "and the outcomes customers see. Interrupt me anytime with questions."
+    ),
+    benefits=[
+        "Interactive live demos on your website",
+        "Adapts depth to technical or executive audiences",
+        "Personalized from your product knowledge base",
+        "Record sessions for sales follow-up",
+    ],
+    roi_label="Demo coverage",
+    roi_value="100% of traffic",
+    knowledge_query="product demo features walkthrough benefits use cases",
+))
+
+_register(SolutionTemplate(
+    slug="demo-videos",
+    title="Live & Recorded Product Demos",
+    tagline="Watch a demo clip or talk live — your product explained by a SuperHuman, not slides.",
+    icon="demo",
+    category="Revenue",
+    persona_id="product-demo",
+    persona_name="Casey",
+    company_name="your company",
+    tone=PersonaTone.professional,
+    system_prompt=(
+        "You are Casey, a product demo specialist hosting live walkthroughs. "
         "Structure demos: problem → solution → 3 key features → social proof → CTA. "
         "Pause for questions; adapt depth to the visitor's technical level. "
         + _COMMON_RULES
     ),
     opening_fallback=(
-        "Welcome! I'm Riley — I'll give you a quick tour of what we do and the features customers love most. "
-        "Jump in anytime with questions."
+        "Welcome — I'm Casey. I'll give you a concise tour of what we offer and what customers value most. "
+        "Ask anything as we go."
     ),
     benefits=[
         "Live interactive demos on your site",
@@ -280,13 +317,48 @@ _register(SolutionTemplate(
     knowledge_query="product demo features walkthrough benefits use cases",
 ))
 
+# ── Healthcare ──────────────────────────────────────────────────────────────────
+
+_register(SolutionTemplate(
+    slug="healthcare",
+    title="Healthcare Patient Guide",
+    tagline="Explains services clearly, guides patients step-by-step, and asks thoughtful follow-up questions.",
+    icon="health",
+    category="Healthcare",
+    persona_id="healthcare-guide",
+    persona_name="Elena",
+    company_name="your practice",
+    tone=PersonaTone.friendly,
+    system_prompt=(
+        "You are Elena, a calm and empathetic healthcare patient guide for a clinic or health system. "
+        "Explain services, preparation steps, insurance basics, and what to expect — in plain language. "
+        "Ask relevant follow-up questions one at a time (symptoms, urgency, preferred appointment type). "
+        "Never diagnose or prescribe. For emergencies, direct callers to emergency services immediately. "
+        "Remind that final clinical decisions are made by licensed providers. "
+        + _COMMON_RULES
+    ),
+    opening_fallback=(
+        "Hello, I'm Elena from the care team. I'm here to explain our services, answer your questions, "
+        "and help you understand the right next step. How can I help you today?"
+    ),
+    benefits=[
+        "24/7 patient education and navigation",
+        "Consistent, empathetic explanations",
+        "Structured follow-up questions",
+        "Reduces front-desk call volume",
+    ],
+    roi_label="Call deflection",
+    roi_value="35–45%",
+    knowledge_query="healthcare services appointments insurance patient FAQ procedures",
+))
+
 # ── Zoom / meetings (roadmap) ───────────────────────────────────────────────────
 
 _register(SolutionTemplate(
     slug="meeting-assistant",
     title="Zoom & Teams Meeting Join",
     tagline="Your AI joins calls as a video participant — demos, support, or interview panels.",
-    icon="📹",
+    icon="meet",
     category="Enterprise",
     persona_id="meeting-assistant",
     persona_name="Taylor",

@@ -16,7 +16,8 @@
     <div class="brand"><strong>Rehu.ai</strong> · Live conversation</div>
     <div class="status-badge hidden" id="status-badge"></div>
 
-    <h1 class="headline">Meet <span id="disp-name">Maya</span>,<br>Your AI Expert</h1>
+    <h1 class="headline">Meet <span id="disp-name">Maya</span></h1>
+    <p class="headline-role" id="disp-role">Sales &amp; Product Specialist</p>
     <p class="sub" id="disp-sub">Always on. Knows your product inside out. Demos live, answers every question, and qualifies leads — like your best rep, 24/7.</p>
 
     <!-- CALL BUTTON -->
@@ -30,65 +31,24 @@
     </button>
 
     <div class="feature-row">
-      <div class="fpill">🎙 Real-time voice</div>
-      <div class="fpill">🧠 Product expert</div>
-      <div class="fpill">⚡ 60-sec auto-demo</div>
+      <div class="fpill">Real-time voice</div>
+      <div class="fpill">Product expert</div>
+      <div class="fpill">Live video persona</div>
     </div>
     <div class="l-links">
-      <a href="/">← Home</a>
-      <a href="#" onclick="openCatalog();return false">⚙ Configure knowledge</a>
-      <a href="/admin">Admin panel</a>
+      <a href="/">Home</a>
+      <a href="#" onclick="openCatalog();return false">Configure knowledge</a>
+      <a href="/admin">Admin</a>
     </div>
   </div>
 
   <div class="l-right">
     <div class="av-frame">
-      <div class="av-ph" id="av-ph">
-        <svg viewBox="0 0 400 560" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="bg1" cx="60%" cy="40%" r="70%"><stop offset="0%" stop-color="#2a2035"/><stop offset="100%" stop-color="#0d0d12"/></radialGradient>
-            <linearGradient id="sk" x1="0%" y1="0%" x2="30%" y2="100%"><stop offset="0%" stop-color="#f0c9a0"/><stop offset="50%" stop-color="#e8b88a"/><stop offset="100%" stop-color="#d4a070"/></linearGradient>
-            <radialGradient id="sksh" cx="50%" cy="60%" r="55%"><stop offset="0%" stop-color="#c89060" stop-opacity="0"/><stop offset="100%" stop-color="#a06838" stop-opacity="0.45"/></radialGradient>
-            <linearGradient id="hr" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#4a2c14"/><stop offset="30%" stop-color="#3a2010"/><stop offset="60%" stop-color="#5c3820"/><stop offset="100%" stop-color="#2a1808"/></linearGradient>
-            <radialGradient id="ir" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#8b6040"/><stop offset="40%" stop-color="#6b4828"/><stop offset="100%" stop-color="#3d2810"/></radialGradient>
-            <linearGradient id="jk" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a2a"/><stop offset="100%" stop-color="#0a0a14"/></linearGradient>
-            <linearGradient id="sr" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#e8e0d4"/><stop offset="100%" stop-color="#c8c0b4"/></linearGradient>
-            <filter id="bl"><feGaussianBlur stdDeviation="8"/></filter>
-          </defs>
-          <rect width="400" height="560" fill="url(#bg1)"/>
-          <circle cx="320" cy="80" r="60" fill="#3a2850" opacity=".5" filter="url(#bl)"/>
-          <circle cx="60" cy="180" r="45" fill="#1e1830" opacity=".6" filter="url(#bl)"/>
-          <path d="M 40 560 L 40 420 Q 80 370 120 350 L 155 335 L 200 560 Z" fill="url(#jk)"/>
-          <path d="M 360 560 L 360 420 Q 320 370 280 350 L 245 335 L 200 560 Z" fill="url(#jk)"/>
-          <path d="M 175 350 Q 190 340 200 340 Q 210 340 225 350 L 215 410 L 200 430 L 185 410 Z" fill="url(#sr)" opacity=".9"/>
-          <ellipse cx="200" cy="195" rx="90" ry="108" fill="url(#sk)"/>
-          <ellipse cx="200" cy="195" rx="90" ry="108" fill="url(#sksh)"/>
-          <ellipse cx="200" cy="168" rx="96" ry="80" fill="url(#hr)"/>
-          <path d="M 110 168 Q 108 100 130 75 Q 155 55 200 52 Q 245 55 270 75 Q 292 100 290 168 Z" fill="url(#hr)"/>
-          <path d="M 111 195 Q 108 240 112 285 Q 114 310 118 330" stroke="#3a2010" stroke-width="18" fill="none" opacity=".85" stroke-linecap="round"/>
-          <path d="M 289 195 Q 292 240 288 285 Q 286 310 282 330" stroke="#3a2010" stroke-width="18" fill="none" opacity=".85" stroke-linecap="round"/>
-          <ellipse cx="112" cy="210" rx="12" ry="16" fill="#d8a070"/>
-          <ellipse cx="288" cy="210" rx="12" ry="16" fill="#d8a070"/>
-          <path d="M 148 158 Q 162 152 178 155" stroke="#3a2010" stroke-width="4" fill="none" stroke-linecap="round" opacity=".9"/>
-          <path d="M 222 155 Q 238 152 252 158" stroke="#3a2010" stroke-width="4" fill="none" stroke-linecap="round" opacity=".9"/>
-          <path d="M 143 186 Q 152 178 163 178 Q 174 178 183 186 Q 174 196 163 196 Q 152 196 143 186 Z" fill="#f4f0ec"/>
-          <circle cx="163" cy="186" r="10" fill="url(#ir)"/>
-          <circle cx="163" cy="186" r="5" fill="#1a0e08"/>
-          <circle cx="159" cy="182" r="2.5" fill="white" opacity=".9"/>
-          <path d="M 143 186 Q 152 177 163 177 Q 174 177 183 186" stroke="#2a1808" stroke-width="1.8" fill="none" opacity=".8"/>
-          <path d="M 217 186 Q 226 178 237 178 Q 248 178 257 186 Q 248 196 237 196 Q 226 196 217 186 Z" fill="#f4f0ec"/>
-          <circle cx="237" cy="186" r="10" fill="url(#ir)"/>
-          <circle cx="237" cy="186" r="5" fill="#1a0e08"/>
-          <circle cx="233" cy="182" r="2.5" fill="white" opacity=".9"/>
-          <path d="M 217 186 Q 226 177 237 177 Q 248 177 257 186" stroke="#2a1808" stroke-width="1.8" fill="none" opacity=".8"/>
-          <path d="M 176 252 Q 186 248 193 250 Q 200 248 207 250 Q 214 248 224 252 Q 214 256 207 255 Q 200 256 193 255 Q 186 256 176 252 Z" fill="#cc7878"/>
-          <path d="M 176 252 Q 186 256 200 264 Q 214 256 224 252 Q 212 270 200 272 Q 188 270 176 252 Z" fill="#e09090"/>
-        </svg>
-      </div>
-      <img id="hero-img" src="" alt=""/>
+      <div class="av-skeleton" id="av-skeleton"></div>
+      <img id="hero-img" src="" alt="" loading="eager"/>
       <div class="av-label">
         <div class="av-dot"></div>
-        <div><div class="av-nm" id="av-nm">Maya</div><div class="av-st">AI Expert · Available Now</div></div>
+        <div><div class="av-nm" id="av-nm">Maya</div><div class="av-st" id="av-st">SuperHuman Specialist · Available</div></div>
       </div>
     </div>
   </div>
@@ -140,12 +100,26 @@
   </div>
 </div>
 
-<!-- Loading overlay -->
-<div id="overlay">
-  <div class="spinner"></div>
-  <div class="ov-txt" id="ov-txt">Connecting…</div>
-  <div class="ov-sub" id="ov-sub">Preparing your call</div>
+<!-- Immersive connect experience -->
+<div id="connect-overlay" aria-live="polite">
+  <div class="connect-card">
+    <div class="connect-photo-wrap">
+      <div class="connect-photo-ring"></div>
+      <img id="connect-photo" src="" alt=""/>
+    </div>
+    <div class="connect-progress"><div class="connect-progress-bar"></div></div>
+    <p class="connect-title" id="connect-title">SuperHuman Maya is joining the call in a few seconds…</p>
+    <p class="connect-sub" id="connect-sub">Sales & Product Specialist</p>
+    <ul class="connect-steps">
+      <li class="connect-step active">Securing your session</li>
+      <li class="connect-step">Initializing voice &amp; video</li>
+      <li class="connect-step">Loading persona knowledge</li>
+      <li class="connect-step">Finalizing connection</li>
+    </ul>
+  </div>
 </div>
+
+<div id="overlay" style="display:none"></div>
 
 <!-- Catalog modal -->
 <div id="cat-modal" onclick="if(event.target===this)closeCatalog()">
@@ -177,6 +151,7 @@
   </div>
 </div>
 
+<script src="/static/call-experience.js"></script>
 <script>
 // ═══════════════ STATE ═══════════════
 let sessionId   = null;
@@ -189,22 +164,39 @@ let personaName = 'Maya';
 let companyName = 'our company';
 
 const PERSONA_SUBS = {
-  'hr-interviewer': (n, c) => `${n} conducts structured first-round interviews for ${c}. Upload job descriptions in Admin for best results.`,
-  'onboarding-guide': (n, c) => `${n} is your onboarding buddy at ${c} — policies, IT, benefits, and first-week help, 24/7.`,
-  'human-chatbot': (n, c) => `${n} replaces boring chatbots with a real face and voice for ${c}. Tier-1 support that feels human.`,
+  'hr-interviewer': (n, c) => `${n} conducts structured first-round interviews for ${c}. Evaluates candidates consistently — upload job descriptions in Admin.`,
+  'onboarding-guide': (n, c) => `${n} is your onboarding guide at ${c} — policies, IT, benefits, and first-week support, 24/7.`,
+  'human-chatbot': (n, c) => `${n} delivers live voice and video support for ${c} — a human presence, not a text widget.`,
   'support-agent': (n, c) => `${n} handles tier-1 support for ${c} — empathetic, fast, and always available.`,
-  'demo-host': (n, c) => `${n} hosts live product demos for ${c}. Watch the walkthrough, then ask anything.`,
-  'meeting-assistant': (n, c) => `${n} is your meeting assistant for ${c}. (Zoom/Teams join coming soon on Enterprise.)`,
-  'default': (n, c) => `${n} knows everything about ${c}. Live demos, Q&A, and lead qualification — 24/7.`,
+  'product-demo': (n, c) => `${n} hosts interactive product demos for ${c}. Walkthroughs that adapt to each visitor.`,
+  'demo-host': (n, c) => `${n} hosts interactive product demos for ${c}.`,
+  'healthcare-guide': (n, c) => `${n} explains services and guides patients through next steps for ${c} — clear, empathetic, and compliant.`,
+  'meeting-assistant': (n, c) => `${n} is your meeting assistant for ${c}. Enterprise Zoom and Teams join coming soon.`,
+  'default': (n, c) => `${n} is your sales and product specialist for ${c}. Live demos, qualification, and Smartsheet-ready lead capture — 24/7.`,
 };
+let roleTitle = 'Sales & Product Specialist';
+let transcriptPending = null;
 let mediaRec    = null;
 let isRecording = false;
 
 // ═══════════════ INIT ═══════════════
 window.addEventListener('load', async () => {
   await loadPersona();
-  loadAvatarPhoto();
+  await initExperience();
 });
+
+async function initExperience() {
+  if (!window.RehuCall) return;
+  await RehuCall.loadExperience(personaId);
+  const exp = RehuCall.getExperience();
+  if (exp?.role_title) {
+    roleTitle = exp.role_title;
+    const dr = document.getElementById('disp-role');
+    if (dr) dr.textContent = roleTitle;
+  }
+  RehuCall.applyLanding(personaName, roleTitle);
+  if (exp?.preview_url) RehuCall.setPreviewImage(exp.preview_url);
+}
 
 async function loadPersona() {
   try {
@@ -215,22 +207,18 @@ async function loadPersona() {
     personaName = p.persona_name || 'Maya';
     companyName = p.company_name || 'our company';
     setNames(personaName);
-    document.getElementById('cs-co').textContent = companyName;
+    document.getElementById('cs-co').textContent = roleTitle || companyName;
     document.title = `Rehu.ai — Meet ${personaName}`;
 
     const subFn = PERSONA_SUBS[personaId] || PERSONA_SUBS.default;
-    const st = await fetch(`/api/knowledge/stats/${personaId}`).then(r=>r.json()).catch(()=>({chunk_count:0}));
     document.getElementById('disp-sub').textContent = subFn(personaName, companyName);
-    if (st.chunk_count > 0 && personaId === 'default')
-      document.getElementById('disp-sub').textContent =
-        `${personaName} knows everything about ${companyName}. She demos live, handles every question, and qualifies leads — 24/7.`;
 
     const h = await fetch('/health').then(r=>r.json());
     const b = document.getElementById('status-badge');
     if (!h.services.liveavatar_key_set) {
-      b.className='status-badge warn'; b.innerHTML='⚠ Add LIVEAVATAR_API_KEY to enable video avatar'; b.classList.remove('hidden');
+      b.className='status-badge warn'; b.innerHTML='Add LIVEAVATAR_API_KEY to enable video persona'; b.classList.remove('hidden');
     } else if (h.services.sandbox_mode) {
-      b.className='status-badge ok'; b.innerHTML='● Sandbox mode active — free testing'; b.classList.remove('hidden');
+      b.className='status-badge ok'; b.innerHTML='Sandbox mode — free testing'; b.classList.remove('hidden');
     }
   } catch(e) {}
 }
@@ -239,28 +227,15 @@ function setNames(n) {
   ['disp-name','btn-name','av-nm','cs-nm'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=n;});
 }
 
-async function loadAvatarPhoto() {
-  try {
-    const d   = await fetch('/api/avatar/list').then(r=>r.json());
-    const avs = d.avatars || [];
-    if (!avs.length) return;
-    const pick = avs.find(a=>/ann|sarah|emma|maya|sofia|angela|lily|grace|woman|female/i.test(a.name))
-                 || avs[Math.floor(Math.random()*Math.min(6,avs.length))];
-    if (pick?.preview_url) {
-      const img = document.getElementById('hero-img');
-      img.src = pick.preview_url;
-      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:none';
-      img.onload = () => { img.style.display='block'; document.getElementById('av-ph').style.display='none'; };
-    }
-  } catch(e) {}
-}
 
 // ═══════════════ START CALL ═══════════════
 async function startCall() {
   const btn = document.getElementById('call-btn');
   btn.disabled = true;
-  btn.innerHTML = `<div class="ph"><div class="spinner" style="width:24px;height:24px;border-width:2px"></div></div><span>Connecting…</span>`;
-  showOv('Creating your session…', 'Just a moment');
+  btn.innerHTML = `<div class="ph"><div class="spinner" style="width:22px;height:22px;border-width:2px;border-top-color:#fff;border-color:rgba(255,255,255,.3)"></div></div><span>Connecting…</span>`;
+
+  if (window.RehuCall) RehuCall.showConnectOverlay(personaName);
+  RehuCall?.transitionToCall();
 
   try {
     const res = await fetch('/api/sessions', {
@@ -275,25 +250,22 @@ async function startCall() {
     sessionMode = data.mode || 'voice_only';
 
     setNames(personaName);
-    document.getElementById('cs-co').textContent = data.company_name || companyName;
-    document.getElementById('landing').style.display    = 'none';
-    document.getElementById('call-screen').style.display = 'block';
+    document.getElementById('cs-co').textContent = roleTitle || data.company_name || companyName;
     setChip('connecting');
 
     if (sessionMode==='liveavatar' && data.livekit_url && data.livekit_client_token) {
-      updateOv('Connecting to '+ personaName +'…', 'Opening live video stream');
       await connectLiveKit(data.livekit_url, data.livekit_client_token);
     } else {
-      updateOv('Starting voice call…', 'Video unavailable — voice mode active');
       await connectVoiceWS(data.opening_text||'');
-      hideOv();
+      if (window.RehuCall) RehuCall.hideConnectOverlay();
     }
   } catch(e) {
     console.error(e);
-    hideOv(); resetBtn();
+    if (window.RehuCall) RehuCall.hideConnectOverlay();
+    resetBtn();
     document.getElementById('call-screen').style.display = 'none';
     document.getElementById('landing').style.display     = 'grid';
-    alert('Could not start call. Make sure the server is running.\n\nFor video, set LIVEAVATAR_API_KEY in .env\nGet key at: app.liveavatar.com');
+    alert('Could not start call. Ensure the server is running and LIVEAVATAR_API_KEY is set in .env.');
   }
 }
 
@@ -308,8 +280,14 @@ async function connectLiveKit(lkUrl, lkToken) {
   livekitRoom.on(LC.RoomEvent.TrackSubscribed, (track, pub, participant) => {
     console.log('Track subscribed:', track.kind, participant.identity);
     if (track.kind === 'video') {
-      track.attach(document.getElementById('av-video'));
-      hideOv();
+      const v = document.getElementById('av-video');
+      track.attach(v);
+      v.style.opacity = '0';
+      v.onloadeddata = () => {
+        v.style.transition = 'opacity .6s ease';
+        v.style.opacity = '1';
+        if (window.RehuCall) RehuCall.hideConnectOverlay();
+      };
       setChip('listening');
     }
     if (track.kind === 'audio') {
@@ -354,15 +332,14 @@ async function connectLiveKit(lkUrl, lkToken) {
 
 async function enableMic() {
   try {
-    updateOv('Opening microphone…', 'Allow mic access when your browser asks');
     await livekitRoom.localParticipant.setMicrophoneEnabled(true);
     micEnabled = true;
     updateMicUI();
-    hideOv();
+    if (window.RehuCall) RehuCall.hideConnectOverlay();
     console.log('✓ Mic published — real-time conversation active');
   } catch(e) {
     console.warn('Mic access denied:', e);
-    hideOv();
+    if (window.RehuCall) RehuCall.hideConnectOverlay();
   }
 }
 
@@ -385,7 +362,8 @@ function handleAgentEvt(evt) {
     case 'transcript.avatar':
       if (evt.data?.text) addMsg('ai', evt.data.text); break;
     case 'avatar.ready':
-      hideOv(); setChip('listening'); break;
+      if (window.RehuCall) RehuCall.hideConnectOverlay();
+      setChip('listening'); break;
   }
 }
 
@@ -494,18 +472,30 @@ async function endCall() {
 function setChip(state) {
   const c = document.getElementById('cs-chip');
   c.className='cs-chip';
-  c.textContent = {connecting:'Connecting…',listening:'Listening',speaking:'Maya is speaking',thinking:'Thinking…',muted:'Muted'}[state]||state;
+  const labels = {
+    connecting:'Connecting…',
+    listening:'Listening',
+    speaking:`${personaName} is speaking`,
+    thinking:'Thinking…',
+    muted:'Muted',
+  };
+  c.textContent = labels[state] || state;
   if (state!=='connecting') c.classList.add(state);
 }
 function addMsg(role,text) {
-  const w=document.getElementById('transcript'),el=document.createElement('div');
-  el.className='tmsg '+role; el.textContent=text; w.appendChild(el);
-  while(w.children.length>5) w.removeChild(w.firstChild);
-  w.scrollTop=w.scrollHeight;
+  if (!text) return;
+  const append = () => {
+    const w=document.getElementById('transcript'),el=document.createElement('div');
+    el.className='tmsg '+role; el.textContent=text; w.appendChild(el);
+    while(w.children.length>6) w.removeChild(w.firstChild);
+    w.scrollTop=w.scrollHeight;
+  };
+  if (transcriptPending) cancelAnimationFrame(transcriptPending);
+  transcriptPending = requestAnimationFrame(() => { append(); transcriptPending = null; });
 }
-function showOv(t,s='')  { document.getElementById('ov-txt').textContent=t; document.getElementById('ov-sub').textContent=s; document.getElementById('overlay').classList.add('show'); }
-function updateOv(t,s='') { document.getElementById('ov-txt').textContent=t; document.getElementById('ov-sub').textContent=s; }
-function hideOv()         { document.getElementById('overlay').classList.remove('show'); }
+function showOv() {}
+function updateOv() {}
+function hideOv() { if (window.RehuCall) RehuCall.hideConnectOverlay(); }
 function resetBtn() {
   const btn=document.getElementById('call-btn'); btn.disabled=false;
   btn.innerHTML=`<div class="ph"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.53 2 2 0 0 1 3.6 1.5h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.13a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.5 16.4z"/></svg></div><span>Call <span id="btn-name">${personaName}</span></span>`;

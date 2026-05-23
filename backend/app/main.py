@@ -19,12 +19,13 @@ from .models import (
     KnowledgeQueryRequest, KnowledgeQueryResponse, KnowledgeQueryResult,
     HealthResponse, PersonaConfig,
 )
-from . import liveavatar, agent, knowledge, persona_templates
+from . import liveavatar, agent, knowledge, persona_templates, persona_experience
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s -- %(message)s")
 logger = logging.getLogger(__name__)
 
 _sessions: dict[str, dict] = {}
+_avatar_cache: list = []
 _default_template = persona_templates.get_template("sales-demo")
 _personas: dict[str, PersonaConfig] = {
     "default": PersonaConfig(
@@ -44,6 +45,8 @@ def _role_hint_for_persona(persona_id: str) -> str:
         "support-agent": "support",
         "human-chatbot": "support",
         "demo-host": "demo",
+        "product-demo": "demo",
+        "healthcare-guide": "support",
         "meeting-assistant": "demo",
     }
     return hints.get(persona_id, "sales")
@@ -68,6 +71,9 @@ async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
     logger.info("LiveAvatar API key set: %s", bool(settings.LIVEAVATAR_API_KEY))
     logger.info("Sandbox mode: %s", settings.LIVEAVATAR_USE_SANDBOX)
+    global _avatar_cache
+    _avatar_cache = await liveavatar.list_public_avatars(page_size=48)
+    logger.info("Cached %d public avatars for previews", len(_avatar_cache))
     yield
     logger.info("Shutting down -- cleaning up %d sessions", len(_sessions))
     for sid in list(_sessions.keys()):
@@ -173,6 +179,19 @@ async def get_persona(persona_id: str):
     return p.model_dump()
 
 
+@app.get("/api/personas/{persona_id}/experience", tags=["Personas"])
+async def get_persona_experience(persona_id: str):
+    """Preview image, role title, and immersive connect messages for the call UI."""
+    p = _personas.get(persona_id) or _personas.get("default")
+    exp = persona_experience.get_experience(persona_id, p.persona_name)
+    preview = persona_experience.pick_avatar_preview(persona_id, _avatar_cache, p.persona_name)
+    if preview:
+        exp["preview_url"] = preview
+    exp["persona_name"] = p.persona_name
+    exp["company_name"] = p.company_name
+    return exp
+
+
 @app.put("/api/personas/{persona_id}", tags=["Personas"])
 async def update_persona(persona_id: str, config: PersonaConfig):
     config.persona_id = persona_id
@@ -182,8 +201,10 @@ async def update_persona(persona_id: str, config: PersonaConfig):
 
 @app.delete("/api/personas/{persona_id}", tags=["Personas"])
 async def delete_persona(persona_id: str):
-    protected = {"default", "hr-interviewer", "onboarding-guide", "support-agent",
-                 "human-chatbot", "demo-host", "meeting-assistant"}
+    protected = {
+        "default", "hr-interviewer", "onboarding-guide", "support-agent",
+        "human-chatbot", "demo-host", "product-demo", "healthcare-guide", "meeting-assistant",
+    }
     if persona_id in protected:
         raise HTTPException(400, f"Cannot delete built-in persona '{persona_id}'")
     _personas.pop(persona_id, None)
@@ -258,13 +279,9 @@ async def create_session(req: CreateSessionRequest):
     role_hint = _role_hint_for_persona(req.persona_id)
     fallback = _opening_fallback_for_persona(req.persona_id)
     opening_text = fallback or f"Hi! I'm {persona_name} from {company_name}. How can I help?"
-    if knowledge_ctx and len(knowledge_ctx.strip()) > 100 and settings.OPENAI_API_KEY:
-        opening_text = await agent.generate_opening_pitch(
-            persona_name, company_name, knowledge_ctx, req.visitor_name,
-            role_hint=role_hint, opening_fallback=fallback or None,
-        )
-    elif req.visitor_name and fallback:
-        opening_text = fallback.replace("Hi,", f"Hi {req.visitor_name},")
+    if req.visitor_name and fallback:
+        opening_text = fallback.replace("Hi,", f"Hi {req.visitor_name},").replace("Hello,", f"Hello {req.visitor_name},")
+    # Use template opening for faster session start (LLM pitch adds 2–4s latency)
 
     la_context_id = None
     la_session_token = ""
