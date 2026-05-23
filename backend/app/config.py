@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     SECRET_KEY:  str  = "change-me-in-production"
     CORS_ORIGINS: List[str] = ["*"]
 
+    # Admin panel HTTP Basic Auth (leave ADMIN_PASSWORD empty to disable in dev)
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = ""
+
     # ── LiveAvatar (NEW HeyGen API) ────────────────────────────────────────────
     # Get your key from: https://app.liveavatar.com/settings/api
     LIVEAVATAR_API_KEY:   str  = ""

@@ -8,7 +8,7 @@ import os
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, WebSocket
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, WebSocket, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -19,7 +19,7 @@ from .models import (
     KnowledgeQueryRequest, KnowledgeQueryResponse, KnowledgeQueryResult,
     HealthResponse, PersonaConfig,
 )
-from . import liveavatar, agent, knowledge, persona_templates, persona_experience
+from . import liveavatar, agent, knowledge, persona_templates, persona_experience, persona_store, auth
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s -- %(message)s")
 logger = logging.getLogger(__name__)
@@ -27,15 +27,37 @@ logger = logging.getLogger(__name__)
 _sessions: dict[str, dict] = {}
 _avatar_cache: list = []
 _default_template = persona_templates.get_template("sales-demo")
-_personas: dict[str, PersonaConfig] = {
-    "default": PersonaConfig(
-        persona_id="default",
-        persona_name=settings.DEFAULT_PERSONA_NAME,
-        company_name="our company",
-        system_prompt_override=_default_template.system_prompt if _default_template else None,
-    ),
-    **persona_templates.get_persona_configs(),
-}
+
+
+def _seed_personas() -> dict[str, PersonaConfig]:
+    return {
+        "default": PersonaConfig(
+            persona_id="default",
+            persona_name=settings.DEFAULT_PERSONA_NAME,
+            company_name="our company",
+            system_prompt_override=_default_template.system_prompt if _default_template else None,
+        ),
+        **persona_templates.get_persona_configs(),
+    }
+
+
+_personas: dict[str, PersonaConfig] = _seed_personas()
+
+
+def _save_personas() -> None:
+    persona_store.save_all(_personas)
+
+
+def _apply_avatar_bindings() -> None:
+    global _personas
+    for pid, p in list(_personas.items()):
+        b = persona_experience.get_avatar_binding(pid)
+        if b and b.get("avatar_id"):
+            _personas[pid] = p.model_copy(update={
+                "avatar_id": b["avatar_id"],
+                "voice_id": b.get("voice_id") or p.voice_id,
+            })
+            logger.info("Persona %s -> LiveAvatar %s (%s)", pid, b["avatar_id"][:8], b.get("avatar_name"))
 
 
 def _role_hint_for_persona(persona_id: str) -> str:
@@ -80,17 +102,11 @@ async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
     logger.info("LiveAvatar API key set: %s", bool(settings.LIVEAVATAR_API_KEY))
     logger.info("Sandbox mode: %s", settings.LIVEAVATAR_USE_SANDBOX)
-    global _avatar_cache
+    global _avatar_cache, _personas
     _avatar_cache = await liveavatar.list_public_avatars(page_size=48)
     persona_experience.bind_live_avatars(_avatar_cache)
-    for pid, p in list(_personas.items()):
-        b = persona_experience.get_avatar_binding(pid)
-        if b and b.get("avatar_id"):
-            _personas[pid] = p.model_copy(update={
-                "avatar_id": b["avatar_id"],
-                "voice_id": b.get("voice_id") or p.voice_id,
-            })
-            logger.info("Persona %s -> LiveAvatar %s (%s)", pid, b["avatar_id"][:8], b.get("avatar_name"))
+    _personas = persona_store.merge_into(_seed_personas(), persona_store.load_all())
+    _apply_avatar_bindings()
     logger.info("Cached %d public avatars for previews", len(_avatar_cache))
     yield
     logger.info("Shutting down -- cleaning up %d sessions", len(_sessions))
@@ -169,7 +185,7 @@ async def solution_page(slug: str):
 
 
 @app.get("/admin", tags=["System"])
-async def admin():
+async def admin(_user: str = Depends(auth.verify_admin)):
     p = os.path.join(FRONTEND_DIR, "admin.html")
     if os.path.isfile(p):
         return FileResponse(p)
@@ -184,8 +200,9 @@ async def list_personas():
 
 
 @app.post("/api/personas", tags=["Personas"])
-async def create_persona(config: PersonaConfig):
+async def create_persona(config: PersonaConfig, _user: str = Depends(auth.verify_admin)):
     _personas[config.persona_id] = config
+    _save_personas()
     return {"persona_id": config.persona_id, "status": "created"}
 
 
@@ -287,14 +304,15 @@ async def create_preview_session(persona_id: str):
 
 
 @app.put("/api/personas/{persona_id}", tags=["Personas"])
-async def update_persona(persona_id: str, config: PersonaConfig):
+async def update_persona(persona_id: str, config: PersonaConfig, _user: str = Depends(auth.verify_admin)):
     config.persona_id = persona_id
     _personas[persona_id] = config
+    _save_personas()
     return {"persona_id": persona_id, "status": "updated"}
 
 
 @app.delete("/api/personas/{persona_id}", tags=["Personas"])
-async def delete_persona(persona_id: str):
+async def delete_persona(persona_id: str, _user: str = Depends(auth.verify_admin)):
     protected = {
         "default", "hr-interviewer", "onboarding-guide", "support-agent",
         "human-chatbot", "demo-host", "product-demo", "healthcare-guide", "meeting-assistant",
@@ -303,6 +321,7 @@ async def delete_persona(persona_id: str):
         raise HTTPException(400, f"Cannot delete built-in persona '{persona_id}'")
     _personas.pop(persona_id, None)
     await knowledge.delete_persona_knowledge(persona_id)
+    _save_personas()
     return {"persona_id": persona_id, "status": "deleted"}
 
 
@@ -329,7 +348,11 @@ async def list_templates():
 
 
 @app.post("/api/personas/from-template/{slug}", tags=["Personas"])
-async def create_persona_from_template(slug: str, company_name: Optional[str] = None):
+async def create_persona_from_template(
+    slug: str,
+    company_name: Optional[str] = None,
+    _user: str = Depends(auth.verify_admin),
+):
     """Clone a solution template into a new custom persona (optional company name)."""
     t = persona_templates.get_template(slug)
     if not t:
@@ -340,6 +363,7 @@ async def create_persona_from_template(slug: str, company_name: Optional[str] = 
     if company_name:
         cfg.company_name = company_name
     _personas[new_id] = cfg
+    _save_personas()
     return {"persona_id": new_id, "status": "created", "template": slug}
 
 
@@ -491,7 +515,7 @@ async def avatar_list():
 # ── Knowledge Base ────────────────────────────────────────────────────────────
 
 @app.post("/api/knowledge/add", tags=["Knowledge"])
-async def add_knowledge(req: AddKnowledgeRequest):
+async def add_knowledge(req: AddKnowledgeRequest, _user: str = Depends(auth.verify_admin)):
     if req.source_type.value == "url":
         count = await knowledge.add_knowledge_from_url(req.persona_id, req.content, req.title)
     else:
@@ -504,6 +528,7 @@ async def upload_knowledge(
     persona_id: str = Form(default="default"),
     title: Optional[str] = Form(default=None),
     file: UploadFile = File(...),
+    _user: str = Depends(auth.verify_admin),
 ):
     content_bytes = await file.read()
     if file.filename and file.filename.lower().endswith(".pdf"):
@@ -535,6 +560,6 @@ async def knowledge_stats(persona_id: str):
 
 
 @app.delete("/api/knowledge/{persona_id}", tags=["Knowledge"])
-async def delete_knowledge(persona_id: str):
+async def delete_knowledge(persona_id: str, _user: str = Depends(auth.verify_admin)):
     ok = await knowledge.delete_persona_knowledge(persona_id)
     return {"persona_id": persona_id, "status": "deleted" if ok else "error"}

@@ -159,9 +159,9 @@
 
     const iframe = document.createElement('iframe');
     iframe.id = 'sh-widget-iframe';
-    iframe.src = `${CONFIG.apiBase}/?${params.toString()}`;
+    iframe.src = `${CONFIG.apiBase}/call?${params.toString()}`;
     iframe.allow = 'microphone; camera; autoplay; display-capture';
-    iframe.title = 'AI Persona Chat';
+    iframe.title = 'Talk to our specialist';
     container.appendChild(iframe);
   }
 

@@ -33,7 +33,7 @@
     <div class="feature-row">
       <div class="fpill">Real-time voice</div>
       <div class="fpill">Product expert</div>
-      <div class="fpill">Live video persona</div>
+      <div class="fpill">Live specialist</div>
     </div>
     <div class="l-links">
       <a href="/">Home</a>
@@ -48,7 +48,7 @@
       <img id="hero-img" class="persona-poster" src="" alt="" loading="eager"/>
       <div class="av-label">
         <div class="av-dot"></div>
-        <div><div class="av-nm" id="av-nm">Maya</div><div class="av-st" id="av-st">SuperHuman Specialist · Available</div></div>
+        <div><div class="av-nm" id="av-nm">Maya</div><div class="av-st" id="av-st">Specialist · Available</div></div>
       </div>
     </div>
   </div>
@@ -62,7 +62,7 @@
   <div class="cs-top">
     <div class="cs-id">
       <div class="cs-dot"></div>
-      <div><div class="cs-nm" id="cs-nm">Maya</div><div class="cs-co" id="cs-co">AI Expert</div></div>
+      <div><div class="cs-nm" id="cs-nm">Maya</div><div class="cs-co" id="cs-co">Sales Specialist</div></div>
     </div>
     <div class="cs-chip" id="cs-chip">Connecting</div>
   </div>
@@ -109,9 +109,15 @@
       <img id="connect-photo" src="" alt=""/>
     </div>
     <div class="connect-progress"><div class="connect-progress-bar"></div></div>
-    <p class="connect-title" id="connect-title">Hold on — we're connecting you to your smartest AI person…</p>
+    <p class="connect-title" id="connect-title">Hold on — we're connecting you to your specialist…</p>
     <p class="connect-sub" id="connect-sub">Sales & Product Specialist</p>
+    <p class="connect-mic-hint" id="connect-mic-hint">Your browser will ask for microphone access so they can hear you.</p>
   </div>
+</div>
+
+<div id="call-error-banner" class="call-error-banner hidden" role="alert">
+  <p id="call-error-msg">Connection issue — check your microphone permissions and try again.</p>
+  <button type="button" class="call-error-retry" onclick="startCall()">Try again</button>
 </div>
 
 <div id="overlay" style="display:none"></div>
@@ -157,6 +163,8 @@ let wsConn      = null;
 let sessionMode = 'liveavatar';
 let micEnabled  = true;
 let personaId   = new URLSearchParams(location.search).get('persona') || 'default';
+const urlParams = new URLSearchParams(location.search);
+const isWidget  = urlParams.get('widget') === '1';
 let personaName = 'Maya';
 let companyName = 'our company';
 
@@ -175,9 +183,15 @@ let roleTitle = 'Sales & Product Specialist';
 let transcriptPending = null;
 let mediaRec    = null;
 let isRecording = false;
+let liveavatarKeySet = false;
 
 // ═══════════════ INIT ═══════════════
 window.addEventListener('load', async () => {
+  if (isWidget) {
+    document.body.classList.add('widget-mode');
+    const accent = urlParams.get('color');
+    if (accent) document.documentElement.style.setProperty('--accent', decodeURIComponent(accent));
+  }
   await loadPersona();
   await initExperience();
   if (window.RehuCall) RehuCall.initAlivePersona('.av-frame');
@@ -187,6 +201,12 @@ window.addEventListener('load', async () => {
 window.addEventListener('pagehide', () => {
   if (window.RehuPersonaLive) RehuPersonaLive.stop();
 });
+
+function roleSubtitle() {
+  const co = companyName && companyName !== 'our company' ? companyName : '';
+  if (roleTitle && co) return `${roleTitle} @ ${co}`;
+  return roleTitle || co || 'Specialist';
+}
 
 async function initExperience() {
   if (!window.RehuCall) return;
@@ -198,6 +218,8 @@ async function initExperience() {
     if (dr) dr.textContent = roleTitle;
   }
   RehuCall.applyLanding(personaName, roleTitle);
+  const csCo = document.getElementById('cs-co');
+  if (csCo) csCo.textContent = roleSubtitle();
   if (exp?.preview_url) {
     RehuCall.setPreviewImage(exp.preview_url);
     const poster = document.getElementById('call-poster');
@@ -214,19 +236,20 @@ async function loadPersona() {
     personaName = p.persona_name || 'Maya';
     companyName = p.company_name || 'our company';
     setNames(personaName);
-    document.getElementById('cs-co').textContent = roleTitle || companyName;
+    document.getElementById('cs-co').textContent = roleSubtitle();
     document.title = `Rehu.ai — Meet ${personaName}`;
 
     const subFn = PERSONA_SUBS[personaId] || PERSONA_SUBS.default;
     document.getElementById('disp-sub').textContent = subFn(personaName, companyName);
 
     const h = await fetch('/health').then(r=>r.json());
+    liveavatarKeySet = !!h.services?.liveavatar_key_set;
     const b = document.getElementById('status-badge');
-    if (!h.services.liveavatar_key_set) {
+    if (!liveavatarKeySet) {
       b.className='status-badge warn'; b.innerHTML='Add LIVEAVATAR_API_KEY to enable video persona'; b.classList.remove('hidden');
     } else if (h.services.sandbox_mode) {
       b.className='status-badge ok';
-      b.innerHTML='Sandbox — Wayne demo avatar · persona voice &amp; knowledge active';
+      b.innerHTML='Demo mode — specialist knowledge &amp; voice active';
       b.classList.remove('hidden');
     }
   } catch(e) {}
@@ -239,9 +262,27 @@ function setNames(n) {
 }
 
 
+function hideCallError() {
+  const b = document.getElementById('call-error-banner');
+  if (b) b.classList.add('hidden');
+}
+
+function showCallError(msg) {
+  const b = document.getElementById('call-error-banner');
+  const m = document.getElementById('call-error-msg');
+  if (m && msg) m.textContent = msg;
+  if (b) b.classList.remove('hidden');
+  if (window.RehuCall) RehuCall.hideConnectOverlay();
+  document.getElementById('call-screen').style.display = 'none';
+  document.getElementById('landing').style.display = 'grid';
+  resetBtn();
+}
+
+
 // ═══════════════ START CALL ═══════════════
 async function startCall() {
   const btn = document.getElementById('call-btn');
+  hideCallError();
   btn.disabled = true;
   btn.innerHTML = `<div class="ph"><div class="spinner" style="width:22px;height:22px;border-width:2px;border-top-color:#fff;border-color:rgba(255,255,255,.3)"></div></div><span>Connecting…</span>`;
 
@@ -266,23 +307,32 @@ async function startCall() {
     sessionMode = data.mode || 'voice_only';
 
     setNames(personaName);
-    document.getElementById('cs-co').textContent = roleTitle || data.company_name || companyName;
+    document.getElementById('cs-co').textContent = roleSubtitle();
     setChip('connecting');
+    if (data.sandbox_stream) {
+      const chip = document.getElementById('cs-chip');
+      chip.dataset.demo = '1';
+    }
 
     if (sessionMode==='liveavatar' && data.livekit_url && data.livekit_client_token) {
-      await connectLiveKit(data.livekit_url, data.livekit_client_token);
-      if (data.opening_text) addMsg('ai', data.opening_text);
+      try {
+        await connectLiveKit(data.livekit_url, data.livekit_client_token);
+        if (data.opening_text) addMsg('ai', data.opening_text);
+      } catch (lkErr) {
+        console.error(lkErr);
+        showCallError('Connection issue — retry or check microphone permissions.');
+        return;
+      }
+    } else if (sessionMode === 'voice_only' && liveavatarKeySet) {
+      showCallError('Connection issue — could not start video session. Please try again.');
+      return;
     } else {
       await connectVoiceWS(data.opening_text||'');
       if (window.RehuCall) RehuCall.hideConnectOverlay();
     }
   } catch(e) {
     console.error(e);
-    if (window.RehuCall) RehuCall.hideConnectOverlay();
-    resetBtn();
-    document.getElementById('call-screen').style.display = 'none';
-    document.getElementById('landing').style.display     = 'grid';
-    alert('Could not start call. Ensure the server is running and LIVEAVATAR_API_KEY is set in .env.');
+    showCallError('Connection issue — retry or check microphone permissions.');
   }
 }
 
@@ -372,10 +422,14 @@ async function connectLiveKit(lkUrl, lkToken) {
 
   await enableMic();
 
-  // Fallback: hide overlay even if video track is slow
   setTimeout(() => {
     if (window.RehuCall) RehuCall.hideConnectOverlay();
-  }, 8000);
+    const v = document.getElementById('av-video');
+    if (v && v.style.opacity !== '1') {
+      showCallError('Connection issue — video did not load. Check microphone permissions and try again.');
+      if (livekitRoom) { try { livekitRoom.disconnect(); } catch (e) {} livekitRoom = null; }
+    }
+  }, 12000);
 }
 
 async function enableMic() {
@@ -517,12 +571,22 @@ async function endCall() {
   micEnabled = true; updateMicUI(); resetBtn();
   const poster = document.getElementById('call-poster');
   if (poster) poster.classList.remove('hidden');
+  const chip = document.getElementById('cs-chip');
+  if (chip) delete chip.dataset.demo;
+  if (isWidget) {
+    window.parent.postMessage({ type: 'sh:session_ended' }, '*');
+  }
 }
 
 // ═══════════════ UI ═══════════════
 function setChip(state) {
   const c = document.getElementById('cs-chip');
   c.className='cs-chip';
+  if (c.dataset.demo === '1' && state === 'listening') {
+    c.textContent = 'Demo mode';
+    c.classList.add('demo');
+    return;
+  }
   const labels = {
     connecting:'Connecting…',
     listening:'Listening',

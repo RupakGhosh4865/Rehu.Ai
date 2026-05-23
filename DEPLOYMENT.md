@@ -210,6 +210,8 @@ LIVEAVATAR_VOICE_ID=           # Leave blank for avatar default voice
 
 # App security
 SECRET_KEY=generate-a-random-32-char-string
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your-secure-password
 DEBUG=false
 
 # CORS — restrict to client domain in production
@@ -277,9 +279,13 @@ Minimum:
 
 ### Step 4 — Add persistent volume (knowledge base)
 
-Mount a volume at `/app/data/chromadb` so uploaded client knowledge survives redeploys.
+Mount a volume at `/app/data` so uploaded client knowledge survives redeploys.
 
-Railway → Service → **Volumes** → Add volume → mount path: `/app/data/chromadb`
+Railway → Service → **Volumes** → Add volume → mount path: `/app/data`
+
+Persists:
+- `./data/chromadb/` — knowledge chunks
+- `./data/personas.json` — persona Admin edits
 
 ### Step 5 — Verify deployment
 
@@ -503,18 +509,9 @@ Link from internal portal — no public embed required:
 https://rehu.internal.acme.com/call?persona=hr-interviewer
 ```
 
-### 10.5 Known widget issue (fix before go-live)
+### 10.5 Widget mode
 
-The widget currently loads the iframe to `/?persona=...` but the call UI is at `/call`.
-
-**Workaround until fixed:** Use direct links (`/call?persona=...`) instead of the embed widget, or patch `frontend/sdk/superhuman-widget.js` line 162:
-
-```javascript
-// Change from:
-iframe.src = `${CONFIG.apiBase}/?${params.toString()}`;
-// To:
-iframe.src = `${CONFIG.apiBase}/call?${params.toString()}`;
-```
+The embed loads `/call?persona=...&widget=1`. In widget mode the call UI hides Home/Admin links and posts `sh:session_ended` to the parent window when the visitor ends the call.
 
 ---
 
@@ -564,7 +561,7 @@ Mapped in `backend/app/persona_experience.py`:
 ### Infrastructure
 
 - [ ] Rehu deployed and `/health` returns healthy
-- [ ] Persistent volume mounted for `./data/chromadb`
+- [ ] Persistent volume mounted for `./data` (knowledge + personas)
 - [ ] Custom domain configured (e.g. `rehu.acme.com`)
 - [ ] HTTPS enabled (TLS certificate valid)
 
@@ -574,6 +571,7 @@ Mapped in `backend/app/persona_experience.py`:
 - [ ] `OPENAI_API_KEY` set and valid
 - [ ] `LIVEAVATAR_USE_SANDBOX=false`
 - [ ] `SECRET_KEY` changed from default
+- [ ] `ADMIN_PASSWORD` set (protects `/admin` and write APIs)
 - [ ] `CORS_ORIGINS` set to client domain(s)
 
 ### Content & personas
@@ -610,7 +608,7 @@ Mapped in `backend/app/persona_experience.py`:
 
 | Control | Status |
 |---------|--------|
-| Admin authentication | **Not built** — must protect externally |
+| Admin authentication | HTTP Basic Auth via `ADMIN_USERNAME` / `ADMIN_PASSWORD` |
 | API key storage | Environment variables (host-managed) |
 | CORS | Configurable via `CORS_ORIGINS` |
 | Knowledge data | Stored on server disk (JSON files) |
@@ -619,7 +617,7 @@ Mapped in `backend/app/persona_experience.py`:
 
 ### Recommendations for client environments
 
-1. **Protect `/admin`** — Nginx basic auth, Azure AD, or VPN-only access
+1. **Set `ADMIN_PASSWORD`** in production — leave empty only for local development
 2. **Restrict CORS** — Never use `["*"]` in production
 3. **Use client-owned API keys** — Where contract requires client billing/control
 4. **Data residency** — Deploy in client's region (EU Azure, etc.) for GDPR
@@ -649,10 +647,10 @@ Response fields:
 | Avatar not speaking | Audio track not attached | Restart backend; check browser autoplay policy |
 | Wrong face on call | Sandbox mode | Set `LIVEAVATAR_USE_SANDBOX=false` |
 | Persona shows generic answers | Empty knowledge base | Upload docs in Admin |
-| Widget opens homepage not call | Widget URL bug | Use `/call?persona=...` or patch widget JS |
+| Widget opens homepage not call | Fixed — widget loads `/call` | Clear browser cache; redeploy latest |
 | CORS error on client site | Wrong `CORS_ORIGINS` | Add client domain to env |
-| Knowledge lost after redeploy | No persistent volume | Mount `/app/data/chromadb` volume |
-| Persona settings reset | In-memory config | Re-configure in Admin after restart |
+| Knowledge lost after redeploy | No persistent volume | Mount `/app/data` volume |
+| Persona settings reset | Fixed — `./data/personas.json` | Mount `./data` volume on host |
 
 ### Logs
 
@@ -712,13 +710,11 @@ Look for LiveAvatar session creation errors and RAG query output.
 
 ### Current limitations (do not block single-client POC)
 
-| # | Issue | Impact | Planned fix |
-|---|-------|--------|-------------|
-| 1 | Widget iframe loads `/` not `/call` | Embed shows homepage | Patch `superhuman-widget.js` |
-| 2 | README / `.env.example` outdated | Confusing setup | Update docs for LiveAvatar |
-| 3 | Persona config not persisted | Admin edits lost on restart | Persist to disk |
-| 4 | No Admin login | Security risk | Basic auth / SSO |
-| 5 | No multi-tenancy | One instance per client | Future SaaS architecture |
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | Multi-tenancy | Future — one instance per client today |
+| 2 | Lead capture / analytics | Next sprint |
+| 3 | Stripe billing | Planned |
 
 ### Future enhancements (not required for first client)
 

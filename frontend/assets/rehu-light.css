@@ -714,3 +714,31 @@ body.connecting #landing{pointer-events:none}
 }
 .badge-live::before{content:'';display:inline-block;width:6px;height:6px;
   background:var(--green);border-radius:50%;margin-right:6px;vertical-align:middle}
+
+/* Widget embed mode */
+body.widget-mode .l-links{display:none!important}
+body.widget-mode .brand{font-size:13px}
+body.widget-mode #landing{grid-template-columns:1fr;height:100%;min-height:100vh}
+body.widget-mode .l-right{display:none}
+body.widget-mode .l-left{padding:20px 24px;justify-content:center}
+body.widget-mode .headline{font-size:clamp(28px,6vw,36px)}
+body.widget-mode .feature-row{display:none}
+body.widget-mode .call-btn{width:100%;justify-content:center}
+
+.connect-mic-hint{
+  font-size:12px;color:var(--muted);margin-top:10px;line-height:1.45;max-width:320px;margin-left:auto;margin-right:auto;
+}
+
+.call-error-banner{
+  margin:16px 0;padding:14px 16px;border-radius:12px;
+  background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;
+}
+.call-error-banner.hidden{display:none}
+.call-error-banner p{margin:0 0 10px;font-size:14px;line-height:1.45}
+.call-error-retry{
+  background:var(--accent);color:#fff;border:none;border-radius:8px;
+  padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;
+}
+.call-error-retry:hover{background:var(--accent-hover)}
+
+.cs-chip.demo{background:#ECFDF5;color:#047857;border:1px solid #A7F3D0}

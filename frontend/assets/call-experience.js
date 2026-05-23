@@ -20,7 +20,7 @@ window.RehuCall = (function () {
     const st = document.getElementById('av-st');
     if (st) st.textContent = roleTitle || 'Available now';
     const co = document.getElementById('cs-co');
-    if (co) co.textContent = roleTitle || experience?.role_title || 'SuperHuman Specialist';
+    if (co) co.textContent = experience?.role_title || 'Specialist';
   }
 
   function setPreviewImage(url) {
@@ -47,9 +47,9 @@ window.RehuCall = (function () {
     if (!el) return;
 
     const messages = experience?.connecting_messages || [
-      "Hold on — we're connecting you to your smartest AI person…",
+      "Hold on — we're connecting you to your specialist…",
       'Your specialist is joining now…',
-      'Preparing your real-time conversation experience…',
+      'Preparing your live conversation…',
     ];
 
     const photo = document.getElementById('connect-photo');
