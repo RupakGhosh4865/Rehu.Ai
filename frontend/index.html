@@ -9,6 +9,23 @@
 <!-- LiveKit Web SDK — handles mic + avatar video in LiveAvatar FULL mode -->
 <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
 <link rel="stylesheet" href="/static/savant-light.css"/>
+<script>
+  /* Apply the minimal "modal-embed" mode as early as possible so the
+     dashboard chrome (top bar, labels, helper text, idle-badge, end-call
+     button, etc.) never paints when /call is loaded inside the homepage
+     docked side panel. */
+  (function () {
+    try {
+      var p = new URLSearchParams(location.search);
+      if (p.get('modal') === '1') {
+        document.documentElement.classList.add('modal-embed');
+        document.addEventListener('DOMContentLoaded', function () {
+          document.body.classList.add('modal-embed');
+        });
+      }
+    } catch (_) {}
+  })();
+</script>
 </head>
 <body class="call-page">
 
@@ -351,6 +368,8 @@ let isRecording = false;
 let liveavatarKeySet = false;
 
 // ═══════════════ INIT ═══════════════
+const isModalEmbed = urlParams.get('modal') === '1';
+
 window.addEventListener('load', async () => {
   if (isWidget) {
     document.body.classList.add('widget-mode');
@@ -367,6 +386,32 @@ window.addEventListener('load', async () => {
   await initExperience();
   if (window.RehuCall) RehuCall.initAlivePersona('.av-frame');
   // Live idle preview only on homepage — call page starts preview after session to avoid conflicts
+
+  // When loaded inside the homepage docked panel, the user already clicked
+  // "Let's Talk" — auto-start the call (no landing screen, no Start button).
+  if (isModalEmbed) {
+    const consentCheck = document.getElementById('consent-check');
+    if (consentCheck) consentCheck.checked = true;
+    setTimeout(() => {
+      try { startCall(); } catch (e) { console.error('auto-start failed', e); }
+      try { window.parent?.postMessage({ type: 'sh:session_started' }, '*'); } catch (_) {}
+    }, 250);
+  }
+});
+
+// Receive cross-frame messages from the homepage panel host
+window.addEventListener('message', (e) => {
+  const msg = e.data;
+  if (!msg || typeof msg !== 'object') return;
+  if (msg.type === 'sh:language_change' && typeof msg.language === 'string') {
+    const code = msg.language.toLowerCase();
+    if (LANGUAGE_LABELS[code]) {
+      const live = document.getElementById('call-language-live');
+      if (live) live.value = code;
+      if (typeof switchCallLanguage === 'function') switchCallLanguage(code);
+      else { selectedLanguage = code; applyLanguageChoice(); }
+    }
+  }
 });
 
 window.addEventListener('pagehide', () => {

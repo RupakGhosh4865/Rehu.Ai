@@ -1491,71 +1491,7 @@ img, video { max-width: 100%; }
   50%      { opacity: 0.85; }
 }
 
-/* Header */
-.sp-head {
-  display: flex; align-items: center; gap: 10px;
-  padding: 13px 14px 12px 14px;
-  border-bottom: 0.5px solid rgba(255,255,255,0.06);
-  background: linear-gradient(180deg, rgba(18,18,30,0.55), transparent);
-  flex-shrink: 0; position: relative; z-index: 3;
-}
-.sp-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  position: relative; overflow: hidden; flex-shrink: 0;
-  background: radial-gradient(circle at 30% 30%, var(--accent-c) 0%, var(--accent-a) 60%, var(--accent-b) 100%);
-  box-shadow:
-    0 0 0 1.5px rgba(255,255,255,0.10),
-    0 0 18px rgba(167,139,250,0.55);
-}
-.sp-avatar video {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-}
-.sp-avatar::after {
-  content: ""; position: absolute; right: -1px; bottom: -1px;
-  width: 10px; height: 10px; border-radius: 50%;
-  background: #46d09a;
-  border: 1.5px solid #0a0a14;
-  box-shadow: 0 0 8px #46d09a;
-}
-.sp-meta { flex: 1; min-width: 0; }
-.sp-meta .sp-name {
-  font-size: 14px; font-weight: 600; color: var(--ink-0); line-height: 1.15;
-  letter-spacing: -0.005em;
-}
-.sp-meta .sp-status {
-  font-family: var(--font-mono); font-size: 10.5px;
-  letter-spacing: 0.10em; text-transform: uppercase; color: var(--ink-2);
-  display: flex; align-items: center; gap: 6px; margin-top: 3px;
-}
-.sp-meta .sp-status .pip {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: #46d09a; box-shadow: 0 0 10px #46d09a;
-  animation: pip 1.4s ease-in-out infinite;
-}
-.sp-lang {
-  appearance: none; cursor: pointer;
-  padding: 5px 10px; border-radius: 999px;
-  background: rgba(255,255,255,0.05);
-  border: 0.5px solid rgba(255,255,255,0.10);
-  font-family: var(--font-mono); font-size: 10.5px;
-  letter-spacing: 0.08em; color: var(--ink-1);
-  transition: background .2s, color .2s;
-}
-.sp-lang:hover { background: rgba(255,255,255,0.12); color: var(--ink-0); }
-.sp-btn {
-  appearance: none; border: 0; cursor: pointer;
-  width: 30px; height: 30px; border-radius: 999px;
-  background: rgba(255,255,255,0.05);
-  border: 0.5px solid rgba(255,255,255,0.08);
-  color: var(--ink-1);
-  display: grid; place-items: center;
-  transition: background .2s, color .2s, transform .2s;
-}
-.sp-btn:hover { background: rgba(255,255,255,0.12); color: var(--ink-0); transform: scale(1.06); }
-.sp-btn.is-active { background: var(--accent-grad); color: #fff; border-color: transparent;
-                    box-shadow: 0 0 16px rgba(167,139,250,0.55); }
-
-/* Iframe stage */
+/* Iframe stage — edge-to-edge, no header bar */
 .sp-stage {
   flex: 1; position: relative; overflow: hidden;
   background: #06060c;
@@ -1566,23 +1502,58 @@ img, video { max-width: 100%; }
   border: 0; display: block;
   background: transparent;
 }
-/* Connecting skeleton inside stage (shown until iframe loads) */
+
+/* Floating top-right controls (close + tiny language pill).
+   No header bar — the panel chrome is just two minimal floating controls. */
+.sp-controls {
+  position: absolute; top: 10px; right: 10px;
+  z-index: 5;
+  display: flex; align-items: center; gap: 6px;
+  pointer-events: none; /* children opt in */
+}
+.sp-controls > * { pointer-events: auto; }
+.sp-lang {
+  appearance: none; cursor: pointer;
+  height: 28px; padding: 0 11px; border-radius: 999px;
+  background: rgba(10, 10, 18, 0.55);
+  border: 0.5px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.08em; color: rgba(255,255,255,0.78);
+  transition: background .2s, color .2s;
+}
+.sp-lang:hover { background: rgba(255,255,255,0.10); color: #fff; }
+.sp-btn {
+  appearance: none; border: 0; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 999px;
+  background: rgba(10, 10, 18, 0.55);
+  border: 0.5px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255,255,255,0.78);
+  display: grid; place-items: center;
+  transition: background .2s, color .2s, transform .2s;
+}
+.sp-btn:hover { background: rgba(255,255,255,0.12); color: #fff; transform: scale(1.06); }
+
+/* Connecting orb shown until iframe finishes mounting */
 .sp-loading {
   position: absolute; inset: 0; display: grid; place-items: center;
-  background: radial-gradient(ellipse at center, rgba(79,124,255,0.15), transparent 60%), #06060c;
-  pointer-events: none;
+  background: #06060c;
+  pointer-events: none; z-index: 2;
   opacity: 1; transition: opacity .4s;
 }
 .sp-loading.hidden { opacity: 0; }
 .sp-loading-orb {
-  width: 64px; height: 64px; border-radius: 50%;
+  width: 48px; height: 48px; border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, var(--accent-c), var(--accent-a) 60%, var(--accent-b));
-  box-shadow: 0 0 40px rgba(167,139,250,0.7);
+  box-shadow: 0 0 32px rgba(167,139,250,0.55);
   animation: spPulse 1.6s ease-in-out infinite;
 }
 @keyframes spPulse {
-  0%, 100% { transform: scale(0.94); opacity: 0.85; }
-  50%      { transform: scale(1.04); opacity: 1; }
+  0%, 100% { transform: scale(0.92); opacity: 0.8; }
+  50%      { transform: scale(1.06); opacity: 1; }
 }
 
 /* ── Responsive ── */
@@ -1942,41 +1913,23 @@ img, video { max-width: 100%; }
 </div>
 
 <!-- ════════════════ DOCKED AI COMPANION PANEL ════════════════
-     Slides in from the right. Never blocks the page. Page stays scrollable. -->
+     Slides in from the right. Never blocks the page. Page stays scrollable.
+     Minimal chrome: a single floating close + tiny language pill. The
+     live Aiza video and conversation are owned by /call inside the iframe. -->
 <aside class="sidepanel" id="sidepanel" role="complementary" aria-label="Aiza live AI companion" aria-hidden="true">
   <div class="sp-frame">
-    <div class="sp-head">
-      <div class="sp-avatar" aria-hidden="true">
-        <video autoplay loop muted playsinline preload="auto">
-          <source src="/static/aiza.mp4" type="video/mp4">
-        </video>
-      </div>
-      <div class="sp-meta">
-        <div class="sp-name" id="sp-name">Aiza</div>
-        <div class="sp-status">
-          <span class="pip"></span>
-          <span id="sp-status">Live · connecting</span>
-        </div>
-      </div>
-      <button type="button" class="sp-lang" id="sp-lang" title="Language" aria-label="Select language">EN</button>
-      <button type="button" class="sp-btn" id="sp-expand" title="Toggle presentation mode" aria-label="Toggle presentation mode" aria-pressed="false">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="15 3 21 3 21 9"/>
-          <polyline points="9 21 3 21 3 15"/>
-          <line x1="21" y1="3" x2="14" y2="10"/>
-          <line x1="3" y1="21" x2="10" y2="14"/>
-        </svg>
-      </button>
-      <button type="button" class="sp-btn" id="sp-close" title="Close panel" aria-label="Close Aiza panel">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </div>
     <div class="sp-stage">
       <div class="sp-loading" id="sp-loading"><div class="sp-loading-orb" aria-hidden="true"></div></div>
       <iframe id="sp-iframe" title="Live Aiza session" allow="camera; microphone; autoplay; clipboard-write" referrerpolicy="origin"></iframe>
+      <div class="sp-controls">
+        <button type="button" class="sp-lang" id="sp-lang" title="Language" aria-label="Select language">EN</button>
+        <button type="button" class="sp-btn" id="sp-close" title="Close panel" aria-label="Close Aiza panel">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </aside>
@@ -2802,39 +2755,20 @@ img, video { max-width: 100%; }
   renderStories();
 
   /* ═══════════ DOCKED AI SIDE PANEL ═══════════
-     Slides in from the right. Page stays scrollable. Persistent presence:
-     clicking a different persona while open smoothly swaps the session. */
+     Slides in from the right. Minimal chrome — only a floating × close and
+     tiny language pill. The live video, controls and conversation belong to
+     /call inside the iframe (rendered in `modal-embed` minimal mode). */
 
-  const panel       = $('#sidepanel');
-  const panelFrame  = panel.querySelector('.sp-frame');
-  const panelIfr    = $('#sp-iframe');
-  const panelClose  = $('#sp-close');
-  const panelExpand = $('#sp-expand');
-  const panelName   = $('#sp-name');
-  const panelStatus = $('#sp-status');
-  const panelLang   = $('#sp-lang');
-  const panelLoad   = $('#sp-loading');
+  const panel      = $('#sidepanel');
+  const panelIfr   = $('#sp-iframe');
+  const panelClose = $('#sp-close');
+  const panelLang  = $('#sp-lang');
+  const panelLoad  = $('#sp-loading');
 
-  const PERSONA_NAME = {
-    'default':           'Aiza',
-    'product-demo':      'Casey',
-    'support-agent':     'Riley',
-    'healthcare-guide':  'Elena',
-    'hr-interviewer':    'Alex',
-    'onboarding-guide':  'Sam',
-    'human-chatbot':     'Jordan',
-    'meeting-assistant': 'Taylor',
-  };
   const LANGS = ['EN', 'ES', 'FR', 'DE', 'JA', 'HI'];
 
   function buildCallSrc(id) {
     return `/call?persona=${encodeURIComponent(id)}&demo=1&timer=60&modal=1`;
-  }
-
-  function setPanelPersona(id) {
-    panel.dataset.persona = id;
-    panelName.textContent = PERSONA_NAME[id] || 'Aiza';
-    panelStatus.textContent = 'Live · connecting';
   }
 
   function openPanel(persona) {
@@ -2843,29 +2777,26 @@ img, video { max-width: 100%; }
     // Already open → smoothly swap persona without re-mounting the panel.
     if (panel.classList.contains('show')) {
       if (panel.dataset.persona !== id) {
+        panel.dataset.persona = id;
         panelLoad.classList.remove('hidden');
-        setPanelPersona(id);
         panelIfr.src = buildCallSrc(id);
       }
       return;
     }
 
-    setPanelPersona(id);
+    panel.dataset.persona = id;
     panelLoad.classList.remove('hidden');
     panelIfr.src = buildCallSrc(id);
     panel.classList.add('show');
     panel.setAttribute('aria-hidden', 'false');
-    // NOTE: We deliberately do NOT lock body scroll — the page must stay browsable.
+    // NOTE: We deliberately do NOT lock body scroll — page must stay browsable.
   }
 
   function closePanel() {
     if (!panel.classList.contains('show')) return;
     panel.classList.remove('show');
     panel.classList.remove('presenting');
-    panelExpand.classList.remove('is-active');
-    panelExpand.setAttribute('aria-pressed', 'false');
     panel.setAttribute('aria-hidden', 'true');
-    panelStatus.textContent = 'Live · ended';
     // Release the iframe after the slide-out finishes so it doesn't keep the mic open.
     setTimeout(() => {
       panelIfr.src = 'about:blank';
@@ -2876,9 +2807,6 @@ img, video { max-width: 100%; }
   function togglePresentation(force) {
     const next = (typeof force === 'boolean') ? force : !panel.classList.contains('presenting');
     panel.classList.toggle('presenting', next);
-    panelExpand.classList.toggle('is-active', next);
-    panelExpand.setAttribute('aria-pressed', next ? 'true' : 'false');
-    // Let /call know so it can rearrange its layout if it wants to.
     try {
       panelIfr.contentWindow?.postMessage({
         type: 'sh:presentation_mode',
@@ -2902,11 +2830,8 @@ img, video { max-width: 100%; }
 
   panelIfr.addEventListener('load', () => {
     if (panelIfr.src === 'about:blank') return;
-    // Small grace period so the call page can mount its own UI.
-    setTimeout(() => {
-      panelLoad.classList.add('hidden');
-      panelStatus.textContent = 'Live · listening';
-    }, 450);
+    // Small grace period so /call can paint before we fade the loader.
+    setTimeout(() => panelLoad.classList.add('hidden'), 450);
   });
 
   function bindLaunchHandlers(root) {
@@ -2932,17 +2857,11 @@ img, video { max-width: 100%; }
   bindLaunchHandlers(document);
 
   panelClose.addEventListener('click', closePanel);
-  panelExpand.addEventListener('click', () => togglePresentation());
   panelLang.addEventListener('click', cycleLang);
 
   document.addEventListener('keydown', (e) => {
     if (!panel.classList.contains('show')) return;
-    if (e.key === 'Escape') {
-      closePanel();
-    } else if (e.key === 'F' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
-      e.preventDefault();
-      togglePresentation();
-    }
+    if (e.key === 'Escape') closePanel();
   });
 
   // Cross-frame events from /call
@@ -2950,11 +2869,8 @@ img, video { max-width: 100%; }
     const msg = e.data;
     if (!msg || typeof msg !== 'object') return;
     if (msg.type === 'sh:session_ended') {
-      // Don't yank the panel — just update status. User decides when to close.
-      panelStatus.textContent = 'Live · ended';
       panelLoad.classList.remove('hidden');
     } else if (msg.type === 'sh:session_started') {
-      panelStatus.textContent = 'Live · listening';
       panelLoad.classList.add('hidden');
     } else if (msg.type === 'sh:presenting') {
       togglePresentation(true);
