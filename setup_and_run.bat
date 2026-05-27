@@ -1,10 +1,10 @@
 @echo off
-title SuperHuman Platform
+title Savant.ai Platform
 color 0A
 
 echo.
 echo ============================================
-echo   SuperHuman AI Persona Platform
+echo   Savant.ai
 echo ============================================
 echo.
 

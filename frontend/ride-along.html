@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ride-Along — Send your AI to a meeting</title>
+  <link rel="icon" type="image/svg+xml" href="/static/savant-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --call-bg: #0d0d1a;
+      --call-card: rgba(20, 22, 38, 0.78);
+      --call-accent: #7c3aed;
+      --call-accent-2: #22d3ee;
+      --text: #e5e7f0;
+      --text-soft: rgba(229,231,240,.7);
+      --border: rgba(148,163,184,.18);
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:'Inter',system-ui,sans-serif;background:radial-gradient(circle at 15% -10%,#1f1f3a 0%,var(--call-bg) 70%);min-height:100vh;color:var(--text);padding:40px 24px;}
+    .wrap{max-width:980px;margin:0 auto;}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;}
+    header h1{margin:0;font-size:24px;font-weight:800;}
+    header p{margin:4px 0 0;color:var(--text-soft);font-size:14px;}
+    header a{color:#A78BFA;font-size:13px;text-decoration:none;font-weight:600;}
+    .layout{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;}
+    @media (max-width:880px){.layout{grid-template-columns:1fr;}}
+    .card{background:var(--call-card);border:1px solid var(--border);border-radius:18px;padding:26px;backdrop-filter:blur(20px);}
+    .card h2{margin:0 0 6px;font-size:18px;font-weight:700;}
+    .card p.sub{margin:0 0 18px;color:var(--text-soft);font-size:13px;}
+    label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;}
+    input,select,textarea{width:100%;background:rgba(2,6,23,.55);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 13px;font-size:14px;outline:none;font-family:inherit;}
+    input:focus,select:focus,textarea:focus{border-color:var(--call-accent);box-shadow:0 0 0 3px rgba(124,58,237,.18);}
+    .btn{background:var(--call-accent);color:#fff;border:none;border-radius:10px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;}
+    .btn:disabled{opacity:.5;cursor:not-allowed;}
+    .btn.secondary{background:transparent;border:1px solid var(--border);color:var(--text);}
+    .btn.danger{background:#ef4444;}
+    .status-pill{display:inline-flex;padding:4px 11px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
+    .status-joined{background:rgba(74,222,128,.18);color:#86efac;}
+    .status-pending{background:rgba(251,191,36,.18);color:#fcd34d;}
+    .status-leaving{background:rgba(248,113,113,.18);color:#fda4af;}
+    .status-error{background:rgba(248,113,113,.28);color:#fecaca;}
+    .status-left,.status-removed{background:rgba(148,163,184,.16);color:#cbd5f5;}
+    .bot{padding:14px;border:1px solid var(--border);border-radius:14px;margin-bottom:12px;background:rgba(8,10,24,.55);}
+    .bot .row{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+    .bot .meta{color:var(--text-soft);font-size:12px;margin-top:4px;}
+    .empty{color:var(--text-soft);font-size:13px;padding:18px;text-align:center;border:1px dashed var(--border);border-radius:14px;}
+    .pill{display:inline-flex;background:rgba(124,58,237,.18);color:#C4B5FD;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;}
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0b0f24;border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:99px;font-size:13px;z-index:99;display:none;}
+    .toast.err{border-color:#ef4444;color:#fecaca;}
+    .footer{margin-top:24px;color:var(--text-soft);font-size:12px;}
+    code{background:rgba(2,6,23,.55);padding:1px 6px;border-radius:5px;font-family:'JetBrains Mono','Fira Code',monospace;color:#A7F3D0;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Ride-Along</h1>
+      <p>Send your AI to a Zoom or Google Meet meeting as a named visible participant.</p>
+    </div>
+    <a href="/admin">← Back to Admin</a>
+  </header>
+
+  <div class="layout">
+    <div class="card">
+      <span class="pill">Launch a bot</span>
+      <h2>Send AI to a meeting</h2>
+      <p class="sub">The bot joins as a named guest, listens, and speaks — like a teammate dropping into the room.</p>
+      <label>Meeting URL (Zoom or Google Meet)</label>
+      <input id="meeting-url" type="url" placeholder="https://meet.google.com/abc-defg-hij" />
+      <label>Persona</label>
+      <select id="persona-select"><option value="default">default</option></select>
+      <label>Display name in meeting</label>
+      <input id="bot-name" type="text" value="Maya | AI Specialist" />
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button class="btn" id="launch-btn" onclick="launchBot()">Launch Ride-Along</button>
+        <button class="btn secondary" onclick="loadBots()">Refresh</button>
+      </div>
+      <div class="footer">
+        Teams support is coming soon. The bot uses your <code>LIVEAVATAR_API_KEY</code> so make sure your account has minutes available.
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="pill">Active bots</span>
+      <h2>In meetings right now</h2>
+      <p class="sub">Pull a bot out at any time. Bots auto-leave when the meeting ends.</p>
+      <div id="bots-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API_BASE = '';
+function authHeaders(extra){
+  const t = localStorage.getItem('savant_token');
+  const h = Object.assign({}, extra || {});
+  if (t) h.Authorization = `Bearer ${t}`;
+  return h;
+}
+
+function toast(msg, isErr){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.toggle('err', !!isErr);
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+async function loadPersonas(){
+  try{
+    const r = await fetch(`${API_BASE}/api/personas`, {headers: authHeaders()});
+    if(!r.ok) return;
+    const data = await r.json();
+    const sel = document.getElementById('persona-select');
+    sel.innerHTML = (data.personas||[]).map(p =>
+      `<option value="${p.persona_id}">${p.persona_name} — ${p.persona_id}</option>`
+    ).join('') || '<option value="default">default</option>';
+  }catch(e){}
+}
+
+async function loadBots(){
+  const list = document.getElementById('bots-list');
+  list.innerHTML = '<div class="empty">Loading…</div>';
+  try{
+    const r = await fetch(`${API_BASE}/api/ride-along`, {headers: authHeaders()});
+    if(!r.ok){ list.innerHTML = '<div class="empty">Sign in to view ride-along bots.</div>'; return; }
+    const data = await r.json();
+    const bots = (data.bots||[]).slice().reverse();
+    if(!bots.length){ list.innerHTML = '<div class="empty">No bots running. Launch one to the left.</div>'; return; }
+    list.innerHTML = bots.map(renderBot).join('');
+  }catch(e){
+    list.innerHTML = '<div class="empty">Could not load bots.</div>';
+  }
+}
+
+function renderBot(b){
+  const status = b.status || 'pending';
+  const cls = `status-${status}`;
+  const url = (b.meeting_url || '').replace(/</g,'&lt;');
+  const platform = b.platform || 'unknown';
+  const joined = b.joined_at ? new Date(b.joined_at).toLocaleString() : '—';
+  const canLeave = ['pending','joined'].includes(status);
+  return `
+    <div class="bot">
+      <div class="row">
+        <div>
+          <div style="font-weight:700;">${(b.bot_name || 'AI Specialist').replace(/</g,'&lt;')}</div>
+          <div class="meta">${platform.toUpperCase()} · joined ${joined}</div>
+          <div class="meta" style="word-break:break-all;">${url}</div>
+        </div>
+        <span class="status-pill ${cls}">${status}</span>
+      </div>
+      ${canLeave ? `
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn secondary" onclick="speakBot('${b.bot_id}')">Say something</button>
+          <button class="btn danger" onclick="leaveBot('${b.bot_id}')">Pull bot out</button>
+        </div>` : ''}
+    </div>`;
+}
+
+async function launchBot(){
+  const meeting_url = document.getElementById('meeting-url').value.trim();
+  const persona_id  = document.getElementById('persona-select').value;
+  const bot_name    = document.getElementById('bot-name').value.trim() || 'AI Specialist';
+  if(!meeting_url){ toast('Paste a meeting URL first', true); return; }
+  const btn = document.getElementById('launch-btn');
+  btn.disabled = true; btn.textContent = 'Joining…';
+  try{
+    const r = await fetch(`${API_BASE}/api/ride-along/join`, {
+      method: 'POST',
+      headers: authHeaders({'Content-Type': 'application/json'}),
+      body: JSON.stringify({ meeting_url, persona_id, bot_name }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if(!r.ok){
+      toast(data.detail || 'Could not join meeting', true);
+    } else {
+      toast(`Bot joined: ${data.bot_name || bot_name}`);
+    }
+  }catch(e){ toast('Network error', true); }
+  finally{
+    btn.disabled = false; btn.textContent = 'Launch Ride-Along';
+    loadBots();
+  }
+}
+
+async function leaveBot(botId){
+  if(!confirm('Pull the bot out of the meeting?')) return;
+  try{
+    const r = await fetch(`${API_BASE}/api/ride-along/${encodeURIComponent(botId)}`, {
+      method: 'DELETE', headers: authHeaders(),
+    });
+    const data = await r.json().catch(() => ({}));
+    if(r.ok){ toast('Bot left the meeting'); } else { toast(data.detail || 'Could not stop bot', true); }
+  }catch(e){ toast('Network error', true); }
+  finally{ loadBots(); }
+}
+
+async function speakBot(botId){
+  const text = prompt('What should the bot say?');
+  if(!text) return;
+  try{
+    const r = await fetch(`${API_BASE}/api/ride-along/${encodeURIComponent(botId)}/speak`, {
+      method: 'POST', headers: authHeaders({'Content-Type':'application/json'}),
+      body: JSON.stringify({ text }),
+    });
+    if(r.ok){ toast('Sent to bot'); } else { toast('Could not send', true); }
+  }catch(e){ toast('Network error', true); }
+}
+
+loadPersonas();
+loadBots();
+setInterval(loadBots, 8000);
+</script>
+</body>
+</html>

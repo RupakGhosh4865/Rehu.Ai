@@ -3,22 +3,45 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Rehu.ai — Live Conversation</title>
+<title>The Smart Human.ai — Live Conversation</title>
+<link rel="icon" type="image/svg+xml" href="/static/savant-icon.svg"/>
+<link rel="apple-touch-icon" href="/static/savant-icon.svg"/>
 <!-- LiveKit Web SDK — handles mic + avatar video in LiveAvatar FULL mode -->
 <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
-<link rel="stylesheet" href="/static/rehu-light.css"/>
+<link rel="stylesheet" href="/static/savant-light.css"/>
 </head>
 <body class="call-page">
 
 <!-- LANDING -->
 <div id="landing">
   <div class="l-left">
-    <div class="brand"><strong>Rehu.ai</strong> · Live conversation</div>
+    <div class="brand"><img src="/static/savant-logo.svg" alt="Savant.ai" style="height:24px;width:auto;max-width:220px;vertical-align:middle;margin-right:8px"/> · Live conversation</div>
     <div class="status-badge hidden" id="status-badge"></div>
 
-    <h1 class="headline">Meet <span id="disp-name">Maya</span></h1>
-    <p class="headline-role" id="disp-role">Sales &amp; Product Specialist</p>
-    <p class="sub" id="disp-sub">Always on. Knows your product inside out. Demos live, answers every question, and qualifies leads — like your best rep, 24/7.</p>
+    <h1 class="headline">Meet <span id="disp-name">Aiza</span></h1>
+    <p class="headline-role" id="disp-role">Savant.ai Business Expert</p>
+    <p class="sub" id="disp-sub">Hi there! I'm Aiza. I'm here to help you find exactly what you need — no waiting, no forms. Just ask me anything and let's figure this out together.</p>
+
+    <div class="lang-row">
+      <label class="flbl" for="call-language">Choose language before Aiza speaks</label>
+      <select class="fi lang-select" id="call-language" onchange="applyLanguageChoice()">
+        <option value="en">English</option>
+        <option value="zh">Chinese</option>
+        <option value="ar">Arabic</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="hi">Hindi</option>
+        <option value="te">Telugu</option>
+        <option value="ja">Japanese</option>
+        <option value="de">German</option>
+        <option value="pt">Portuguese</option>
+      </select>
+    </div>
+
+    <label class="consent-row">
+      <input type="checkbox" id="consent-check" checked/>
+      <span id="consent-copy">This conversation may be transcribed and saved so the team can follow up and improve service.</span>
+    </label>
 
     <!-- START CONVERSATION -->
     <button class="call-btn" id="call-btn" onclick="startCall()">
@@ -31,13 +54,13 @@
     </button>
 
     <div class="feature-row">
-      <div class="fpill">Real-time voice</div>
-      <div class="fpill">Product expert</div>
-      <div class="fpill">Live specialist</div>
+      <div class="fpill">Speaks Like a Human</div>
+      <div class="fpill">Knows Everything</div>
+      <div class="fpill">Always Available</div>
     </div>
     <div class="l-links">
       <a href="/">Home</a>
-      <a href="#" onclick="openCatalog();return false">Configure knowledge</a>
+      <a href="#" onclick="openCatalog();return false">Train Aiza</a>
       <a href="/admin">Admin</a>
     </div>
   </div>
@@ -48,7 +71,7 @@
       <img id="hero-img" class="persona-poster" src="" alt="" loading="eager"/>
       <div class="av-label">
         <div class="av-dot"></div>
-        <div><div class="av-nm" id="av-nm">Maya</div><div class="av-st" id="av-st">Specialist · Available</div></div>
+        <div><div class="av-nm" id="av-nm">Aiza</div><div class="av-st" id="av-st">Savant.ai Business Expert</div></div>
       </div>
     </div>
   </div>
@@ -56,48 +79,133 @@
 
 <!-- CALL SCREEN -->
 <div id="call-screen">
-  <img id="call-poster" class="call-poster" alt="" />
-  <video id="av-video" autoplay playsinline></video>
-
-  <div class="cs-top">
-    <div class="cs-id">
-      <div class="cs-dot"></div>
-      <div><div class="cs-nm" id="cs-nm">Maya</div><div class="cs-co" id="cs-co">Sales Specialist</div></div>
+  <div class="call-shell">
+    <div class="cs-top">
+      <div class="cs-id">
+        <div class="cs-dot"></div>
+        <div><div class="cs-nm" id="cs-nm">Aiza</div><div class="cs-co" id="cs-co">Savant.ai Business Expert</div></div>
+      </div>
+      <div class="cs-top-right">
+        <select class="cs-lang-select" id="call-language-live" onchange="switchCallLanguage(this.value)" aria-label="Change conversation language">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="hi">Hindi</option>
+          <option value="te">Telugu</option>
+          <option value="ja">Japanese</option>
+          <option value="zh">Chinese</option>
+          <option value="ar">Arabic</option>
+          <option value="de">German</option>
+          <option value="pt">Portuguese</option>
+        </select>
+        <div class="lang-confirm" id="lang-confirm" aria-live="polite"></div>
+        <div class="cs-chip" id="cs-chip">Connecting</div>
+      </div>
     </div>
-    <div class="cs-chip" id="cs-chip">Connecting</div>
-  </div>
 
-  <div class="transcript" id="transcript"></div>
+    <div class="call-split">
+      <aside class="chat-col" aria-label="Live transcript and chat">
+        <div class="presenter-dock" id="presenter-dock" aria-label="Aiza live presenter"></div>
+        <div class="chat-label">Live conversation</div>
+        <div class="transcript" id="transcript">
+          <div class="transcript-empty" id="transcript-empty">Aiza will appear here when the conversation starts.</div>
+        </div>
+        <div class="chat-status" id="chat-status">Ready when you are.</div>
+        <form class="chat-input-row" onsubmit="sendChatMessage(event)">
+          <input class="chat-input" id="chat-input" type="text" autocomplete="off" placeholder="Type a message to Aiza..."/>
+          <button class="chat-send" type="submit" title="Send message" aria-label="Send message">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 2L11 13"/>
+              <path d="M22 2L15 22L11 13L2 9L22 2Z"/>
+            </svg>
+          </button>
+        </form>
+      </aside>
 
-  <div class="cs-ctrl">
-    <!-- Interrupt -->
-    <button class="cbtn" title="Interrupt Maya" onclick="interrupt()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-        <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
-      </svg>
-    </button>
+      <main class="media-col" aria-label="Aiza live video">
+        <div class="video-wrap" id="avatar-stage">
+          <img id="call-poster" class="call-poster" alt="" />
+          <video id="av-video" autoplay playsinline></video>
+          <div class="presenter-caption" aria-hidden="true">
+            <span class="presenter-pulse"></span>
+            <span>Aiza is presenting live</span>
+          </div>
+          <div class="avatar-idle-presence" aria-hidden="true">
+            <span class="idle-orb"></span>
+            <span id="avatar-presence-label">Ask me anything</span>
+          </div>
+          <section class="presentation-stage hidden" id="presentation-stage" aria-label="Product presentation">
+            <button class="presentation-close" type="button" onclick="closePresentation()" aria-label="Close presentation">×</button>
+            <div class="slide-viewport">
+              <img id="presentation-image" class="presentation-image hidden" alt="Presentation slide" />
+              <div class="presentation-slide" id="presentation-fallback">
+                <p class="presentation-eyebrow" id="presentation-eyebrow">Website inbound superhuman</p>
+                <h2 id="presentation-title">Product Overview</h2>
+                <p id="presentation-subtitle">Aiza will present relevant product or service information here.</p>
+                <div class="presentation-grid">
+                  <div>
+                    <h3>Role & goals</h3>
+                    <ul id="presentation-bullets"></ul>
+                  </div>
+                  <div>
+                    <h3>Value proposition</h3>
+                    <ul id="presentation-values"></ul>
+                  </div>
+                </div>
+                <a class="presentation-cta hidden" id="presentation-cta" href="#" target="_blank" rel="noopener">Learn more</a>
+              </div>
+            </div>
+            <div class="slide-controls hidden" id="slide-controls" aria-label="Slide navigation">
+              <button type="button" onclick="showPresentationSlide(-1)" aria-label="Previous slide">‹</button>
+              <span id="slide-count">1 / 1</span>
+              <button type="button" onclick="showPresentationSlide(1)" aria-label="Next slide">›</button>
+            </div>
+          </section>
+        </div>
+        <p class="privacy-notice">Use voice naturally, or type when needed. You can mute your mic, speaker, or end the call anytime.</p>
+      </main>
+    </div>
 
-    <!-- Mute / Unmute -->
-    <button class="cbtn" id="mute-btn" title="Mute / Unmute mic" onclick="toggleMute()">
-      <svg id="mic-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-        <line x1="12" y1="19" x2="12" y2="23"/>
-      </svg>
-      <svg id="mic-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="display:none">
-        <line x1="1" y1="1" x2="23" y2="23"/>
-        <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/>
-        <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/>
-        <line x1="12" y1="19" x2="12" y2="23"/>
-      </svg>
-    </button>
+    <div class="cs-ctrl">
+      <button class="cbtn" id="speaker-btn" title="Speaker on / off" aria-label="Speaker on / off" onclick="toggleSpeaker()">
+        <svg id="speaker-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+          <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+          <path d="M19 5a10 10 0 0 1 0 14"/>
+        </svg>
+        <svg id="speaker-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+          <line x1="22" y1="9" x2="16" y2="15"/>
+          <line x1="16" y1="9" x2="22" y2="15"/>
+        </svg>
+      </button>
 
-    <!-- End call -->
-    <button class="cbtn" id="end-btn" title="End call" onclick="endCall()">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-        <path d="M18.36 5.64a9 9 0 0 0-12.73 0L1.22 10.05a1 1 0 0 0 0 1.41l2.83 2.83a1 1 0 0 0 1.41 0l1.42-1.42a1 1 0 0 1 1.41 0l3.54 3.54a1 1 0 0 1 0 1.41l-1.42 1.42a1 1 0 0 0 0 1.41l2.83 2.83a1 1 0 0 0 1.41 0l4.42-4.41a9 9 0 0 0 0-12.73z" transform="rotate(135 12 12)"/>
-      </svg>
-    </button>
+      <button class="cbtn" title="Interrupt Aiza" aria-label="Interrupt Aiza" onclick="interrupt()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
+        </svg>
+      </button>
+
+      <button class="cbtn" id="mute-btn" title="Mute / Unmute mic" aria-label="Mute / Unmute mic" onclick="toggleMute()">
+        <svg id="mic-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+        </svg>
+        <svg id="mic-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="display:none">
+          <line x1="1" y1="1" x2="23" y2="23"/>
+          <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/>
+          <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+        </svg>
+      </button>
+
+      <button class="cbtn" id="end-btn" title="End call" aria-label="End call" onclick="endCall()">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.72 19.72 0 0 1 11.19 19 19.38 19.38 0 0 1 5 12.81 19.72 19.72 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.77.62 2.61a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.47-1.14a2 2 0 0 1 2.11-.45c.84.29 1.71.5 2.61.62A2 2 0 0 1 22 16.92z" transform="rotate(135 12 12)"/>
+        </svg>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -110,7 +218,7 @@
     </div>
     <div class="connect-progress"><div class="connect-progress-bar"></div></div>
     <p class="connect-title" id="connect-title">Hold on — we're connecting you to your specialist…</p>
-    <p class="connect-sub" id="connect-sub">Sales & Product Specialist</p>
+    <p class="connect-sub" id="connect-sub">Savant.ai Business Expert</p>
     <p class="connect-mic-hint" id="connect-mic-hint">Your browser will ask for microphone access so they can hear you.</p>
   </div>
 </div>
@@ -126,27 +234,27 @@
 <div id="cat-modal" onclick="if(event.target===this)closeCatalog()">
   <div class="modal">
     <div id="cat-form">
-      <h2>Configure Product Knowledge</h2>
-      <p>Give Maya your product catalog, and she'll automatically demo it the moment someone calls — a live 60-second pitch, personalized to your product.</p>
-      <div class="flbl">Company Name</div>
+      <h2>Train Aiza With Your Knowledge</h2>
+      <p>Add your website, product, service, FAQs, or internal notes so Aiza can speak with real context — like someone who already knows your business.</p>
+      <div class="flbl">Business / Company Name</div>
       <input class="fi" id="c-co" type="text" placeholder="e.g. Acme Corp"/>
-      <div class="flbl">Product / Service Description</div>
-      <textarea class="fi" id="c-txt" placeholder="Paste your product description, features, pricing, use cases, FAQs…"></textarea>
-      <div class="flbl">Website URL (optional — Maya will read it)</div>
+      <div class="flbl">Product, Service, or FAQ Details</div>
+      <textarea class="fi" id="c-txt" placeholder="Paste your product, service, pricing, use cases, FAQs, or internal notes…"></textarea>
+      <div class="flbl">Website URL (optional — Aiza will read it)</div>
       <input class="fi" id="c-url" type="url" placeholder="https://yourwebsite.com"/>
       <div class="ma">
         <button class="mb s" onclick="closeCatalog()">Cancel</button>
-        <button class="mb p" id="c-save" onclick="saveCatalog()">Train Maya</button>
+        <button class="mb p" id="c-save" onclick="saveCatalog()">Train Aiza</button>
       </div>
     </div>
     <div class="m-ok" id="cat-ok">
       <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/>
       </svg>
-      <h3>Maya is trained and ready!</h3>
-      <p>She now knows everything about your product.<br>Click Call to start the live demo.</p>
+      <h3>Aiza is trained and ready.</h3>
+      <p>Start a live conversation to test how she answers using your own knowledge.</p>
       <div class="ma" style="margin-top:22px">
-        <button class="mb p" onclick="closeCatalog();startCall()">Call Maya Now</button>
+        <button class="mb p" onclick="closeCatalog();startCall()">Call Aiza Now</button>
       </div>
     </div>
   </div>
@@ -165,8 +273,65 @@ let micEnabled  = true;
 let personaId   = new URLSearchParams(location.search).get('persona') || 'default';
 const urlParams = new URLSearchParams(location.search);
 const isWidget  = urlParams.get('widget') === '1';
-let personaName = 'Maya';
+let personaName = 'Aiza';
 let companyName = 'our company';
+let selectedLanguage = urlParams.get('lang') || 'en';
+let speakerEnabled = true;
+let openingFallbackTimer = null;
+let avatarSpeechSeen = false;
+let avatarAudioAttached = false;
+let micAutoPaused = false;
+let fallbackTtsActive = false;
+let suppressVisitorAudioUntil = 0;
+let endingCall = false;
+let reconnectingAvatar = false;
+let avatarReconnectAttempts = 0;
+let livekitConnectSerial = 0;
+let demoTimerHandle = null;
+let demoTimerStarted = false;
+const fallbackAudioEls = new Set();
+const partialTranscriptEls = {};
+const transcriptSeen = new Set();
+let complianceSettings = null;
+let activeProductCardId = '';
+let lastUserIntentText = '';
+let presentationOpenedAt = 0;
+let presentationReturnTimer = null;
+let presentationSlides = [];
+let presentationSlideIndex = 0;
+const leadCaptureState = {
+  active: false,
+  asked: false,
+  saved: false,
+  endPrompted: false,
+  intent: '',
+  fields: { visitor_name: '', visitor_email: '', company_name: '', preferred_time: '', topic: '' },
+};
+
+const LANGUAGE_LABELS = {
+  en: 'English',
+  zh: 'Chinese',
+  ar: 'Arabic',
+  es: 'Spanish',
+  fr: 'French',
+  hi: 'Hindi',
+  te: 'Telugu',
+  ja: 'Japanese',
+  de: 'German',
+  pt: 'Portuguese',
+};
+const SPEECH_LANGS = {
+  en: 'en-US',
+  zh: 'zh-CN',
+  ar: 'ar-SA',
+  es: 'es-ES',
+  fr: 'fr-FR',
+  hi: 'hi-IN',
+  te: 'te-IN',
+  ja: 'ja-JP',
+  de: 'de-DE',
+  pt: 'pt-BR',
+};
 
 const PERSONA_SUBS = {
   'hr-interviewer': (n, c) => `${n} conducts structured first-round interviews for ${c}. Evaluates candidates consistently — upload job descriptions in Admin.`,
@@ -177,9 +342,9 @@ const PERSONA_SUBS = {
   'demo-host': (n, c) => `${n} hosts interactive product demos for ${c}.`,
   'healthcare-guide': (n, c) => `${n} explains services and guides patients through next steps for ${c} — clear, empathetic, and compliant.`,
   'meeting-assistant': (n, c) => `${n} is your meeting assistant for ${c}. Enterprise Zoom and Teams join coming soon.`,
-  'default': (n, c) => `${n} is your sales and product specialist for ${c}. Live demos, qualification, and Smartsheet-ready lead capture — 24/7.`,
+  'default': (n, c) => `Hi there! I'm ${n}. I'm here to help you find exactly what you need — no waiting, no forms. Just ask me anything and let's figure this out together.`,
 };
-let roleTitle = 'Sales & Product Specialist';
+let roleTitle = 'Savant.ai Business Expert';
 let transcriptPending = null;
 let mediaRec    = null;
 let isRecording = false;
@@ -192,6 +357,12 @@ window.addEventListener('load', async () => {
     const accent = urlParams.get('color');
     if (accent) document.documentElement.style.setProperty('--accent', decodeURIComponent(accent));
   }
+  const langSelect = document.getElementById('call-language');
+  if (langSelect && LANGUAGE_LABELS[selectedLanguage]) langSelect.value = selectedLanguage;
+  const liveLangSelect = document.getElementById('call-language-live');
+  if (liveLangSelect && LANGUAGE_LABELS[selectedLanguage]) liveLangSelect.value = selectedLanguage;
+  applyLanguageChoice();
+  await loadComplianceSettings();
   await loadPersona();
   await initExperience();
   if (window.RehuCall) RehuCall.initAlivePersona('.av-frame');
@@ -233,11 +404,11 @@ async function loadPersona() {
       if (!r.ok) { personaId = 'default'; return fetch('/api/personas/default').then(x => x.json()); }
       return r.json();
     });
-    personaName = p.persona_name || 'Maya';
+    personaName = p.persona_name || 'Aiza';
     companyName = p.company_name || 'our company';
     setNames(personaName);
     document.getElementById('cs-co').textContent = roleSubtitle();
-    document.title = `Rehu.ai — Meet ${personaName}`;
+    document.title = `The Smart Human.ai — Meet ${personaName}`;
 
     const subFn = PERSONA_SUBS[personaId] || PERSONA_SUBS.default;
     document.getElementById('disp-sub').textContent = subFn(personaName, companyName);
@@ -249,7 +420,7 @@ async function loadPersona() {
       b.className='status-badge warn'; b.innerHTML='Add LIVEAVATAR_API_KEY to enable video persona'; b.classList.remove('hidden');
     } else if (h.services.sandbox_mode) {
       b.className='status-badge ok';
-      b.innerHTML='Demo mode — specialist knowledge &amp; voice active';
+      b.innerHTML='Live Now — Your Expert Is Ready';
       b.classList.remove('hidden');
     }
   } catch(e) {}
@@ -259,6 +430,71 @@ function setNames(n) {
   ['disp-name','av-nm','cs-nm'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=n;});
   const lbl = document.getElementById('call-btn-label');
   if (lbl) lbl.textContent = `Talk to ${n}`;
+}
+
+function applyLanguageChoice(sourceValue) {
+  const select = document.getElementById('call-language');
+  const liveSelect = document.getElementById('call-language-live');
+  selectedLanguage = sourceValue || select?.value || liveSelect?.value || selectedLanguage || 'en';
+  if (!LANGUAGE_LABELS[selectedLanguage]) selectedLanguage = 'en';
+  if (select) select.value = selectedLanguage;
+  if (liveSelect) liveSelect.value = selectedLanguage;
+
+  const isRtl = selectedLanguage === 'ar';
+  const call = document.getElementById('call-screen');
+  if (call) {
+    call.dir = isRtl ? 'rtl' : 'ltr';
+    call.classList.toggle('call-rtl', isRtl);
+  }
+
+  const input = document.getElementById('chat-input');
+  if (input) {
+    input.dir = isRtl ? 'rtl' : 'ltr';
+    input.placeholder = isRtl ? 'اكتب رسالة إلى Aiza...' : 'Type a message to Aiza...';
+  }
+
+  const confirm = document.getElementById('lang-confirm');
+  if (confirm) confirm.textContent = '';
+}
+
+async function switchCallLanguage(lang) {
+  const previous = selectedLanguage;
+  applyLanguageChoice(lang);
+  if (selectedLanguage === previous) return;
+  showLanguageConfirmation();
+  if (sessionId) {
+    fetch(`/api/sessions/${sessionId}/language`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: selectedLanguage }),
+    }).catch(() => {});
+  }
+  sendCtrl('session.language_changed', { language: selectedLanguage, data: { language: selectedLanguage } });
+  if (wsConn?.readyState === WebSocket.OPEN) {
+    wsConn.send(JSON.stringify({ type: 'language', language: selectedLanguage }));
+  }
+}
+
+function showLanguageConfirmation() {
+  const confirm = document.getElementById('lang-confirm');
+  if (!confirm) return;
+  confirm.textContent = `${LANGUAGE_LABELS[selectedLanguage]} active`;
+  confirm.classList.remove('show');
+  void confirm.offsetWidth;
+  confirm.classList.add('show');
+  setTimeout(() => confirm.classList.remove('show'), 2200);
+}
+
+async function loadComplianceSettings() {
+  try {
+    const settings = await fetch('/api/compliance/settings').then(r => r.ok ? r.json() : null);
+    if (!settings) return;
+    complianceSettings = settings;
+    const copy = document.getElementById('consent-copy');
+    const check = document.getElementById('consent-check');
+    if (copy) copy.textContent = settings.consent_text || copy.textContent;
+    if (check) check.required = !!settings.consent_required;
+  } catch(e) {}
 }
 
 
@@ -282,7 +518,16 @@ function showCallError(msg) {
 // ═══════════════ START CALL ═══════════════
 async function startCall() {
   const btn = document.getElementById('call-btn');
+  const consentCheck = document.getElementById('consent-check');
+  if (complianceSettings?.consent_required && consentCheck && !consentCheck.checked) {
+    showCallError('Please accept the conversation transcript notice before starting.');
+    return;
+  }
   hideCallError();
+  endingCall = false;
+  reconnectingAvatar = false;
+  avatarReconnectAttempts = 0;
+  setAvatarPresence('ready');
   btn.disabled = true;
   btn.innerHTML = `<div class="ph"><div class="spinner" style="width:22px;height:22px;border-width:2px;border-top-color:#fff;border-color:rgba(255,255,255,.3)"></div></div><span>Connecting…</span>`;
 
@@ -292,12 +537,44 @@ async function startCall() {
   }
 
   if (window.RehuCall) RehuCall.showConnectOverlay(personaName);
+  closePresentation();
   RehuCall?.transitionToCall();
+  applyLanguageChoice();
 
   try {
+    const urlUserId    = urlParams.get('user_id') || '';
+    const urlUserPlan  = urlParams.get('user_plan') || '';
+    const urlUserStage = urlParams.get('user_stage') || '';
+    const urlPage      = urlParams.get('page') || '';
+
     const res = await fetch('/api/sessions', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({persona_id: personaId}),
+      body: JSON.stringify({
+        persona_id: personaId,
+        language: selectedLanguage,
+        user_id:      urlUserId    || undefined,
+        user_plan:    urlUserPlan  || undefined,
+        user_stage:   urlUserStage || undefined,
+        page_context: urlPage      || undefined,
+        metadata: {
+          widget: isWidget,
+          widget_mode: isWidget,
+          source_page: location.href,
+          user_agent: navigator.userAgent,
+          user: {
+            id:    urlUserId    || undefined,
+            plan:  urlUserPlan  || undefined,
+            stage: urlUserStage || undefined,
+            page:  urlPage      || undefined,
+          },
+          consent: {
+            accepted: !!consentCheck?.checked,
+            text: document.getElementById('consent-copy')?.textContent || '',
+            accepted_at: new Date().toISOString(),
+            store_audio: !!complianceSettings?.store_audio,
+          },
+        },
+      }),
     });
     if (!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
@@ -305,6 +582,8 @@ async function startCall() {
     sessionId   = data.session_id;
     personaName = data.persona_name || personaName;
     sessionMode = data.mode || 'voice_only';
+    selectedLanguage = data.language || selectedLanguage;
+    applyLanguageChoice();
 
     setNames(personaName);
     document.getElementById('cs-co').textContent = roleSubtitle();
@@ -317,7 +596,7 @@ async function startCall() {
     if (sessionMode==='liveavatar' && data.livekit_url && data.livekit_client_token) {
       try {
         await connectLiveKit(data.livekit_url, data.livekit_client_token);
-        if (data.opening_text) addMsg('ai', data.opening_text);
+        scheduleOpeningFallback(data.opening_text || '');
       } catch (lkErr) {
         console.error(lkErr);
         showCallError('Connection issue — retry or check microphone permissions.');
@@ -330,6 +609,7 @@ async function startCall() {
       await connectVoiceWS(data.opening_text||'');
       if (window.RehuCall) RehuCall.hideConnectOverlay();
     }
+    maybeStartDemoTimer();
   } catch(e) {
     console.error(e);
     showCallError('Connection issue — retry or check microphone permissions.');
@@ -347,6 +627,8 @@ function attachAvatarVideo(track) {
   const poster = document.getElementById('call-poster');
   if (poster) poster.classList.add('hidden');
   v.play().catch(() => {});
+  reconnectingAvatar = false;
+  setAvatarPresence('ready');
   setChip('listening');
   if (window.RehuCall) RehuCall.hideConnectOverlay();
 }
@@ -359,8 +641,15 @@ function attachAvatarAudio(track) {
     avatarAudioEl = null;
   }
   avatarAudioEl = track.attach();
+  avatarAudioAttached = true;
+  if (openingFallbackTimer) {
+    clearTimeout(openingFallbackTimer);
+    openingFallbackTimer = null;
+  }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
   avatarAudioEl.autoplay = true;
   avatarAudioEl.playsInline = true;
+  avatarAudioEl.muted = !speakerEnabled;
   avatarAudioEl.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0';
   document.body.appendChild(avatarAudioEl);
   const playAudio = async () => {
@@ -390,6 +679,7 @@ function attachRemoteTracks(room, LC) {
 async function connectLiveKit(lkUrl, lkToken) {
   const LC = window.LivekitClient;
   if (!LC) throw new Error('LiveKit SDK not loaded');
+  const connectSerial = ++livekitConnectSerial;
 
   livekitRoom = new LC.Room({ adaptiveStream: true, dynacast: true });
 
@@ -397,6 +687,12 @@ async function connectLiveKit(lkUrl, lkToken) {
     console.log('Track subscribed:', track.kind, participant?.identity);
     if (track.kind === 'video') attachAvatarVideo(track);
     if (track.kind === 'audio') attachAvatarAudio(track);
+  });
+
+  livekitRoom.on(LC.RoomEvent.TrackUnsubscribed, (track) => {
+    if (track?.kind === 'video' && sessionId && !endingCall) {
+      handleAvatarDisconnect('avatar_video_unsubscribed');
+    }
   });
 
   livekitRoom.on(LC.RoomEvent.DataReceived, (data, participant, kind, topic) => {
@@ -407,7 +703,11 @@ async function connectLiveKit(lkUrl, lkToken) {
     } catch (e) {}
   });
 
-  livekitRoom.on(LC.RoomEvent.Disconnected, () => { if (sessionId) endCall(); });
+  livekitRoom.on(LC.RoomEvent.Disconnected, () => {
+    if (endingCall || !sessionId) return;
+    livekitRoom = null;
+    handleAvatarDisconnect('LiveAvatar stream disconnected');
+  });
 
   await livekitRoom.connect(lkUrl, lkToken, { autoSubscribe: true });
   console.log('✓ LiveKit connected, room state:', livekitRoom.state);
@@ -423,6 +723,7 @@ async function connectLiveKit(lkUrl, lkToken) {
   await enableMic();
 
   setTimeout(() => {
+    if (connectSerial !== livekitConnectSerial || !sessionId) return;
     if (window.RehuCall) RehuCall.hideConnectOverlay();
     const v = document.getElementById('av-video');
     if (v && v.style.opacity !== '1') {
@@ -430,6 +731,80 @@ async function connectLiveKit(lkUrl, lkToken) {
       if (livekitRoom) { try { livekitRoom.disconnect(); } catch (e) {} livekitRoom = null; }
     }
   }, 12000);
+}
+
+function setAvatarPresence(state, message = '') {
+  const stage = document.getElementById('avatar-stage');
+  const label = document.getElementById('avatar-presence-label');
+  const poster = document.getElementById('call-poster');
+  const video = document.getElementById('av-video');
+  if (!stage) return;
+  stage.classList.toggle('avatar-reconnecting', state === 'reconnecting');
+  stage.classList.toggle('avatar-disconnected', state === 'expired' || state === 'offline');
+  if (label) {
+    label.textContent = message || (state === 'reconnecting'
+      ? 'Reconnecting Aiza...'
+      : state === 'expired'
+        ? 'Aiza session ended. You can reconnect or end the call.'
+        : 'Ask me anything');
+  }
+  if (state === 'reconnecting' || state === 'expired' || state === 'offline') {
+    if (poster) poster.classList.remove('hidden');
+    if (video) video.style.opacity = '0';
+    setChip('connecting');
+  }
+}
+
+async function handleAvatarDisconnect(reason = 'avatar_disconnected') {
+  if (!sessionId || reconnectingAvatar) return;
+  reconnectingAvatar = true;
+  avatarReconnectAttempts += 1;
+  if (avatarAudioEl) { avatarAudioEl.remove(); avatarAudioEl = null; }
+  avatarAudioAttached = false;
+  setAvatarPresence('reconnecting', avatarReconnectAttempts > 1 ? 'Still reconnecting Aiza...' : 'Reconnecting Aiza...');
+  persistSessionEvent(`Avatar stream disconnected: ${reason}`, 'avatar_disconnect');
+
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    const ok = await reconnectLiveAvatar();
+    if (ok) {
+      avatarReconnectAttempts = 0;
+      addMsg('system', 'Aiza is back online. Your conversation is still here.', { persist: false });
+      persistSessionEvent('Avatar stream reconnected', 'avatar_reconnect');
+      return;
+    }
+  } catch (e) {
+    console.warn('Avatar reconnect failed:', e);
+  }
+
+  reconnectingAvatar = false;
+  setAvatarPresence(
+    'expired',
+    avatarReconnectAttempts >= 2
+      ? 'Aiza sandbox session ended. Please end and start a fresh call.'
+      : 'Aiza paused. Trying to reconnect...'
+  );
+  if (avatarReconnectAttempts < 2) {
+    setTimeout(() => handleAvatarDisconnect('retry_after_failed_reconnect'), 2200);
+  } else {
+    addMsg('system', 'Aiza video paused because the avatar session ended. In sandbox this can happen around one minute; production sessions can run longer with keep-alive.', { persist: false });
+  }
+}
+
+async function reconnectLiveAvatar() {
+  if (!sessionId) return false;
+  const res = await fetch(`/api/sessions/${sessionId}/liveavatar/reconnect`, { method: 'POST' });
+  if (!res.ok) return false;
+  const data = await res.json();
+  if (!data.livekit_url || !data.livekit_client_token) return false;
+  if (livekitRoom) {
+    try { livekitRoom.disconnect(); } catch (e) {}
+    livekitRoom = null;
+  }
+  await connectLiveKit(data.livekit_url, data.livekit_client_token);
+  reconnectingAvatar = false;
+  setAvatarPresence('ready');
+  return true;
 }
 
 async function enableMic() {
@@ -447,11 +822,25 @@ async function enableMic() {
 
 function handleAgentEvt(evt) {
   const cs = document.getElementById('call-screen');
+  const transcriptEvt = normalizeTranscriptEvent(evt);
+  if (transcriptEvt) {
+    if (transcriptEvt.partial) updatePartialTranscript(transcriptEvt.role, transcriptEvt.text);
+    else finalizeTranscript(transcriptEvt.role, transcriptEvt.text);
+    return;
+  }
   switch(evt.event_type) {
     case 'avatar.speak_started':
-      setChip('speaking'); cs.classList.add('maya-speaks'); break;
+      avatarSpeechSeen = true;
+      if (openingFallbackTimer) {
+        clearTimeout(openingFallbackTimer);
+        openingFallbackTimer = null;
+      }
+      autoPauseMicForAiza();
+      setChip('speaking'); cs.classList.add('aiza-speaks'); break;
     case 'avatar.speak_ended':
-      setChip('listening'); cs.classList.remove('maya-speaks'); break;
+      resumeMicAfterAiza();
+      maybeSchedulePresentationReturn(8000);
+      setChip('listening'); cs.classList.remove('aiza-speaks'); break;
     case 'user.speak_started':
       const mb = document.getElementById('mute-btn');
       if (!mb.classList.contains('muted')) {
@@ -459,13 +848,55 @@ function handleAgentEvt(evt) {
         setTimeout(()=>mb.classList.remove('user-speaking'), 1500);
       }
       break;
-    case 'transcript.user':
-      if (evt.data?.text) addMsg('me', evt.data.text); break;
-    case 'transcript.avatar':
-      if (evt.data?.text) addMsg('ai', evt.data.text); break;
     case 'avatar.ready':
       if (window.RehuCall) RehuCall.hideConnectOverlay();
       setChip('listening'); break;
+  }
+}
+
+function normalizeTranscriptEvent(evt) {
+  const type = evt?.event_type || evt?.type || '';
+  if (!type) return null;
+  const isTranscript = /transcript|transcription/i.test(type);
+  if (!isTranscript) return null;
+  const text = (evt?.data?.text || evt?.data?.transcript || evt?.text || evt?.transcript || '').trim();
+  if (!text) return null;
+  const role = /user|visitor|human/i.test(type) || evt?.role === 'user' ? 'me' : 'ai';
+  const partial = /chunk|partial|delta|interim/i.test(type) || evt?.data?.is_final === false || evt?.is_final === false;
+  return { role, text, partial };
+}
+
+function updatePartialTranscript(role, text) {
+  const w = document.getElementById('transcript');
+  if (!w || !text) return;
+  hideTranscriptEmpty();
+  const key = role;
+  let el = partialTranscriptEls[key];
+  if (!el || !el.isConnected) {
+    el = document.createElement('div');
+    el.className = `tmsg ${role} partial`;
+    partialTranscriptEls[key] = el;
+    w.appendChild(el);
+  }
+  el.textContent = text;
+  safeScrollTranscript();
+}
+
+function finalizeTranscript(role, text) {
+  const partial = partialTranscriptEls[role];
+  if (partial?.isConnected) partial.remove();
+  partialTranscriptEls[role] = null;
+  if (role === 'me') {
+    if (shouldSuppressVisitorTranscript()) return;
+    lastUserIntentText = text;
+    addMsg(role, text, { persist: true });
+    maybeShowProductCard(text);
+    maybePromptMeeting(text);
+    captureLeadDetails(text);
+  } else {
+    addMsg('ai', text, { persist: false });
+    persistTranscriptLine('ai', text);
+    if (isPresentationCue(text)) maybeShowProductCard(lastUserIntentText || text, { fromAssistant: true, cueText: text });
   }
 }
 
@@ -481,14 +912,60 @@ function sendCtrl(type, extra={}) {
 
 function interrupt() {
   sendCtrl('avatar.interrupt');
-  document.getElementById('call-screen').classList.remove('maya-speaks');
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  resumeMicAfterAiza();
+  document.getElementById('call-screen').classList.remove('aiza-speaks');
   setChip('listening');
+}
+
+async function autoPauseMicForAiza() {
+  if (!micEnabled || micAutoPaused) return;
+  micAutoPaused = true;
+  suppressVisitorAudioUntil = Date.now() + 1200;
+  if (livekitRoom) {
+    try { await livekitRoom.localParticipant.setMicrophoneEnabled(false); } catch(e){}
+  } else {
+    stopVoiceRec();
+  }
+}
+
+async function resumeMicAfterAiza() {
+  if (!micAutoPaused) return;
+  micAutoPaused = false;
+  suppressVisitorAudioUntil = Date.now() + 900;
+  if (!micEnabled) return;
+  if (livekitRoom) {
+    try { await livekitRoom.localParticipant.setMicrophoneEnabled(true); } catch(e){}
+  } else if (!fallbackTtsActive) {
+    startVoiceRec();
+  }
+}
+
+function shouldSuppressVisitorTranscript() {
+  return micAutoPaused || Date.now() < suppressVisitorAudioUntil;
+}
+
+function toggleSpeaker() {
+  speakerEnabled = !speakerEnabled;
+  updateSpeakerUI();
+}
+
+function updateSpeakerUI() {
+  const btn = document.getElementById('speaker-btn');
+  const on = document.getElementById('speaker-on');
+  const off = document.getElementById('speaker-off');
+  if (on) on.style.display = speakerEnabled ? '' : 'none';
+  if (off) off.style.display = speakerEnabled ? 'none' : '';
+  if (btn) btn.classList.toggle('muted', !speakerEnabled);
+  if (avatarAudioEl) avatarAudioEl.muted = !speakerEnabled;
+  fallbackAudioEls.forEach((audio) => { audio.muted = !speakerEnabled; });
+  if (!speakerEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
 async function toggleMute() {
   micEnabled = !micEnabled;
   if (livekitRoom) {
-    try { await livekitRoom.localParticipant.setMicrophoneEnabled(micEnabled); } catch(e){}
+    try { await livekitRoom.localParticipant.setMicrophoneEnabled(micEnabled && !micAutoPaused); } catch(e){}
   } else {
     // voice-only fallback
     micEnabled ? startVoiceRec() : stopVoiceRec();
@@ -504,6 +981,287 @@ function updateMicUI() {
   else { btn.classList.add('muted'); setChip('muted'); }
 }
 
+async function sendChatMessage(event) {
+  if (event) event.preventDefault();
+  const input = document.getElementById('chat-input');
+  const text = (input?.value || '').trim();
+  if (!text || !sessionId) return;
+  if (input) input.value = '';
+
+  addMsg('me', text, { persist: false });
+  maybeShowProductCard(text);
+  maybePromptMeeting(text);
+  captureLeadDetails(text);
+
+  if (wsConn?.readyState === WebSocket.OPEN) {
+    wsConn.send(JSON.stringify({ type: 'text', text }));
+    return;
+  }
+
+  if (livekitRoom) {
+    sendCtrl('user.message', { text, data: { text } });
+  }
+
+  fetch(`/api/sessions/${sessionId}/message`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  }).catch(() => {});
+
+}
+
+async function maybeShowProductCard(text, opts={}) {
+  if (!sessionId || !isProductIntent(text)) return;
+  if (opts.fromAssistant && !isPresentationCue(opts.cueText || text)) return;
+  try {
+    const data = await fetch(`/api/sessions/${sessionId}/visual?topic=${encodeURIComponent(text)}`).then(r => r.ok ? r.json() : null);
+    const card = data?.product_card;
+    if (!card || card.id === activeProductCardId) return;
+    activeProductCardId = card.id;
+    renderProductCard(card);
+  } catch(e) {}
+}
+
+function isProductIntent(text) {
+  return /(product|service|pricing|price|cost|feature|overview|demo|solution|case stud|value|benefit|plan|package|offer)/i.test(text || '');
+}
+
+function renderProductCard(card) {
+  const stage = document.getElementById('presentation-stage');
+  if (!stage || !card) return;
+  presentationSlides = getCardSlideImages(card);
+  presentationSlideIndex = 0;
+  document.getElementById('presentation-eyebrow').textContent = card.eyebrow || 'Product presentation';
+  document.getElementById('presentation-title').textContent = card.title || 'Product Overview';
+  document.getElementById('presentation-subtitle').textContent = card.subtitle || 'Relevant product or service details.';
+  renderList('presentation-bullets', card.bullets || card.role_goals || [
+    'Answer customer questions in real time',
+    'Qualify interest and uncover needs',
+    'Guide visitors to the right next step',
+  ]);
+  renderList('presentation-values', card.value_points || [
+    'Always-on expert experience',
+    'Faster path from interest to action',
+    'Clearer product and service understanding',
+  ]);
+  const cta = document.getElementById('presentation-cta');
+  if (cta) {
+    if (card.cta_url) {
+      cta.href = card.cta_url;
+      cta.textContent = card.cta_label || 'Learn more';
+      cta.classList.remove('hidden');
+    } else {
+      cta.classList.add('hidden');
+    }
+  }
+  renderActivePresentationSlide();
+  stage.classList.remove('hidden');
+  stage.classList.add('presentation-active');
+  stage.closest('.call-shell')?.classList.add('presentation-mode');
+  stage.closest('.video-wrap')?.classList.add('presentation-mode');
+  movePresenterToDock();
+  presentationOpenedAt = Date.now();
+  schedulePresentationReturn(45000);
+}
+
+function getCardSlideImages(card) {
+  const images = [];
+  if (Array.isArray(card.slide_images)) images.push(...card.slide_images);
+  if (card.image_url) images.push(card.image_url);
+  return [...new Set(images.map(x => String(x || '').trim()).filter(Boolean))];
+}
+
+function renderActivePresentationSlide() {
+  const image = document.getElementById('presentation-image');
+  const fallback = document.getElementById('presentation-fallback');
+  const controls = document.getElementById('slide-controls');
+  const count = document.getElementById('slide-count');
+  const src = presentationSlides[presentationSlideIndex] || '';
+  if (image && fallback) {
+    if (src) {
+      image.src = src;
+      image.classList.remove('hidden');
+      fallback.classList.add('hidden');
+    } else {
+      image.removeAttribute('src');
+      image.classList.add('hidden');
+      fallback.classList.remove('hidden');
+    }
+  }
+  if (controls) controls.classList.toggle('hidden', presentationSlides.length <= 1);
+  if (count) count.textContent = `${presentationSlideIndex + 1} / ${Math.max(presentationSlides.length, 1)}`;
+}
+
+function showPresentationSlide(direction) {
+  if (!presentationSlides.length) return;
+  presentationSlideIndex = (presentationSlideIndex + direction + presentationSlides.length) % presentationSlides.length;
+  renderActivePresentationSlide();
+  schedulePresentationReturn(45000);
+}
+
+function renderList(id, items) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const list = Array.isArray(items) ? items : String(items || '').split('\n');
+  el.innerHTML = list.filter(Boolean).slice(0, 6).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch]));
+}
+
+function closePresentation() {
+  const stage = document.getElementById('presentation-stage');
+  if (presentationReturnTimer) {
+    clearTimeout(presentationReturnTimer);
+    presentationReturnTimer = null;
+  }
+  stage?.classList.add('hidden');
+  stage?.classList.remove('presentation-active');
+  stage?.closest('.call-shell')?.classList.remove('presentation-mode');
+  stage?.closest('.video-wrap')?.classList.remove('presentation-mode');
+  presentationOpenedAt = 0;
+  activeProductCardId = '';
+  presentationSlides = [];
+  presentationSlideIndex = 0;
+  renderActivePresentationSlide();
+  movePresenterToStage();
+  const poster = document.getElementById('call-poster');
+  const video = document.getElementById('av-video');
+  if (poster && (!video || video.style.opacity !== '1')) poster.classList.remove('hidden');
+}
+
+function movePresenterToDock() {
+  const dock = document.getElementById('presenter-dock');
+  if (!dock) return;
+  ['call-poster', 'av-video'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.parentElement !== dock) dock.appendChild(el);
+  });
+  const caption = document.querySelector('.presenter-caption');
+  if (caption && caption.parentElement !== dock) dock.appendChild(caption);
+}
+
+function movePresenterToStage() {
+  const stage = document.getElementById('avatar-stage');
+  const presentation = document.getElementById('presentation-stage');
+  if (!stage) return;
+  const poster = document.getElementById('call-poster');
+  const video = document.getElementById('av-video');
+  const caption = document.querySelector('.presenter-caption');
+  if (poster && poster.parentElement !== stage) stage.insertBefore(poster, presentation || null);
+  if (video && video.parentElement !== stage) stage.insertBefore(video, presentation || null);
+  if (caption && caption.parentElement !== stage) stage.insertBefore(caption, presentation || null);
+}
+
+function isPresentationCue(text) {
+  return /(let me show|let me walk|i.?ll walk|here.?s how|show you|walk you through|quick overview|see how|visual|presentation|demo)/i.test(text || '');
+}
+
+function isPresentationActive() {
+  const stage = document.getElementById('presentation-stage');
+  return !!stage && !stage.classList.contains('hidden');
+}
+
+function schedulePresentationReturn(delay=45000) {
+  if (presentationReturnTimer) clearTimeout(presentationReturnTimer);
+  presentationReturnTimer = setTimeout(() => {
+    presentationReturnTimer = null;
+    closePresentation();
+  }, delay);
+}
+
+function maybeSchedulePresentationReturn(delay=8000) {
+  if (!isPresentationActive() || !presentationOpenedAt) return;
+  if (Date.now() - presentationOpenedAt < 10000) return;
+  schedulePresentationReturn(delay);
+}
+
+function maybePromptMeeting(text) {
+  const lower = (text || '').toLowerCase();
+  if (/(book|schedule|meeting|demo|calendar|talk to|contact|call me)/.test(lower)) {
+    startLeadCapture(text);
+  }
+}
+
+function startLeadCapture(intent='') {
+  leadCaptureState.active = true;
+  leadCaptureState.intent = intent || leadCaptureState.intent || 'Follow-up request';
+  leadCaptureState.fields.topic = leadCaptureState.intent;
+  if (!leadCaptureState.asked) {
+    leadCaptureState.asked = true;
+    addMsg('system', 'Please share your name, email, and preferred time here in the chat, and I will pass it to the team.', { persist: false });
+  }
+}
+
+function captureLeadDetails(text) {
+  if (!leadCaptureState.active || leadCaptureState.saved || !text) return;
+  const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0];
+  if (email) leadCaptureState.fields.visitor_email = email;
+  const nameMatch = text.match(/(?:my name is|i am|i'm)\s+([a-z][a-z\s.'-]{1,40})/i);
+  if (nameMatch) leadCaptureState.fields.visitor_name = nameMatch[1].trim();
+  const companyMatch = text.match(/(?:from|at|company is|company)\s+([a-z0-9][a-z0-9\s&.'-]{1,50})/i);
+  if (companyMatch) leadCaptureState.fields.company_name = companyMatch[1].trim();
+  const timeMatch = text.match(/(?:today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next week|morning|afternoon|evening|\b\d{1,2}(?::\d{2})?\s?(?:am|pm)\b)/i);
+  if (timeMatch) leadCaptureState.fields.preferred_time = timeMatch[0];
+  if (leadCaptureState.fields.visitor_email) saveLeadCapture();
+}
+
+async function saveLeadCapture() {
+  if (!sessionId || leadCaptureState.saved) return;
+  const payload = {
+    session_id: sessionId,
+    persona_id: personaId,
+    visitor_name: leadCaptureState.fields.visitor_name || '',
+    visitor_email: leadCaptureState.fields.visitor_email || '',
+    company_name: leadCaptureState.fields.company_name || companyName,
+    preferred_time: leadCaptureState.fields.preferred_time || '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    topic: leadCaptureState.fields.topic || 'Follow-up conversation',
+    notes: 'Captured conversationally from Aiza live call',
+  };
+  try {
+    await fetch('/api/meetings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await fetch(`/api/sessions/${sessionId}/visitor`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ visitor_name: payload.visitor_name, visitor_email: payload.visitor_email }),
+    }).catch(() => {});
+    leadCaptureState.saved = true;
+    addMsg('system', 'Thanks. I saved your details so the team can follow up.', { persist: false });
+  } catch(e) {}
+}
+
+function scheduleOpeningFallback(openingText) {
+  if (!openingText || !window.speechSynthesis) return;
+  avatarSpeechSeen = false;
+  if (openingFallbackTimer) clearTimeout(openingFallbackTimer);
+  openingFallbackTimer = setTimeout(() => {
+    openingFallbackTimer = null;
+    if (!sessionId || avatarSpeechSeen || avatarAudioAttached || sessionMode === 'liveavatar' || !speakerEnabled) return;
+    speakBrowserFallback(openingText);
+  }, 4500);
+}
+
+function speakBrowserFallback(text) {
+  if (!text || !window.speechSynthesis || !speakerEnabled) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = SPEECH_LANGS[selectedLanguage] || 'en-US';
+  utterance.rate = selectedLanguage === 'zh' ? 0.92 : 0.96;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
 // ═══════════════ VOICE-ONLY FALLBACK ═══════════════
 async function connectVoiceWS(openingText) {
   const proto = location.protocol==='https:'?'wss:':'ws:';
@@ -515,7 +1273,19 @@ async function connectVoiceWS(openingText) {
   };
   wsConn.onmessage = e => {
     const m = JSON.parse(e.data);
-    if (m.type==='transcript') addMsg(m.role==='assistant'?'ai':'me', m.text);
+    if (m.type==='transcript') {
+      const role = m.role==='assistant'?'ai':'me';
+      if (role === 'me') {
+        if (shouldSuppressVisitorTranscript()) return;
+        addMsg(role, m.text, { persist: true });
+        maybeShowProductCard(m.text || '');
+        maybePromptMeeting(m.text || '');
+        captureLeadDetails(m.text || '');
+      } else if (m.text !== openingText) {
+        addMsg('ai', m.text || '', { persist: false });
+        persistTranscriptLine('ai', m.text || '');
+      }
+    }
     else if (m.type==='audio') playAudio(m.data);
     else if (m.type==='status') {
       const s = (m.message||'').toLowerCase();
@@ -528,12 +1298,12 @@ async function connectVoiceWS(openingText) {
 async function startVoiceRec() {
   if (isRecording) return;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
     mediaRec = new MediaRecorder(stream, {mimeType:'audio/webm'});
     mediaRec.ondataavailable = e => {
       if (e.data.size>0 && wsConn?.readyState===1 && micEnabled) {
         const rd = new FileReader();
-        rd.onloadend = () => wsConn.send(JSON.stringify({type:'audio_chunk',data:rd.result.split(',')[1]}));
+        rd.onloadend = () => wsConn.send(JSON.stringify({type:'audio',data:rd.result.split(',')[1]}));
         rd.readAsDataURL(e.data);
       }
     };
@@ -548,34 +1318,105 @@ function stopVoiceRec() {
 }
 
 function playAudio(b64) {
+  fallbackTtsActive = true;
+  autoPauseMicForAiza();
   const url = URL.createObjectURL(new Blob([Uint8Array.from(atob(b64),c=>c.charCodeAt(0))],{type:'audio/mpeg'}));
   const a   = new Audio(url);
-  a.onended = ()=>URL.revokeObjectURL(url);
-  a.play().catch(()=>{});
+  a.muted = !speakerEnabled;
+  fallbackAudioEls.add(a);
+  a.onended = () => {
+    URL.revokeObjectURL(url);
+    fallbackAudioEls.delete(a);
+    fallbackTtsActive = false;
+    resumeMicAfterAiza();
+  };
+  a.play().catch(()=>{
+    fallbackTtsActive = false;
+    resumeMicAfterAiza();
+  });
+}
+
+// ═══════════════ DEMO TIMER (homepage round-trip) ═══════════════
+function maybeStartDemoTimer() {
+  if (demoTimerStarted) return;
+  const secs = parseInt(urlParams.get('timer') || '0', 10);
+  if (!secs || secs <= 0) return;
+  demoTimerStarted = true;
+  if (demoTimerHandle) clearTimeout(demoTimerHandle);
+  demoTimerHandle = setTimeout(() => { endCall(); }, secs * 1000);
 }
 
 // ═══════════════ END CALL ═══════════════
 async function endCall() {
+  if (sessionId && leadCaptureState.active && !leadCaptureState.saved && !leadCaptureState.endPrompted) {
+    leadCaptureState.endPrompted = true;
+    addMsg('system', 'Before you go, please share your name and email here if you want the team to follow up.', { persist: false });
+    document.getElementById('chat-input')?.focus();
+    return;
+  }
   const sid = sessionId; sessionId = null;
+  endingCall = true;
+  reconnectingAvatar = false;
   if (livekitRoom) { try{await livekitRoom.disconnect();}catch(e){} livekitRoom=null; }
   if (wsConn)      { try{wsConn.send(JSON.stringify({type:'end'}));wsConn.close();}catch(e){} wsConn=null; }
   stopVoiceRec();
+  if (openingFallbackTimer) { clearTimeout(openingFallbackTimer); openingFallbackTimer = null; }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  fallbackAudioEls.forEach((audio) => { try { audio.pause(); } catch(e) {} });
+  fallbackAudioEls.clear();
   if (avatarAudioEl) { avatarAudioEl.remove(); avatarAudioEl = null; }
+  avatarAudioAttached = false;
+  micAutoPaused = false;
+  fallbackTtsActive = false;
   const v = document.getElementById('av-video');
-  if (v) try{v.srcObject=null;}catch(e){}
-  document.getElementById('call-screen').classList.remove('maya-speaks');
+  if (v) { try{v.srcObject=null;}catch(e){} v.style.opacity = '0'; }
+  document.getElementById('call-screen').classList.remove('aiza-speaks');
   if (sid) fetch(`/api/sessions/${sid}`,{method:'DELETE'}).catch(()=>{});
   document.getElementById('call-screen').style.display = 'none';
   document.getElementById('landing').style.display     = 'grid';
-  document.getElementById('transcript').innerHTML = '';
-  micEnabled = true; updateMicUI(); resetBtn();
+  document.getElementById('transcript').innerHTML = '<div class="transcript-empty" id="transcript-empty">Aiza will appear here when the conversation starts.</div>';
+  Object.keys(partialTranscriptEls).forEach(k => partialTranscriptEls[k] = null);
+  transcriptSeen.clear();
+  activeProductCardId = '';
+  Object.assign(leadCaptureState, {
+    active: false,
+    asked: false,
+    saved: false,
+    endPrompted: false,
+    intent: '',
+    fields: { visitor_name: '', visitor_email: '', company_name: '', preferred_time: '', topic: '' },
+  });
+  const chatInput = document.getElementById('chat-input');
+  if (chatInput) chatInput.value = '';
+  closePresentation();
+  micEnabled = true; speakerEnabled = true; updateMicUI(); updateSpeakerUI(); resetBtn();
   const poster = document.getElementById('call-poster');
   if (poster) poster.classList.remove('hidden');
+  setAvatarPresence('ready');
+  const hero = document.getElementById('hero-img');
+  if (hero && poster?.src) {
+    hero.src = poster.src;
+    hero.classList.add('loaded');
+  }
+  document.getElementById('av-skeleton')?.classList.add('hidden');
+  if (window.RehuCall) RehuCall.initAlivePersona('.av-frame');
+  if (window.RehuPersonaLive && liveavatarKeySet) {
+    setTimeout(() => RehuPersonaLive.mountLivePreview('.av-frame', personaId), 250);
+  }
   const chip = document.getElementById('cs-chip');
   if (chip) delete chip.dataset.demo;
+  if (demoTimerHandle) { clearTimeout(demoTimerHandle); demoTimerHandle = null; }
   if (isWidget) {
     window.parent.postMessage({ type: 'sh:session_ended' }, '*');
+  } else if (urlParams.get('modal') === '1') {
+    try { window.parent?.postMessage({ type: 'sh:session_ended' }, '*'); } catch (_) {}
+    return;
+  } else if (urlParams.get('demo') === '1') {
+    const nm = urlParams.get('name') || '';
+    location.href = `/?session_ended=1${nm ? `&name=${encodeURIComponent(nm)}` : ''}`;
+    return;
   }
+  endingCall = false;
 }
 
 // ═══════════════ UI ═══════════════
@@ -583,30 +1424,98 @@ function setChip(state) {
   const c = document.getElementById('cs-chip');
   c.className='cs-chip';
   if (c.dataset.demo === '1' && state === 'listening') {
-    c.textContent = 'Demo mode';
+    c.innerHTML = '<span class="live-dot"></span><span>Live</span>';
     c.classList.add('demo');
     return;
   }
   const labels = {
     connecting:'Connecting…',
-    listening:'Listening',
-    speaking:`${personaName} is speaking`,
+    listening:'Live',
+    speaking:'Live',
     thinking:'Thinking…',
     muted:'Muted',
   };
-  c.textContent = labels[state] || state;
+  if (state === 'speaking') {
+    c.innerHTML = '<span class="mini-wave"><i></i><i></i><i></i></span><span>Live</span>';
+  } else if (state === 'listening') {
+    c.innerHTML = '<span class="live-dot"></span><span>Live</span>';
+  } else {
+    c.textContent = labels[state] || state;
+  }
   if (state!=='connecting') c.classList.add(state);
+  const status = document.getElementById('chat-status');
+  if (status) status.textContent = '';
 }
-function addMsg(role,text) {
+function addMsg(role,text,opts={}) {
   if (!text) return;
+  const persist = opts.persist !== false;
+  const key = `${role}:${text.trim().toLowerCase()}`;
+  if (transcriptSeen.has(key)) return;
+  transcriptSeen.add(key);
   const append = () => {
     const w=document.getElementById('transcript'),el=document.createElement('div');
-    el.className='tmsg '+role; el.textContent=text; w.appendChild(el);
-    while(w.children.length>6) w.removeChild(w.firstChild);
-    w.scrollTop=w.scrollHeight;
+    if (!w) return;
+    hideTranscriptEmpty();
+    const ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    el.className='tmsg '+role;
+    if (role === 'ai') {
+      const icon = document.createElement('span');
+      icon.className = 'tmsg-avatar';
+      icon.textContent = (personaName || 'A').slice(0, 1).toUpperCase();
+      const body = document.createElement('span');
+      body.className = 'tmsg-body';
+      body.textContent = text;
+      const time = document.createElement('span');
+      time.className = 'tmsg-time';
+      time.textContent = ts;
+      el.append(icon, body, time);
+    } else {
+      el.textContent=text;
+      const time = document.createElement('span');
+      time.className = 'tmsg-time';
+      time.textContent = ts;
+      el.appendChild(time);
+    }
+    w.appendChild(el);
+    while(w.querySelectorAll('.tmsg').length>30) {
+      const first = w.querySelector('.tmsg');
+      if (!first) break;
+      first.remove();
+    }
+    safeScrollTranscript();
+    if (persist) persistTranscriptLine(role, text);
   };
   if (transcriptPending) cancelAnimationFrame(transcriptPending);
   transcriptPending = requestAnimationFrame(() => { append(); transcriptPending = null; });
+}
+
+function hideTranscriptEmpty() {
+  const empty = document.getElementById('transcript-empty');
+  if (empty) empty.style.display = 'none';
+}
+
+function safeScrollTranscript() {
+  const w = document.getElementById('transcript');
+  if (!w) return;
+  const nearBottom = w.scrollHeight - w.scrollTop - w.clientHeight < 120;
+  if (nearBottom) w.scrollTop = w.scrollHeight;
+}
+
+function persistTranscriptLine(role, text) {
+  if (!sessionId || !text) return;
+  fetch(`/api/sessions/${sessionId}/events`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role: role === 'me' ? 'user' : 'assistant', text, event_type: 'transcript' }),
+  }).catch(() => {});
+}
+function persistSessionEvent(text, eventType = 'system') {
+  if (!sessionId || !text) return;
+  fetch(`/api/sessions/${sessionId}/events`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role: 'assistant', text, event_type: eventType }),
+  }).catch(() => {});
 }
 function showOv() {}
 function updateOv() {}
@@ -622,7 +1531,7 @@ function closeCatalog() {
   document.getElementById('cat-modal').classList.remove('show');
   document.getElementById('cat-form').style.display='';
   document.getElementById('cat-ok').style.display='none';
-  const b=document.getElementById('c-save');b.disabled=false;b.textContent='Train Maya';
+  const b=document.getElementById('c-save');b.disabled=false;b.textContent='Train Aiza';
 }
 async function saveCatalog() {
   const co=document.getElementById('c-co').value.trim();
@@ -634,10 +1543,10 @@ async function saveCatalog() {
     if (co) { await fetch(`/api/personas/${personaId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:personaId,persona_name:personaName,company_name:co})}); companyName=co; }
     if (tx) await fetch('/api/knowledge/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:personaId,source_type:'text',content:tx,title:`${co||'Product'} Knowledge`})});
     if (ur) await fetch('/api/knowledge/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona_id:personaId,source_type:'url',content:ur,title:co||'Website'})});
-    if (co) document.getElementById('disp-sub').textContent=`${personaName} knows everything about ${co}. She demos live, handles every question, and qualifies leads — 24/7.`;
+    if (co) document.getElementById('disp-sub').textContent=`Hi there! I'm ${personaName}. I'm here to help you find exactly what you need from ${co} — no waiting, no forms. Just ask me anything and let's figure this out together.`;
     document.getElementById('cat-form').style.display='none';
     document.getElementById('cat-ok').style.display='block';
-  } catch(e) { alert('Error: '+e.message); btn.disabled=false; btn.textContent='Train Maya'; }
+  } catch(e) { alert('Error: '+e.message); btn.disabled=false; btn.textContent='Train Aiza'; }
 }
 </script>
 </body>

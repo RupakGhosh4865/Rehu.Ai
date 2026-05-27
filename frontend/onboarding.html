@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome — Savant.ai onboarding</title>
+  <link rel="icon" type="image/svg+xml" href="/static/savant-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <style>
+    body{font-family:'Inter',system-ui,sans-serif;background:radial-gradient(circle at 20% -10%,#1e293b 0%,#020617 70%);min-height:100vh;color:#e2e8f0;padding:40px 24px;}
+    .wrap{max-width:880px;margin:0 auto;}
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+    .brand img{height:28px;}
+    .stepper{display:flex;gap:8px;margin-bottom:24px;}
+    .step{flex:1;height:6px;border-radius:99px;background:rgba(148,163,184,.16);}
+    .step.active{background:linear-gradient(90deg,#7C3AED,#22D3EE);}
+    .card{background:rgba(15,23,42,.78);border:1px solid rgba(148,163,184,.18);border-radius:20px;padding:36px;box-shadow:0 30px 80px rgba(0,0,0,.5);}
+    h1{font-size:22px;margin:0 0 6px;font-weight:800;color:#fff;}
+    .subtitle{color:rgba(226,232,240,.7);font-size:14px;margin:0 0 22px;}
+    label{display:block;font-size:12px;font-weight:600;color:rgba(226,232,240,.75);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;}
+    input,textarea,select{width:100%;background:rgba(2,6,23,.55);border:1px solid rgba(148,163,184,.22);border-radius:10px;color:#fff;padding:11px 13px;font-size:14px;outline:none;font-family:inherit;}
+    textarea{min-height:120px;resize:vertical;}
+    input:focus,textarea:focus{border-color:#7C3AED;box-shadow:0 0 0 3px rgba(124,58,237,.18);}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .btnrow{display:flex;justify-content:space-between;margin-top:26px;gap:12px;}
+    .btn{background:#7C3AED;color:#fff;border:none;border-radius:10px;padding:12px 22px;font-weight:700;font-size:14px;cursor:pointer;}
+    .btn.secondary{background:transparent;border:1px solid rgba(148,163,184,.32);}
+    .btn:disabled{opacity:.55;cursor:default;}
+    .embed{background:#020617;border:1px solid rgba(148,163,184,.16);border-radius:10px;padding:14px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;color:#A7F3D0;overflow-x:auto;white-space:pre;line-height:1.55;}
+    .pill{display:inline-flex;background:rgba(124,58,237,.18);color:#C4B5FD;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:14px;}
+    .hint{font-size:12px;color:rgba(226,232,240,.55);margin-top:6px;}
+    .checks li{margin:6px 0;color:rgba(226,232,240,.85);font-size:13px;}
+    .preview{background:rgba(2,6,23,.55);border:1px solid rgba(148,163,184,.16);border-radius:12px;padding:14px;font-size:13px;color:rgba(226,232,240,.85);}
+    .preview strong{color:#fff;}
+    .actions a{color:#A7F3D0;text-decoration:none;font-weight:700;font-size:13px;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><img src="/static/savant-logo.svg" alt="Savant.ai"/></div>
+  <div class="stepper">
+    <div class="step active" id="step-1-bar"></div>
+    <div class="step" id="step-2-bar"></div>
+    <div class="step" id="step-3-bar"></div>
+  </div>
+
+  <div class="card" id="step-1">
+    <div class="pill">Step 1 of 3</div>
+    <h1>Meet your AI expert</h1>
+    <p class="subtitle">Give your Aiza a name and a company to represent. You can change everything later in Admin.</p>
+    <div class="row">
+      <div>
+        <label>Persona name</label>
+        <input id="o-name" value="Aiza" />
+      </div>
+      <div>
+        <label>Company name</label>
+        <input id="o-company" placeholder="Acme Inc"/>
+      </div>
+    </div>
+    <label>Tone</label>
+    <select id="o-tone">
+      <option value="professional">Professional</option>
+      <option value="friendly">Friendly</option>
+      <option value="casual">Casual</option>
+      <option value="formal">Formal</option>
+    </select>
+    <label>Calendly booking link (optional)</label>
+    <input id="o-calendly" placeholder="https://calendly.com/yourteam/intro"/>
+    <div class="hint">Aiza will share this link when a visitor wants to book a meeting.</div>
+    <label>Notification email for new leads</label>
+    <input id="o-notify" type="email" placeholder="sales@yourcompany.com"/>
+    <div class="btnrow">
+      <span></span>
+      <button class="btn" onclick="saveStep1()">Continue</button>
+    </div>
+  </div>
+
+  <div class="card" id="step-2" style="display:none;">
+    <div class="pill">Step 2 of 3</div>
+    <h1>Train Aiza on your business</h1>
+    <p class="subtitle">Paste your URL or product details. Aiza will read it and use it in every conversation.</p>
+    <label>Your website URL</label>
+    <input id="o-url" placeholder="https://yourcompany.com"/>
+    <label>Or paste product / FAQ details</label>
+    <textarea id="o-knowledge" placeholder="Paste pricing, product details, FAQs, objection handling notes…"></textarea>
+    <div class="hint">You can add more docs anytime in Admin → Knowledge Base.</div>
+    <div class="btnrow">
+      <button class="btn secondary" onclick="goto(1)">Back</button>
+      <button class="btn" onclick="saveStep2()" id="o-train-btn">Train Aiza</button>
+    </div>
+  </div>
+
+  <div class="card" id="step-3" style="display:none;">
+    <div class="pill">Step 3 of 3</div>
+    <h1>Embed Aiza on your site</h1>
+    <p class="subtitle">Paste this snippet before <code>&lt;/body&gt;</code> on your website. Visitors get a "Talk to Aiza" button.</p>
+    <div class="embed" id="o-embed-code"></div>
+    <ul class="checks">
+      <li>Leads are auto-saved and emailed to your notification address.</li>
+      <li>If you connect HubSpot, contacts sync automatically.</li>
+      <li>If you connect Google Calendar, meetings are booked end-to-end.</li>
+    </ul>
+    <div class="preview" style="margin-top:14px;">
+      You can preview live anytime at <strong><a href="/call" target="_blank" style="color:#A7F3D0;text-decoration:none;">/call</a></strong> on this workspace.
+    </div>
+    <div class="btnrow actions">
+      <button class="btn secondary" onclick="goto(2)">Back</button>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <a href="/call" target="_blank">Test live →</a>
+        <button class="btn" onclick="finish()">Go to Admin</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const token = localStorage.getItem('savant_token');
+if(!token){ location.href='/login'; }
+const HEADERS = {'Content-Type':'application/json','Authorization':`Bearer ${token}`};
+let tenant = null;
+let personaId = 'default';
+
+async function loadTenant(){
+  try{
+    const r = await fetch('/api/auth/me',{headers:HEADERS});
+    const data = await r.json();
+    if(!data.tenant){ location.href='/login'; return; }
+    tenant = data.tenant;
+    document.getElementById('o-company').value = tenant.company_name || '';
+  }catch(e){location.href='/login';}
+}
+loadTenant();
+
+function goto(n){
+  document.getElementById('step-1').style.display = n===1?'block':'none';
+  document.getElementById('step-2').style.display = n===2?'block':'none';
+  document.getElementById('step-3').style.display = n===3?'block':'none';
+  document.getElementById('step-1-bar').classList.toggle('active', n>=1);
+  document.getElementById('step-2-bar').classList.toggle('active', n>=2);
+  document.getElementById('step-3-bar').classList.toggle('active', n>=3);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function saveStep1(){
+  const payload = {
+    persona_id: personaId,
+    persona_name: document.getElementById('o-name').value.trim() || 'Aiza',
+    company_name: document.getElementById('o-company').value.trim() || tenant?.company_name || 'your company',
+    tone: document.getElementById('o-tone').value,
+    calendly_url: document.getElementById('o-calendly').value.trim() || null,
+    notification_email: document.getElementById('o-notify').value.trim() || null,
+  };
+  const r = await fetch(`/api/personas/${personaId}`,{method:'PUT',headers:HEADERS,body:JSON.stringify(payload)});
+  if(!r.ok){alert('Could not save persona');return;}
+  if(payload.notification_email){
+    await fetch('/api/notifications/settings',{method:'PUT',headers:HEADERS,body:JSON.stringify({lead_email:payload.notification_email,meeting_email:payload.notification_email,from_name:payload.company_name,events:{lead_captured:true,meeting_requested:true,session_ended:false}})});
+  }
+  goto(2);
+}
+
+async function saveStep2(){
+  const btn = document.getElementById('o-train-btn');
+  btn.disabled = true; btn.textContent='Training…';
+  const url = document.getElementById('o-url').value.trim();
+  const txt = document.getElementById('o-knowledge').value.trim();
+  try{
+    if(url){
+      await fetch('/api/knowledge/add',{method:'POST',headers:HEADERS,body:JSON.stringify({persona_id:personaId,source_type:'url',content:url,title:'Website'})});
+    }
+    if(txt){
+      await fetch('/api/knowledge/add',{method:'POST',headers:HEADERS,body:JSON.stringify({persona_id:personaId,source_type:'text',content:txt,title:'Product details'})});
+    }
+  }catch(e){console.warn(e);}
+  btn.disabled = false; btn.textContent='Train Aiza';
+  renderEmbed();
+  goto(3);
+}
+
+function renderEmbed(){
+  const origin = location.origin;
+  const code = `<!-- Savant.ai live AI expert -->\n<script src="${origin}/sdk/superhuman-widget.js"\n  data-api="${origin}"\n  data-persona="${personaId}"\n  data-position="bottom-right"\n  data-color="#7C3AED"\n  data-label="Talk to Aiza"><\\/script>`;
+  document.getElementById('o-embed-code').textContent = code;
+}
+
+function finish(){ location.href='/admin'; }
+</script>
+</body>
+</html>

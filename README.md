@@ -1,8 +1,8 @@
-# SuperHuman AI Persona Platform
+# Savant.ai
 
-A production-ready platform for creating AI personas that look, speak, and behave like real humans — with real-time voice, photorealistic avatar, and deep product knowledge.
+Deploy a **Savant Superhuman** — a human-grade representative that talks, listens, and knows your product. On your website, inside your product, and in your meetings.
 
-**Stack:** Python · FastAPI · Pipecat · Daily.co · HeyGen · ElevenLabs · Deepgram · OpenAI · ChromaDB
+**Stack:** Python · FastAPI · LiveAvatar · ElevenLabs · Deepgram · OpenAI · ChromaDB · Playwright
 
 ---
 
@@ -11,7 +11,7 @@ A production-ready platform for creating AI personas that look, speak, and behav
 ### 1. Prerequisites
 - Python 3.11+
 - Docker (optional, for containerised run)
-- API accounts: OpenAI, ElevenLabs, HeyGen, Daily.co, Deepgram
+- API accounts: OpenAI, ElevenLabs, LiveAvatar, Daily.co, Deepgram
 
 ### 2. Clone & configure
 ```bash
@@ -30,7 +30,8 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Open `http://localhost:8000` — the conversation UI loads automatically.
+Open `http://localhost:8000` — the marketing homepage loads automatically.
+Open `http://localhost:8000/call` — the live conversation UI.
 Open `http://localhost:8000/admin` — the admin panel.
 
 ### 5. Or run with Docker
@@ -46,7 +47,7 @@ docker-compose up --build
 2. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
 3. Select your repo → Railway auto-detects the `railway.json` config
 4. In Railway dashboard → Variables tab, add all keys from `.env.example`
-5. Railway builds & deploys — get your public URL (e.g. `https://superhuman.up.railway.app`)
+5. Railway builds & deploys — get your public URL (e.g. `https://savant.up.railway.app`)
 
 **That's it.** Your platform is live.
 
@@ -59,6 +60,7 @@ All endpoints documented at `/docs` (Swagger UI) when running locally.
 | Endpoint | Method | Description |
 |---|---|---|
 | `/health` | GET | System health check |
+| `/api/leads` | POST | Public inbound lead capture (homepage forms) |
 | `/api/personas` | GET/POST | List / create personas |
 | `/api/personas/{id}` | GET/PUT/DELETE | Manage individual persona |
 | `/api/sessions` | POST | Start a new avatar session |
@@ -68,6 +70,7 @@ All endpoints documented at `/docs` (Swagger UI) when running locally.
 | `/api/knowledge/query` | POST | Test knowledge retrieval |
 | `/api/avatar/speak` | POST | Make avatar speak manually |
 | `/api/avatar/interrupt` | POST | Interrupt avatar speech |
+| `/api/ride-along` | POST/GET/DELETE | Meeting-bot orchestration (Zoom/Meet/Teams) |
 
 ---
 
@@ -79,13 +82,24 @@ Add this single script tag before `</body>`:
 <script src="https://your-app.up.railway.app/sdk/superhuman-widget.js"
   data-persona="default"
   data-position="bottom-right"
-  data-color="#2E86AB"
-  data-label="Talk to our AI Expert"
+  data-color="#0EA5A4"
+  data-label="Talk to our Expert"
   data-api="https://your-app.up.railway.app">
 </script>
 ```
 
 Or use the Admin Panel (`/admin`) → Embed Widget to generate the code automatically.
+
+**Programmatic control:**
+
+```javascript
+window.Savant.open();              // Open widget
+window.Savant.close();             // Close widget
+window.Savant.toggle();            // Toggle open/close
+window.Savant.openWithGreeting(s); // Open with a custom greeting
+```
+
+(`window.SuperHuman` is kept as a backward-compat alias.)
 
 ---
 
@@ -94,14 +108,14 @@ Or use the Admin Panel (`/admin`) → Embed Widget to generate the code automati
 ```
 Browser (visitor)
   │
-  ├── Daily.co WebRTC ──────────→ Pipecat Pipeline (Railway)
+  ├── Daily.co WebRTC ──────────→ Voice Pipeline (Railway)
   │       (voice audio)              │
   │                                  ├── Deepgram STT → text
   │                                  ├── RAG lookup (ChromaDB)
   │                                  ├── OpenAI GPT-4o mini → response
   │                                  └── ElevenLabs TTS → audio back
   │
-  └── HeyGen WebRTC ─────────────→ HeyGen Streaming Avatar
+  └── LiveAvatar WebRTC ─────────→ Streaming Avatar
           (avatar video)               (lip-synced to TTS audio)
 ```
 
@@ -114,7 +128,7 @@ See `.env.example` for all required and optional variables.
 **Required:**
 - `OPENAI_API_KEY` — [platform.openai.com](https://platform.openai.com)
 - `ELEVENLABS_API_KEY` — [elevenlabs.io](https://elevenlabs.io)
-- `HEYGEN_API_KEY` — [app.heygen.com](https://app.heygen.com)
+- `LIVEAVATAR_API_KEY` — [app.liveavatar.com](https://app.liveavatar.com)
 - `DAILY_API_KEY` — [daily.co](https://daily.co)
 - `DEEPGRAM_API_KEY` — [deepgram.com](https://deepgram.com)
 
@@ -124,7 +138,7 @@ See `.env.example` for all required and optional variables.
 
 | Service | Cost |
 |---|---|
-| HeyGen Streaming | $99–$399 |
+| LiveAvatar Streaming | $99–$399 |
 | ElevenLabs | $22 |
 | Deepgram | $15–40 |
 | OpenAI GPT-4o mini | $20–80 |
@@ -136,4 +150,4 @@ Revenue at $2,000/month = **80%+ gross margin**.
 
 ---
 
-Built by SSPM Consultants | SuperHuman AI Persona Platform
+Built by SSPM Consultants | Savant.ai

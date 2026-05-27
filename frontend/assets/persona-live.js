@@ -1,5 +1,5 @@
 /**
- * Rehu.ai — Live avatar preview (idle stream with natural blinking)
+ * Savant.ai — Live avatar preview (idle stream with natural blinking)
  * Uses the same LiveAvatar as the conversation session.
  */
 window.RehuPersonaLive = (function () {

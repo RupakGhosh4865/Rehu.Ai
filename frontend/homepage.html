@@ -1,341 +1,2817 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Rehu.ai | Your Smartest Rep in the Room</title>
-<meta name="description" content="Rehu.ai deploys your smartest rep on every page ? live sales, HR, support, and healthcare specialists that know your business, 24/7."/>
-<link rel="stylesheet" href="/static/rehu-light.css"/>
-<script src="/static/call-experience.js" defer></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Savant.ai — AI employees that can actually work</title>
+<meta name="description" content="Savant.ai deploys Super Humans that speak, listen, understand, and book meetings like your best GTM rep. On your website, inside your product, and on Zoom calls.">
+<meta property="og:title" content="Savant.ai — AI employees that can actually work">
+<meta property="og:description" content="Meet your Super Human. She speaks 28 languages, books meetings, runs demos, and never sleeps.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="/static/savant-icon.svg">
+<link rel="apple-touch-icon" href="/static/savant-icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   Savant.ai — Cinematic homepage
+   Self-contained · vanilla JS · no React payload
+   ════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg-0: #050509;
+  --bg-1: #0a0a12;
+  --bg-2: #0e0e18;
+  --ink-0: #f6f7fb;
+  --ink-1: rgba(246, 247, 251, 0.72);
+  --ink-2: rgba(246, 247, 251, 0.48);
+  --ink-3: rgba(246, 247, 251, 0.28);
+  --line-1: rgba(255, 255, 255, 0.06);
+  --line-2: rgba(255, 255, 255, 0.10);
+  --line-3: rgba(255, 255, 255, 0.16);
+  --glass: rgba(18, 18, 28, 0.55);
+  --glass-2: rgba(255, 255, 255, 0.035);
+  --accent-a: #4f7cff;
+  --accent-b: #8b5cf6;
+  --accent-c: #6ee7ff;
+  --accent-grad: linear-gradient(135deg, #4f7cff 0%, #8b5cf6 100%);
+  --accent-grad-soft: linear-gradient(135deg, rgba(79,124,255,.18) 0%, rgba(139,92,246,.18) 100%);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --shadow-glow: 0 0 80px -10px rgba(79, 124, 255, 0.45), 0 0 140px -30px rgba(139, 92, 246, 0.35);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-0);
+  color: var(--ink-0);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  letter-spacing: -0.005em;
+}
+img, video { max-width: 100%; }
+
+/* ── Ambient backdrop ── */
+.ambient {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 78% 18%, rgba(139, 92, 246, 0.22), transparent 70%),
+    radial-gradient(55% 50% at 12% 78%, rgba(79, 124, 255, 0.18), transparent 70%),
+    radial-gradient(40% 35% at 50% 50%, rgba(110, 231, 255, 0.06), transparent 70%),
+    var(--bg-0);
+}
+.ambient::before {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 100% 70% at 50% 40%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 100% 70% at 50% 40%, #000 30%, transparent 75%);
+}
+.ambient::after {
+  content: ""; position: absolute; inset: 0; opacity: .35; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.shell { position: relative; z-index: 1; }
+
+/* ── Glass primitive ── */
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+  border: 0.5px solid var(--line-2);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.02),
+    0 30px 60px -30px rgba(0, 0, 0, 0.6),
+    0 18px 40px -20px rgba(79, 124, 255, 0.08);
+}
+
+/* ── Type ── */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.display {
+  font-size: clamp(40px, 5.6vw, 84px);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  font-weight: 500;
+  margin: 0;
+}
+.display em {
+  font-style: normal;
+  background: linear-gradient(135deg, #c9d4ff 0%, #e9d4ff 50%, #ffffff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.h2 {
+  font-size: clamp(28px, 3.4vw, 48px);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  font-weight: 500;
+  margin: 0;
+}
+.lead {
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--ink-1);
+  margin: 0;
+  max-width: 560px;
+  font-weight: 400;
+}
+
+/* ── Buttons ── */
+.btn {
+  appearance: none; border: 0; cursor: pointer;
+  font: inherit; font-weight: 500; letter-spacing: -0.005em;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 20px; border-radius: 999px;
+  transition: transform .25s cubic-bezier(.2,.7,.3,1), background .25s, box-shadow .25s, color .25s;
+  position: relative; isolation: isolate; white-space: nowrap;
+}
+.btn-primary {
+  background: var(--accent-grad);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.35),
+    inset 0 -1px 0 rgba(0,0,0,.2),
+    0 8px 24px -8px rgba(79,124,255,.6),
+    0 12px 48px -12px rgba(139,92,246,.45);
+}
+.btn-primary:hover { transform: translateY(-1px); }
+.btn-ghost {
+  background: rgba(255,255,255,0.04);
+  color: var(--ink-0);
+  border: 0.5px solid var(--line-2);
+  backdrop-filter: blur(14px);
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.08); border-color: var(--line-3); }
+.btn .dot { width: 6px; height: 6px; border-radius: 999px; background: #6ee7ff; box-shadow: 0 0 12px #6ee7ff; }
+
+/* ── Nav ── */
+.nav {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 50; display: flex; align-items: center; gap: 28px;
+  padding: 8px 8px 8px 22px; border-radius: 999px;
+  background: rgba(10, 10, 18, 0.55);
+  border: 0.5px solid var(--line-2);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,.6);
+}
+.nav-logo {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-weight: 600; font-size: 16px; letter-spacing: -0.01em;
+  text-decoration: none; color: var(--ink-0);
+}
+.nav-mark {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: var(--accent-grad);
+  display: grid; place-items: center;
+  box-shadow: 0 0 18px rgba(139,92,246,.55), inset 0 1px 0 rgba(255,255,255,.4);
+  position: relative;
+}
+.nav-mark::after {
+  content: ""; position: absolute; inset: 4px; border-radius: 3px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.7), transparent 60%);
+}
+.nav-links { display: flex; gap: 22px; }
+.nav-links a {
+  color: var(--ink-1); text-decoration: none; font-size: 13.5px; font-weight: 450;
+  transition: color .2s;
+}
+.nav-links a:hover { color: var(--ink-0); }
+.nav-cta { font-size: 13px; padding: 9px 16px; }
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  padding: 140px 56px 80px;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+}
+.hero-stage {
+  position: relative;
+  width: 100%; max-width: 1480px; margin: 0 auto;
+  display: grid; grid-template-columns: minmax(420px, 1fr) minmax(540px, 1.05fr);
+  gap: 56px;
+  align-items: center;
+  min-height: min(82vh, 800px);
+}
+.hero-copy { position: relative; z-index: 2; }
+.hero-copy .eyebrow { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+.hero-copy .pip-live {
+  display: inline-block; width: 6px; height: 6px; border-radius: 999px;
+  background: #6ee7ff; box-shadow: 0 0 10px #6ee7ff;
+  animation: pip 1.4s ease-in-out infinite;
+}
+.hero-copy .display { margin: 0; }
+.hero-copy .lead { margin-top: 24px; max-width: 460px; }
+.hero-copy .cta-row { margin-top: 32px; display: flex; gap: 12px; flex-wrap: wrap; }
+.hero-copy .live-chips {
+  margin-top: 40px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding-top: 24px;
+  border-top: 0.5px solid var(--line-1);
+}
+.hero-copy .live-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-radius: 999px;
+  background: rgba(255,255,255,.025);
+  border: 0.5px solid var(--line-2);
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-1);
+  letter-spacing: 0.04em;
+}
+.hero-copy .live-chip .v { color: var(--ink-0); font-weight: 500; }
+.hero-copy .live-chip .pp { width: 6px; height: 6px; border-radius: 999px; background: var(--accent-c); box-shadow: 0 0 8px var(--accent-c); animation: pip 1.4s ease-in-out infinite; }
+
+/* Right column — Aiza frame */
+.hero-aiza-col { position: relative; }
+.hero-aiza {
+  position: relative; z-index: 1;
+  width: 100%; aspect-ratio: 4 / 5;
+  max-height: min(78vh, 760px);
+  border-radius: 32px;
+  overflow: hidden;
+  background: #050509;
+  box-shadow:
+    0 60px 120px -40px rgba(0,0,0,.8),
+    0 0 80px -10px rgba(139,92,246,.45),
+    0 0 160px -30px rgba(79,124,255,.4),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  border: 0.5px solid rgba(255,255,255,.10);
+  justify-self: end;
+  cursor: pointer;
+}
+.hero-aiza video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.hero-aiza::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 30% 18%, rgba(255,255,255,.10), transparent 50%),
+    linear-gradient(180deg, transparent 50%, rgba(0,0,0,.55) 100%);
+}
+.hero-aiza.breath { animation: breathe 6s ease-in-out infinite; }
+
+.hero-aiza-tag {
+  position: absolute; top: 18px; left: 18px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 999px;
+  background: rgba(8,8,16,.55); backdrop-filter: blur(14px);
+  border: 0.5px solid var(--line-2);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-0); z-index: 3;
+}
+.hero-aiza-tag .pip { width: 6px; height: 6px; border-radius: 999px; background: #ff5d8f; box-shadow: 0 0 8px #ff5d8f; animation: pip 1.4s ease-in-out infinite; }
+.hero-aiza-name {
+  position: absolute; top: 18px; right: 18px;
+  padding: 7px 12px; border-radius: 999px;
+  background: rgba(8,8,16,.55); backdrop-filter: blur(14px);
+  border: 0.5px solid var(--line-2);
+  font-size: 12px; color: var(--ink-0); font-weight: 450;
+  z-index: 3; display: inline-flex; align-items: center; gap: 8px;
+}
+.hero-aiza-name .role {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-2);
+}
+.hero-aiza-caption {
+  position: absolute; left: 18px; right: 18px; bottom: 18px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: 18px;
+  background: rgba(8,8,16,.65); backdrop-filter: blur(18px);
+  border: 0.5px solid var(--line-2);
+  z-index: 3;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity .4s, transform .4s;
+}
+.hero-aiza-caption.shown { opacity: 1; transform: translateY(0); }
+.hero-aiza-caption .eq { display: inline-flex; gap: 3px; align-items: center; height: 18px; flex-shrink: 0; }
+.hero-aiza-caption .eq span {
+  display: block; width: 2.5px; background: linear-gradient(180deg, var(--accent-c), var(--accent-a));
+  border-radius: 2px; animation: wave 0.9s ease-in-out infinite;
+}
+.hero-aiza-caption .eq span:nth-child(1) { animation-delay: -.1s }
+.hero-aiza-caption .eq span:nth-child(2) { animation-delay: -.3s }
+.hero-aiza-caption .eq span:nth-child(3) { animation-delay: -.5s }
+.hero-aiza-caption .eq span:nth-child(4) { animation-delay: -.2s }
+.hero-aiza-caption .txt {
+  font-size: 13.5px; line-height: 1.4; color: var(--ink-0);
+  flex: 1; min-width: 0;
+}
+.hero-aiza-glow {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%; height: 80%;
+  background:
+    radial-gradient(60% 60% at 50% 50%, rgba(139,92,246,.32), transparent 70%),
+    radial-gradient(60% 60% at 50% 50%, rgba(79,124,255,.22), transparent 70%);
+  filter: blur(60px); z-index: 0; pointer-events: none;
+}
+
+/* state-driven micro-animation on the frame */
+.hero-aiza[data-state="speaking"] { animation: speak 0.5s ease-in-out infinite; }
+.hero-aiza[data-state="listening"] { animation: breathe 2.2s ease-in-out infinite; }
+.hero-aiza[data-state="idle"] { animation: breathe 4.5s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.015); } }
+@keyframes speak   { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+@keyframes wave    { 0%, 100% { height: 8px; } 50% { height: 32px; } }
+@keyframes spin    { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes pip     { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes fadeUp  { to { opacity: 1; transform: translateY(0); } }
+
+/* ── Generic sections ── */
+.sec {
+  position: relative; padding: 140px 48px;
+  max-width: 1440px; margin: 0 auto;
+}
+.sec-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 56px; gap: 40px;
+}
+.sec-head .eyebrow { display: block; margin-bottom: 14px; }
+.sec-head .desc { max-width: 420px; font-size: 14.5px; color: var(--ink-1); line-height: 1.5; }
+
+/* ── AI Builder ── */
+.builder-tabs {
+  display: flex; gap: 8px;
+  padding: 6px; border-radius: 999px;
+  background: rgba(255,255,255,.025);
+  border: 0.5px solid var(--line-2);
+  width: max-content; margin: 0 auto 40px;
+  backdrop-filter: blur(20px);
+  flex-wrap: wrap; justify-content: center; max-width: 100%;
+}
+.builder-tab {
+  appearance: none; border: 0;
+  background: transparent;
+  padding: 10px 18px; border-radius: 999px;
+  font: inherit; font-size: 13px; font-weight: 450;
+  color: var(--ink-2); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: background .2s, color .2s, box-shadow .2s;
+  white-space: nowrap;
+}
+.builder-tab .num {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .14em;
+  color: var(--ink-3); padding: 2px 6px; border-radius: 5px;
+  background: rgba(255,255,255,.04);
+}
+.builder-tab.active {
+  background: var(--accent-grad); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 6px 20px -6px rgba(79,124,255,.55);
+}
+.builder-tab.active .num { background: rgba(0,0,0,.25); color: rgba(255,255,255,.85); }
+.builder-tab.done { color: var(--ink-0); }
+.builder-tab.done .num { background: rgba(110,231,255,.12); color: var(--accent-c); }
+
+.builder-stage {
+  position: relative;
+  min-height: 620px;
+  border-radius: var(--radius-xl);
+  padding: 36px;
+  background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.005));
+  border: 0.5px solid var(--line-2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 30px 80px -40px rgba(0,0,0,.7);
+  overflow: hidden;
+}
+.builder-stage::before {
+  content: ""; position: absolute; top: -20%; right: -10%;
+  width: 50%; height: 70%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(139,92,246,.18), transparent 70%);
+  pointer-events: none;
+}
+.builder-stage::after {
+  content: ""; position: absolute; bottom: -20%; left: -10%;
+  width: 50%; height: 70%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(79,124,255,.14), transparent 70%);
+  pointer-events: none;
+}
+
+.sh-grid {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+}
+.sh-card {
+  position: relative;
+  padding: 22px 20px; border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+  border: 0.5px solid var(--line-2);
+  cursor: pointer; text-align: left;
+  font: inherit; color: var(--ink-0);
+  transition: transform .25s cubic-bezier(.2,.7,.3,1), border-color .25s, background .25s, box-shadow .25s;
+  overflow: hidden;
+  min-height: 168px;
+  display: flex; flex-direction: column; gap: 10px;
+  appearance: none;
+}
+.sh-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--line-3);
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  box-shadow: 0 18px 50px -20px rgba(79,124,255,.35);
+}
+.sh-card.picked {
+  border-color: transparent;
+  background: linear-gradient(180deg, rgba(79,124,255,.14), rgba(139,92,246,.10));
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 24px 60px -20px rgba(79,124,255,.55),
+    0 0 80px -20px rgba(139,92,246,.45);
+}
+.sh-card.picked::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: conic-gradient(from 0deg at 50% 50%, rgba(110,231,255,.18), transparent 30%, rgba(139,92,246,.2) 60%, transparent 90%);
+  mix-blend-mode: screen; animation: spin-self 18s linear infinite;
+  border-radius: inherit; opacity: .9;
+}
+@keyframes spin-self { to { transform: rotate(360deg); } }
+.sh-card .ic {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: grid; place-items: center;
+  background: rgba(255,255,255,.04);
+  border: 0.5px solid var(--line-2);
+  color: var(--ink-0); flex-shrink: 0;
+}
+.sh-card.picked .ic { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.18); }
+.sh-card .nm { font-size: 15px; font-weight: 500; letter-spacing: -0.005em; position: relative; z-index: 1; }
+.sh-card .sb { font-size: 12.5px; color: var(--ink-2); line-height: 1.4; margin-top: -4px; position: relative; z-index: 1; }
+.sh-card .meta {
+  margin-top: auto; position: relative; z-index: 1;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-3);
+  display: flex; align-items: center; gap: 6px;
+}
+.sh-card.picked .meta { color: var(--accent-c); }
+.sh-card.picked .meta::before {
+  content: ""; width: 6px; height: 6px; border-radius: 999px;
+  background: var(--accent-c); box-shadow: 0 0 8px var(--accent-c);
+}
+
+.builder-actions {
+  margin-top: 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; position: relative; z-index: 1; flex-wrap: wrap;
+}
+.builder-actions .summary { font-size: 13px; color: var(--ink-1); }
+.builder-actions .summary strong { color: var(--ink-0); font-weight: 500; }
+.next-btn {
+  font: inherit; cursor: pointer; appearance: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 500;
+  background: var(--accent-grad); border: 0; color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 30px -10px rgba(79,124,255,.6);
+  transition: transform .2s;
+}
+.next-btn:hover { transform: translateY(-1px); }
+.next-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+
+/* World mockup */
+.world-mock {
+  position: relative;
+  border-radius: var(--radius-lg);
+  background: #0a0a14;
+  border: 0.5px solid var(--line-2);
+  overflow: hidden;
+  min-height: 360px;
+  margin-top: 18px;
+}
+.world-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--line-1);
+  background: rgba(255,255,255,.02);
+}
+.world-head .wdots { display: flex; gap: 6px; }
+.world-head .wdots span { width: 11px; height: 11px; border-radius: 999px; background: rgba(255,255,255,.12); }
+.world-head .wdots span:nth-child(1) { background: #ff5d8f; }
+.world-head .wdots span:nth-child(2) { background: #ffd56b; }
+.world-head .wdots span:nth-child(3) { background: #6ee7ff; }
+.world-head .url {
+  flex: 1; text-align: center;
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-2);
+  padding: 5px 12px; border-radius: 8px;
+  background: rgba(0,0,0,.3);
+}
+.world-body { position: relative; padding: 20px; min-height: 310px; }
+.world-aiza {
+  position: absolute; right: 18px; bottom: 18px;
+  width: 80px; height: 80px; border-radius: 50%; overflow: hidden;
+  border: 0.5px solid rgba(255,255,255,.18);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.08),
+    0 12px 30px -8px rgba(139,92,246,.6),
+    0 0 60px -10px rgba(79,124,255,.5);
+  z-index: 2;
+}
+.world-aiza video, .world-aiza img { width:100%; height:100%; object-fit: cover; }
+.world-aiza-bubble {
+  position: absolute; right: 110px; bottom: 24px;
+  max-width: 280px;
+  padding: 12px 14px; border-radius: 16px 16px 4px 16px;
+  background: linear-gradient(135deg, rgba(79,124,255,.22), rgba(139,92,246,.18));
+  border: 0.5px solid rgba(139,92,246,.3);
+  font-size: 13px; line-height: 1.4; color: var(--ink-0);
+  backdrop-filter: blur(10px); z-index: 2;
+}
+
+/* Train step */
+.train-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  position: relative; z-index: 1;
+}
+.train-form { display: flex; flex-direction: column; gap: 18px; }
+.field-label {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-2); margin-bottom: 8px;
+}
+.field-input {
+  width: 100%; appearance: none; font: inherit;
+  padding: 13px 16px; border-radius: 12px;
+  background: rgba(255,255,255,.025);
+  border: 0.5px solid var(--line-2);
+  color: var(--ink-0); font-size: 14px;
+}
+.field-input:focus { outline: none; border-color: rgba(110,231,255,.4); background: rgba(255,255,255,.04); }
+.field-input::placeholder { color: var(--ink-3); }
+.field-textarea { min-height: 88px; resize: vertical; }
+
+.drop-zone {
+  padding: 22px;
+  border-radius: 14px;
+  border: 1px dashed var(--line-3);
+  background: rgba(255,255,255,.015);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center;
+}
+.drop-zone .lg { font-size: 14px; color: var(--ink-0); font-weight: 450; }
+.drop-zone .sm { font-size: 12px; color: var(--ink-2); }
+.drop-zone .files { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.drop-file {
+  font-family: var(--font-mono); font-size: 10.5px;
+  padding: 5px 10px; border-radius: 999px;
+  background: rgba(110,231,255,.08); color: var(--accent-c);
+  border: 0.5px solid rgba(110,231,255,.18);
+  letter-spacing: 0.04em;
+}
+
+.crm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.crm-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 999px;
+  background: rgba(255,255,255,.03);
+  border: 0.5px solid var(--line-2);
+  font-size: 12.5px; color: var(--ink-1);
+  cursor: pointer; font: inherit; appearance: none;
+  transition: background .2s, border-color .2s;
+}
+.crm-chip:hover { background: rgba(255,255,255,.06); }
+.crm-chip.on {
+  background: rgba(79,124,255,.14); color: #c9d4ff;
+  border-color: rgba(79,124,255,.4);
+}
+.crm-chip .swatch {
+  width: 14px; height: 14px; border-radius: 4px;
+  display: grid; place-items: center;
+  font-size: 8px; font-weight: 600; font-family: var(--font-mono);
+  flex-shrink: 0; color: #fff;
+}
+
+.brain-stage {
+  position: relative;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(10,10,18,.6), rgba(8,8,14,.7));
+  border: 0.5px solid var(--line-2);
+  padding: 24px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  min-height: 460px;
+}
+.brain-stage::before {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, #000 30%, transparent 75%);
+  pointer-events: none;
+}
+.brain-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-2); position: relative; z-index: 1;
+}
+.brain-head .pip {
+  display: inline-block; width: 6px; height: 6px; border-radius: 999px;
+  background: var(--accent-c); box-shadow: 0 0 8px var(--accent-c);
+  margin-right: 6px; animation: pip 1.4s ease-in-out infinite;
+}
+.brain-canvas {
+  position: relative; flex: 1; display: grid; place-items: center;
+  margin: 12px -4px; min-height: 300px;
+}
+.brain-core {
+  position: relative; width: 220px; height: 220px; border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,.5), rgba(139,92,246,.7) 35%, #1a0f3d 70%, #050509);
+  box-shadow:
+    inset 0 -16px 50px rgba(0,0,0,.5),
+    0 0 50px rgba(139,92,246,.45),
+    0 0 100px rgba(79,124,255,.3);
+  animation: breathe 4s ease-in-out infinite;
+}
+.brain-core::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 220deg, transparent, rgba(110,231,255,.45) 30%, transparent 60%, rgba(79,124,255,.5) 80%, transparent);
+  mix-blend-mode: screen; animation: spin-self 14s linear infinite;
+}
+.brain-orbit {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  border-radius: 50%; border: 0.5px dashed rgba(255,255,255,.08);
+  pointer-events: none;
+}
+.brain-orbit.o1 { width: 360px; height: 360px; animation: spin 32s linear infinite; }
+.brain-orbit.o2 { width: 480px; height: 480px; animation: spin 48s linear infinite reverse; }
+.brain-token {
+  position: absolute; top: 50%; left: 50%;
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 5px 10px; border-radius: 999px;
+  background: rgba(8,8,16,.85); color: var(--ink-1);
+  border: 0.5px solid var(--line-2);
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+}
+
+.brain-meter {
+  position: relative; z-index: 1;
+  margin-top: 12px; padding: 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
+  border: 0.5px solid var(--line-1);
+}
+.brain-meter .row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; margin-bottom: 8px;
+}
+.brain-meter .row:last-child { margin-bottom: 0; }
+.brain-meter .lab { color: var(--ink-2); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; flex-shrink: 0; }
+.brain-meter .bar {
+  flex: 1; height: 4px; background: rgba(255,255,255,.06); border-radius: 999px;
+  margin: 0 12px; overflow: hidden; position: relative;
+}
+.brain-meter .bar > i {
+  display: block; height: 100%; border-radius: 999px;
+  background: var(--accent-grad);
+  box-shadow: 0 0 8px rgba(79,124,255,.5);
+  transition: width 1.2s cubic-bezier(.4, 0, .2, 1);
+}
+.brain-meter .pct { font-family: var(--font-mono); font-size: 11px; color: var(--ink-0); font-variant-numeric: tabular-nums; flex-shrink: 0; min-width: 36px; text-align: right; }
+
+/* Personalize step */
+.persona-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  position: relative; z-index: 1;
+}
+.persona-form { display: flex; flex-direction: column; gap: 22px; }
+.lang-select { display: flex; flex-wrap: wrap; gap: 8px; }
+.lang-chip {
+  font: inherit; appearance: none; cursor: pointer;
+  padding: 8px 14px; border-radius: 999px;
+  background: rgba(255,255,255,.03);
+  border: 0.5px solid var(--line-2);
+  color: var(--ink-1); font-size: 12.5px;
+  transition: background .2s, color .2s, border-color .2s;
+}
+.lang-chip:hover { background: rgba(255,255,255,.06); color: var(--ink-0); }
+.lang-chip.on {
+  background: rgba(110,231,255,.10);
+  color: var(--accent-c);
+  border-color: rgba(110,231,255,.3);
+}
+
+.personality-list { display: flex; flex-direction: column; gap: 8px; }
+.personality {
+  display: grid; grid-template-columns: 36px 1fr auto; gap: 14px; align-items: center;
+  padding: 14px 16px; border-radius: 14px;
+  background: rgba(255,255,255,.025);
+  border: 0.5px solid var(--line-2);
+  cursor: pointer; font: inherit; color: var(--ink-0); text-align: left;
+  appearance: none;
+  transition: background .25s, border-color .25s;
+}
+.personality:hover { background: rgba(255,255,255,.04); }
+.personality.on {
+  background: linear-gradient(135deg, rgba(79,124,255,.12), rgba(139,92,246,.10));
+  border-color: rgba(139,92,246,.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.personality .pic {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: grid; place-items: center;
+  background: rgba(255,255,255,.04);
+  border: 0.5px solid var(--line-2);
+  color: var(--ink-1); font-family: var(--font-mono); font-size: 13px;
+}
+.personality.on .pic {
+  background: var(--accent-grad); color: #fff; border-color: transparent;
+  box-shadow: 0 0 16px rgba(79,124,255,.45);
+}
+.personality .nm { font-size: 14px; font-weight: 500; letter-spacing: -0.005em; }
+.personality .sb { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.personality .pn-state {
+  font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--ink-3); letter-spacing: .12em; text-transform: uppercase;
+}
+.personality.on .pn-state { color: var(--accent-c); }
+
+.voice-stage {
+  position: relative;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(10,10,18,.6), rgba(8,8,14,.7));
+  border: 0.5px solid var(--line-2);
+  padding: 24px; display: flex; flex-direction: column; gap: 18px;
+  overflow: hidden;
+  min-height: 460px;
+}
+.voice-stage::before {
+  content: ""; position: absolute; top: -30%; right: -10%;
+  width: 60%; height: 60%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(110,231,255,.22), transparent 70%);
+  pointer-events: none;
+}
+.voice-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.voice-head .who { display: flex; align-items: center; gap: 12px; }
+.voice-head .av {
+  width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
+  border: 0.5px solid rgba(255,255,255,.18);
+  box-shadow: 0 0 16px rgba(139,92,246,.45);
+}
+.voice-head .av video, .voice-head .av img { width: 100%; height: 100%; object-fit: cover; }
+.voice-head .nm { font-size: 15px; font-weight: 500; }
+.voice-head .sb { font-size: 11.5px; color: var(--ink-2); font-family: var(--font-mono); letter-spacing: 0.06em; }
+.voice-head .tag {
+  padding: 5px 10px; border-radius: 999px;
+  background: rgba(110,231,255,.08); border: 0.5px solid rgba(110,231,255,.2);
+  color: var(--accent-c); font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+.voice-wave-big {
+  position: relative; z-index: 1;
+  flex: 1; min-height: 160px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px;
+}
+.voice-wave-big i {
+  display: block; width: 4px;
+  background: linear-gradient(180deg, #6ee7ff, #4f7cff, #8b5cf6);
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(110,231,255,.4);
+  animation: voiceWave 1.2s ease-in-out infinite;
+}
+@keyframes voiceWave {
+  0%, 100% { height: 12px; opacity: .5; }
+  50% { height: 100px; opacity: 1; }
+}
+.voice-subtitle {
+  position: relative; z-index: 1;
+  text-align: center;
+  font-size: 14.5px; color: var(--ink-0);
+  padding: 14px 18px; border-radius: 14px;
+  background: rgba(8,8,16,.6);
+  border: 0.5px solid var(--line-2);
+  backdrop-filter: blur(10px);
+  line-height: 1.45;
+}
+.voice-subtitle .cursor {
+  display: inline-block; width: 1.5px; height: 14px;
+  background: var(--accent-c); vertical-align: -2px;
+  margin-left: 3px;
+  animation: cur 1s steps(2) infinite;
+}
+@keyframes cur { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+
+/* Meet step */
+.live-stage {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px;
+  min-height: 480px;
+}
+.live-presenter {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #050509;
+  border: 0.5px solid var(--line-2);
+  box-shadow: 0 0 80px -20px rgba(139,92,246,.5), 0 0 160px -30px rgba(79,124,255,.35);
+  aspect-ratio: 4 / 5;
+  max-height: 540px;
+  cursor: pointer;
+}
+.live-presenter video, .live-presenter img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.live-presenter::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, transparent 55%, rgba(0,0,0,.65) 100%),
+    radial-gradient(circle at 30% 22%, rgba(255,255,255,.12), transparent 50%);
+  pointer-events: none;
+}
+.live-controls {
+  position: absolute; left: 16px; right: 16px; bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+  z-index: 2;
+}
+.live-controls .ctl {
+  width: 40px; height: 40px; border-radius: 999px;
+  display: grid; place-items: center;
+  background: rgba(8,8,16,.6); border: 0.5px solid var(--line-2);
+  backdrop-filter: blur(10px);
+  color: var(--ink-0); flex-shrink: 0;
+  appearance: none; font: inherit; cursor: pointer;
+}
+.live-controls .ctl.red { background: linear-gradient(135deg,#ff5d8f,#ff3c1f); color: #fff; border-color: transparent; }
+.live-controls .live-sub {
+  flex: 1; padding: 10px 14px; border-radius: 999px;
+  background: rgba(8,8,16,.7); border: 0.5px solid var(--line-2);
+  backdrop-filter: blur(14px);
+  font-size: 13px; color: var(--ink-0);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.live-tag-floating {
+  position: absolute; top: 14px; left: 14px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px; border-radius: 999px;
+  background: rgba(8,8,16,.6); backdrop-filter: blur(12px);
+  border: 0.5px solid var(--line-2);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-0);
+}
+.live-tag-floating .pip { width: 6px; height: 6px; border-radius: 999px; background: #ff5d8f; box-shadow: 0 0 8px #ff5d8f; animation: pip 1.4s ease-in-out infinite; }
+
+.live-side { display: flex; flex-direction: column; gap: 14px; }
+.live-card {
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,.025);
+  border: 0.5px solid var(--line-2);
+}
+.live-card .ttl {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-2); margin-bottom: 14px;
+}
+.live-card .ttl .pip { display:inline-block; width:6px;height:6px;border-radius:999px;background:var(--accent-c);box-shadow:0 0 8px var(--accent-c);margin-right:6px;animation:pip 1.4s ease-in-out infinite; }
+.live-msg { font-size: 13.5px; line-height: 1.5; padding: 8px 12px; border-radius: 12px; }
+.live-msg.you { background: rgba(255,255,255,.05); color: var(--ink-0); align-self: flex-end; max-width: 80%; }
+.live-msg.her {
+  background: linear-gradient(135deg, rgba(79,124,255,.18), rgba(139,92,246,.16));
+  border: 0.5px solid rgba(139,92,246,.3); color: var(--ink-0); max-width: 90%;
+}
+.live-msgs { display: flex; flex-direction: column; gap: 8px; }
+
+.live-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.live-action {
+  appearance: none; font: inherit; cursor: pointer;
+  padding: 11px 12px; border-radius: 12px;
+  background: rgba(255,255,255,.03);
+  border: 0.5px solid var(--line-2);
+  color: var(--ink-1); font-size: 12.5px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  text-align: center; transition: background .2s, color .2s;
+}
+.live-action:hover { background: rgba(255,255,255,.07); color: var(--ink-0); }
+
+.live-go-btn {
+  margin-top: 4px; appearance: none; font: inherit; cursor: pointer;
+  width: 100%; padding: 14px 18px; border-radius: 999px;
+  background: var(--accent-grad); border: 0; color: #fff;
+  font-size: 14.5px; font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 12px 32px -8px rgba(79,124,255,.6);
+  transition: transform .2s;
+}
+.live-go-btn:hover { transform: translateY(-1px); }
+.live-go-btn .dot { width: 6px; height: 6px; border-radius: 999px; background: #fff; box-shadow: 0 0 8px rgba(255,255,255,.6); animation: pip 1s ease-in-out infinite; }
+
+/* ── Integrations ── */
+.integ-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+.integ-tile {
+  padding: 24px 22px; border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border: 0.5px solid var(--line-2);
+  display: flex; flex-direction: column; gap: 12px;
+  position: relative; overflow: hidden;
+  transition: transform .25s, border-color .25s;
+}
+.integ-tile:hover { transform: translateY(-2px); border-color: var(--line-3); }
+.integ-tile .logo-lg {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: grid; place-items: center;
+  color: #fff; font-family: var(--font-mono); font-weight: 600; font-size: 13px;
+  flex-shrink: 0;
+}
+.integ-tile .nm { font-size: 14.5px; font-weight: 500; letter-spacing: -0.005em; }
+.integ-tile .sb { font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+.integ-tile .stat {
+  margin-top: auto; padding-top: 8px;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent-c);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.integ-tile .stat::before {
+  content: ""; width: 6px; height: 6px; border-radius: 999px; background: var(--accent-c); box-shadow: 0 0 6px var(--accent-c);
+}
+
+/* ── Analytics ── */
+.analytics-grid {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px;
+}
+.chart-card {
+  position: relative;
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(10,10,18,.7), rgba(8,8,14,.85));
+  border: 0.5px solid var(--line-2);
+  overflow: hidden;
+}
+.chart-card::before {
+  content: ""; position: absolute; top: -30%; right: -10%;
+  width: 60%; height: 60%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(110,231,255,.16), transparent 70%);
+  pointer-events: none;
+}
+.chart-card .head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; position: relative; gap: 16px; }
+.chart-card .head .nm { font-size: 14px; font-weight: 500; }
+.chart-card .head .sb { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.chart-card .head .big {
+  font-size: 36px; font-weight: 500; letter-spacing: -0.025em;
+  line-height: 1; font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.chart-card .head .big .delta { font-size: 13px; color: var(--accent-c); margin-left: 8px; font-family: var(--font-mono); font-weight: 400; letter-spacing: 0; }
+.chart-area {
+  position: relative;
+  height: 200px;
+  display: flex; align-items: flex-end; gap: 6px;
+}
+.chart-area svg { width: 100%; height: 100%; display: block; position: relative; z-index: 1; }
+.chart-bottom-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  margin-top: 18px; padding-top: 18px;
+  border-top: 0.5px dashed var(--line-2); position: relative;
+}
+.chart-bottom-row .v { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+.chart-bottom-row .k { font-size: 11px; color: var(--ink-2); font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; margin-top: 2px; }
+
+.mini-stats { display: flex; flex-direction: column; gap: 12px; }
+.mini-stat {
+  padding: 18px 20px; border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border: 0.5px solid var(--line-2);
+  display: flex; align-items: center; gap: 14px;
+}
+.mini-stat .ic {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(255,255,255,.04); border: 0.5px solid var(--line-2);
+  display: grid; place-items: center; color: var(--ink-1);
+  flex-shrink: 0;
+}
+.mini-stat .v { font-size: 24px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; }
+.mini-stat .v .d { font-size: 11px; color: var(--accent-c); margin-left: 6px; font-family: var(--font-mono); font-weight: 400; }
+.mini-stat .k { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+
+/* ── Security ── */
+.security-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.sec-card {
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.005));
+  border: 0.5px solid var(--line-2);
+  display: flex; flex-direction: column; gap: 12px;
+  position: relative; overflow: hidden;
+}
+.sec-card .ic-lg {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(255,255,255,.05); border: 0.5px solid var(--line-2);
+  display: grid; place-items: center; color: var(--ink-0);
+}
+.sec-card .ttl { font-size: 16px; font-weight: 500; letter-spacing: -0.01em; }
+.sec-card .desc { font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+
+.cert-row {
+  margin-top: 28px;
+  display: flex; flex-wrap: wrap; gap: 12px;
+  padding-top: 24px;
+  border-top: 0.5px dashed var(--line-2);
+}
+.cert {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-radius: 999px;
+  background: rgba(255,255,255,.025);
+  border: 0.5px solid var(--line-2);
+  font-size: 12.5px; color: var(--ink-1);
+}
+.cert .ic {
+  width: 16px; height: 16px; border-radius: 4px;
+  background: var(--accent-grad);
+  display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 600; color: #fff;
+}
+
+/* ── Team ── */
+.team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.team-card {
+  display: flex; flex-direction: column; gap: 18px;
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.005));
+  border: 0.5px solid var(--line-2);
+  transition: transform .25s, border-color .25s, box-shadow .25s;
+  position: relative; overflow: hidden;
+}
+.team-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--line-3);
+  box-shadow: 0 24px 60px -24px rgba(79,124,255,.4), 0 0 80px -30px rgba(139,92,246,.35);
+}
+.team-portrait {
+  position: relative;
+  width: 100%; aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #0a0a14;
+  border: 0.5px solid rgba(255,255,255,.10);
+  cursor: pointer;
+}
+.team-portrait video, .team-portrait img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform .8s cubic-bezier(.2, .7, .3, 1);
+}
+.team-card:hover .team-portrait video,
+.team-card:hover .team-portrait img { transform: scale(1.04); }
+.team-portrait::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,.55) 100%);
+}
+.team-live {
+  position: absolute; top: 12px; left: 12px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 999px;
+  background: rgba(8,8,16,.62); backdrop-filter: blur(12px);
+  border: 0.5px solid var(--line-2);
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-0);
+}
+.team-live .pip {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: #6ee7ff; box-shadow: 0 0 8px #6ee7ff;
+  animation: pip 1.4s ease-in-out infinite;
+}
+.team-info { display: flex; flex-direction: column; gap: 8px; }
+.team-name { font-size: 24px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.05; }
+.team-name em {
+  font-style: normal;
+  background: linear-gradient(135deg, #c9d4ff 0%, #e9d4ff 50%, #ffffff 100%);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+}
+.team-role {
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-2);
+}
+.team-desc {
+  font-size: 13.5px; line-height: 1.5; color: var(--ink-1);
+  flex: 1;
+}
+.team-cta {
+  appearance: none; font: inherit; cursor: pointer;
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 14px; border-radius: 999px;
+  background: rgba(255,255,255,.04);
+  border: 0.5px solid var(--line-2);
+  color: var(--ink-0); font-size: 13px; font-weight: 450;
+  transition: background .2s, border-color .2s, transform .2s;
+  margin-top: 4px;
+}
+.team-cta:hover {
+  background: var(--accent-grad);
+  border-color: transparent;
+  box-shadow: 0 8px 24px -8px rgba(79,124,255,.6);
+}
+
+/* ── Stories ── */
+.stories-grid {
+  display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px;
+  grid-auto-rows: minmax(200px, auto);
+}
+.story-card {
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.005));
+  border: 0.5px solid var(--line-2);
+  display: flex; flex-direction: column; gap: 16px;
+  position: relative; overflow: hidden;
+}
+.story-card.feature {
+  grid-row: span 2;
+  background: linear-gradient(160deg, rgba(79,124,255,.12), rgba(139,92,246,.08) 60%, rgba(10,10,18,.6));
+  border-color: rgba(139,92,246,.25);
+}
+.story-card .quote { font-size: 17px; line-height: 1.4; letter-spacing: -0.012em; font-weight: 400; }
+.story-card.feature .quote { font-size: 24px; line-height: 1.25; letter-spacing: -0.02em; }
+.story-card .who {
+  display: flex; align-items: center; gap: 12px; margin-top: auto;
+  padding-top: 16px; border-top: 0.5px solid var(--line-1);
+}
+.story-card .who .av {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; color: #fff;
+}
+.story-card .who .nm { font-size: 13.5px; font-weight: 500; }
+.story-card .who .role { font-size: 11.5px; color: var(--ink-2); }
+.story-card .metric-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  padding-top: 12px; border-top: 0.5px dashed var(--line-2);
+}
+.story-card .metric-row .v { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+.story-card .metric-row .k { font-size: 11px; color: var(--ink-2); font-family: var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; }
+
+/* ── Capture / Contact ── */
+.capture-section {
+  position: relative; padding: 0 48px 100px;
+  max-width: 1440px; margin: 0 auto;
+}
+.capture-card {
+  position: relative;
+  border-radius: var(--radius-xl);
+  padding: 56px 56px;
+  background: linear-gradient(180deg, rgba(20,20,32,.55), rgba(8,8,14,.55));
+  border: 0.5px solid var(--line-2);
+  backdrop-filter: blur(24px);
+  box-shadow:
+    0 40px 100px -40px rgba(0,0,0,.8),
+    0 20px 80px -20px rgba(79,124,255,.18),
+    inset 0 1px 0 rgba(255,255,255,.06);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 64px;
+  overflow: hidden;
+}
+.capture-card::before {
+  content: ""; position: absolute; top: -30%; left: -10%;
+  width: 60%; height: 80%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(79,124,255,.22), transparent 70%);
+  pointer-events: none;
+}
+.capture-card::after {
+  content: ""; position: absolute; bottom: -40%; right: -10%;
+  width: 60%; height: 80%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(139,92,246,.18), transparent 70%);
+  pointer-events: none;
+}
+.capture-text { position: relative; z-index: 1; }
+.capture-text h2 { font-size: clamp(28px, 3vw, 42px); font-weight: 500; line-height: 1.05; letter-spacing: -0.025em; margin: 0 0 16px; }
+.capture-text p { color: var(--ink-1); font-size: 15.5px; line-height: 1.55; margin: 0 0 28px; max-width: 420px; }
+.capture-bullets { display: flex; flex-direction: column; gap: 12px; }
+.capture-bullets .b {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 13.5px; color: var(--ink-1);
+}
+.capture-bullets .b .ck {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(110,231,255,.12);
+  border: 0.5px solid rgba(110,231,255,.3);
+  color: #6ee7ff;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+
+.capture-form { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px; }
+.capture-form label {
+  display: block; font-size: 10.5px; font-family: var(--font-mono);
+  color: var(--ink-2); margin: 0 0 6px;
+  text-transform: uppercase; letter-spacing: .14em;
+}
+.capture-form input,
+.capture-form textarea {
+  width: 100%; padding: 14px 16px;
+  background: rgba(255,255,255,.025);
+  border: 0.5px solid var(--line-2);
+  border-radius: 12px;
+  color: var(--ink-0); font-family: inherit;
+  font-size: 14.5px; outline: none;
+  transition: border-color .2s, background .2s;
+  resize: vertical;
+}
+.capture-form input:focus,
+.capture-form textarea:focus {
+  border-color: rgba(110,231,255,.35);
+  background: rgba(255,255,255,.04);
+  box-shadow: 0 0 0 4px rgba(79,124,255,.08);
+}
+.capture-form button {
+  margin-top: 8px; width: 100%;
+  background: var(--accent-grad); color: #fff;
+  border: 0; padding: 16px;
+  border-radius: 12px; font-size: 14.5px; font-weight: 500;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.35),
+    0 12px 32px -10px rgba(79,124,255,.55),
+    0 18px 64px -12px rgba(139,92,246,.45);
+  transition: transform .2s;
+}
+.capture-form button:hover { transform: translateY(-1px); }
+.capture-form button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.capture-success {
+  margin-top: 14px;
+  padding: 18px 20px; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(79,124,255,.18), rgba(139,92,246,.16));
+  border: 0.5px solid rgba(139,92,246,.3);
+  color: var(--ink-0); font-size: 14px;
+  display: none;
+}
+.capture-success.show { display: block; }
+.capture-error {
+  margin-top: 14px;
+  padding: 14px 18px; border-radius: 12px;
+  background: rgba(255,93,143,.10);
+  border: 0.5px solid rgba(255,93,143,.3);
+  color: #ff8fab; font-size: 13.5px;
+  display: none;
+}
+.capture-error.show { display: block; }
+
+/* ── Final CTA ── */
+.final-cta {
+  position: relative;
+  padding: 100px 60px;
+  margin: 0 48px;
+  max-width: 1360px;
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(60% 70% at 50% 0%, rgba(110,231,255,.16), transparent 70%),
+    radial-gradient(60% 70% at 50% 100%, rgba(139,92,246,.18), transparent 70%),
+    linear-gradient(180deg, rgba(20,20,32,.6), rgba(8,8,14,.6));
+  border: 0.5px solid var(--line-2);
+  overflow: hidden;
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+}
+@media (min-width: 1456px) { .final-cta { margin: 0 auto; } }
+.final-cta::before {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 30%, transparent 75%);
+  pointer-events: none;
+}
+.final-cta .display { position: relative; z-index: 1; }
+.final-cta .lead { position: relative; z-index: 1; text-align: center; margin: 0 auto; }
+.final-cta .cta-row { position: relative; z-index: 1; display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+.final-cta .ring-glow {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 360px; height: 360px; border-radius: 50%;
+  border: 0.5px solid rgba(255,255,255,.04);
+  pointer-events: none;
+}
+.final-cta .ring-glow.r2 { width: 600px; height: 600px; }
+.final-cta .ring-glow.r3 { width: 900px; height: 900px; }
+.final-cta-portrait {
+  position: relative; z-index: 1;
+  width: 160px; height: 160px; border-radius: 50%; overflow: hidden;
+  border: 0.5px solid rgba(255,255,255,.18);
+  box-shadow: 0 0 80px rgba(139,92,246,.6), 0 0 160px rgba(79,124,255,.4);
+  margin-bottom: 12px;
+  cursor: pointer;
+  animation: breathe 5s ease-in-out infinite;
+}
+.final-cta-portrait video, .final-cta-portrait img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── Footer ── */
+.foot {
+  padding: 60px 48px 56px;
+  max-width: 1440px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 0.5px solid var(--line-1);
+  gap: 24px; flex-wrap: wrap;
+}
+.foot .leg { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); letter-spacing: 0.06em; }
+
+/* ── Floating presenter ── */
+.float-presenter {
+  position: fixed; right: 24px; bottom: 24px;
+  z-index: 40;
+  opacity: 0; transform: translateY(20px) scale(.9);
+  transition: opacity .5s, transform .5s cubic-bezier(.2,.7,.3,1);
+  pointer-events: none;
+}
+.float-presenter.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.fp-card {
+  position: relative;
+  padding: 18px 18px 16px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(20,20,32,.85), rgba(8,8,14,.85));
+  border: 0.5px solid var(--line-2);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  box-shadow:
+    0 24px 80px -20px rgba(0,0,0,.7),
+    0 0 80px -20px rgba(139,92,246,.4),
+    inset 0 1px 0 rgba(255,255,255,.06);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  width: 210px;
+  z-index: 1;
+}
+.fp-lang {
+  position: absolute; top: 10px; right: 10px;
+  font-family: var(--font-mono); font-size: 9.5px;
+  letter-spacing: 0.12em;
+  padding: 4px 8px; border-radius: 6px;
+  background: rgba(255,255,255,.05);
+  border: 0.5px solid var(--line-2);
+  color: var(--ink-1);
+}
+.fp-portrait-lg {
+  position: relative;
+  width: 100px; height: 100px; border-radius: 50%; overflow: hidden;
+  background: #0a0a14;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.10),
+    0 0 32px rgba(139,92,246,.55),
+    0 0 64px rgba(79,124,255,.35);
+  margin-top: 6px;
+  animation: breathe 4s ease-in-out infinite;
+}
+.fp-portrait-lg video, .fp-portrait-lg img { width: 100%; height: 100%; object-fit: cover; }
+.fp-name { font-size: 15px; font-weight: 500; letter-spacing: -0.005em; line-height: 1.1; }
+.fp-sub {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+  color: var(--ink-2); text-align: center; line-height: 1.4;
+  margin-top: -2px;
+}
+.fp-talk {
+  appearance: none; border: 0; cursor: pointer; font: inherit;
+  background: var(--accent-grad); color: #fff;
+  padding: 10px 18px; border-radius: 999px;
+  font-size: 13px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 8px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 8px 24px -8px rgba(79,124,255,.6);
+  margin-top: 4px;
+  transition: transform .2s;
+}
+.fp-talk:hover { transform: translateY(-1px); }
+.fp-talk .dot { width: 6px; height: 6px; border-radius: 999px; background: #fff; box-shadow: 0 0 8px rgba(255,255,255,.6); animation: pip 1s ease-in-out infinite; }
+.fp-orbit {
+  position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+  width: 130px; height: 130px;
+  border-radius: 50%;
+  border: 0.5px dashed rgba(255,255,255,.06);
+  pointer-events: none;
+  animation: spin-self 24s linear infinite;
+}
+.fp-close {
+  position: absolute; top: 6px; left: 6px;
+  appearance: none; border: 0; cursor: pointer;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,255,255,.06); color: var(--ink-2);
+  display: grid; place-items: center;
+  font-size: 11px; line-height: 1;
+}
+.fp-close:hover { background: rgba(255,255,255,.12); color: var(--ink-0); }
+
+/* ── Avatar modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(2, 2, 8, 0.82);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 28px;
+  opacity: 0;
+  transition: opacity .35s cubic-bezier(.2,.7,.3,1);
+}
+.modal-overlay.show { display: flex; opacity: 1; }
+.modal-frame {
+  position: relative;
+  width: 100%; max-width: 1180px;
+  height: min(86vh, 760px);
+  background: var(--bg-0);
+  border-radius: 22px;
+  border: 0.5px solid var(--line-2);
+  box-shadow:
+    0 60px 120px -40px rgba(0,0,0,.9),
+    0 0 0 1px rgba(110,231,255,.08),
+    0 0 80px rgba(79,124,255,.18);
+  overflow: hidden;
+  transform: scale(.98) translateY(8px);
+  transition: transform .4s cubic-bezier(.2,.7,.3,1);
+}
+.modal-overlay.show .modal-frame { transform: scale(1) translateY(0); }
+.modal-frame iframe {
+  width: 100%; height: 100%; border: 0; display: block;
+  background: var(--bg-0);
+}
+.modal-bar {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 52px; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px 0 22px;
+  background: linear-gradient(180deg, rgba(8,8,16,.85), rgba(8,8,16,.0));
+  pointer-events: none;
+}
+.modal-bar .mb-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-1);
+}
+.modal-bar .mb-tag .pip {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #ff5d8f; box-shadow: 0 0 10px #ff5d8f;
+  animation: pip 1.4s ease-in-out infinite;
+}
+.modal-close {
+  pointer-events: auto;
+  appearance: none; border: 0; cursor: pointer;
+  width: 34px; height: 34px; border-radius: 999px;
+  background: rgba(255,255,255,.06);
+  border: 0.5px solid var(--line-2);
+  color: var(--ink-0);
+  display: grid; place-items: center;
+  transition: background .2s, transform .2s;
+}
+.modal-close:hover { background: rgba(255,255,255,.12); transform: scale(1.05); }
+
+/* ── Responsive ── */
+@media (max-width: 1280px) {
+  .hero { padding: 110px 28px 60px; }
+  .hero-stage { grid-template-columns: 1fr 1fr; gap: 36px; }
+  .sh-grid { grid-template-columns: repeat(2, 1fr); }
+  .integ-grid { grid-template-columns: repeat(2, 1fr); }
+  .train-grid, .persona-grid { grid-template-columns: 1fr; }
+  .analytics-grid { grid-template-columns: 1fr; }
+  .security-grid { grid-template-columns: 1fr 1fr; }
+  .stories-grid { grid-template-columns: 1fr 1fr; }
+  .story-card.feature { grid-row: span 1; grid-column: span 2; }
+  .team-grid { grid-template-columns: repeat(2, 1fr); }
+  .live-stage { grid-template-columns: 1fr; }
+  .live-presenter { aspect-ratio: 16 / 10; max-height: 380px; }
+  .live-actions { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 960px) {
+  .nav { gap: 14px; padding: 6px 8px 6px 14px; }
+  .nav-links { display: none; }
+  .nav-cta { font-size: 12.5px; padding: 8px 14px; }
+  .nav-logo { font-size: 14px; }
+
+  .hero { padding: 110px 18px 60px; }
+  .hero-stage { grid-template-columns: 1fr; gap: 32px; }
+  .hero-aiza { aspect-ratio: 1 / 1; max-height: 560px; }
+  .hero-copy .display { font-size: clamp(36px, 8vw, 56px); }
+  .hero-copy .lead { font-size: 16px; }
+
+  .sec { padding: 80px 18px; }
+  .sec-head { flex-direction: column; align-items: flex-start; gap: 16px; margin-bottom: 36px; }
+  .sec-head .desc { max-width: 100%; }
+  .builder-stage { padding: 22px; }
+  .sh-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sh-card { padding: 16px 14px; min-height: 140px; }
+  .integ-grid { grid-template-columns: 1fr 1fr; }
+  .security-grid { grid-template-columns: 1fr; }
+  .stories-grid { grid-template-columns: 1fr; }
+  .story-card.feature { grid-column: span 1; }
+  .team-grid { grid-template-columns: 1fr; }
+  .chart-bottom-row { grid-template-columns: repeat(2, 1fr); }
+  .live-actions { grid-template-columns: 1fr 1fr; }
+
+  .capture-section { padding: 0 18px 80px; }
+  .capture-card { grid-template-columns: 1fr; gap: 32px; padding: 36px 24px; }
+
+  .final-cta { margin: 0 18px; padding: 60px 24px; }
+  .final-cta-portrait { width: 120px; height: 120px; }
+
+  .foot { padding: 40px 18px; flex-direction: column; gap: 14px; text-align: center; }
+
+  .modal-overlay { padding: 0; }
+  .modal-frame { height: 100vh; width: 100vw; max-width: none; border-radius: 0; border: 0; }
+
+  .float-presenter { right: 14px; bottom: 14px; }
+  .fp-card { width: 170px; padding: 14px 14px 14px; }
+  .fp-portrait-lg { width: 80px; height: 80px; }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+</style>
 </head>
 <body>
 
-<!-- NAV -->
-<nav>
-  <div class="nav-logo">
-    <span class="logo-dot"></span>
-    <span>Rehu.ai</span>
+<div class="ambient"></div>
+
+<div class="shell">
+
+<!-- ════════════════ NAV ════════════════ -->
+<nav class="nav" aria-label="Primary">
+  <a class="nav-logo" href="/">
+    <span class="nav-mark" aria-hidden="true"></span>
+    <span>savant<span style="color:var(--ink-2)">.ai</span></span>
+  </a>
+  <div class="nav-links">
+    <a href="#build">Build</a>
+    <a href="#team">Team</a>
+    <a href="#integrations">Integrations</a>
+    <a href="#security">Security</a>
+    <a href="#stories">Customers</a>
   </div>
-  <ul class="nav-links">
-    <li><a href="#personas">Use Cases</a></li>
-    <li><a href="#demos">Demos</a></li>
-    <li><a href="#pricing">Pricing</a></li>
-    <li><a href="#demo">Try Live</a></li>
-  </ul>
-  <div class="nav-cta">
-    <a href="/call" class="btn-primary">Start Conversation</a>
-  </div>
+  <button class="btn btn-primary nav-cta" data-launch-avatar data-persona="default">
+    <span class="dot"></span>
+    Talk to Aiza
+  </button>
 </nav>
 
-<!-- HERO -->
-<div class="hero hero-premium">
-  <div class="hero-left animate">
-    <p class="hero-eyebrow">Human Digital Workforce</p>
-    <h1>Your <span class="accent">Smartest Rep</span> in the Room</h1>
-    <p class="hero-lead">Deploy specialists who know your business inside out ? live on your website, answering questions and closing gaps, 24/7.</p>
-    <div class="hero-actions">
-      <a href="/call" class="btn-hero btn-hero-primary btn-start">Start Conversation</a>
-      <a href="#personas" class="btn-hero btn-hero-ghost">See use cases</a>
-    </div>
-    <p class="hero-proof">Live voice &amp; video &middot; Trained on your content &middot; Ready in days</p>
-  </div>
-  <div class="hero-premium-visual animate">
-    <div class="persona-live-frame" id="hero-persona-frame">
-      <div class="persona-live-glow"></div>
-      <span class="persona-live-badge">Live now</span>
-      <img class="persona-alive-img persona-poster" id="hero-maya-poster" src="" alt="Maya ? sales specialist" loading="eager"/>
-      <video class="persona-live-video" id="hero-maya-video" autoplay playsinline muted></video>
-      <div class="persona-live-caption">
-        <strong>Maya ? Business Consultant</strong>
-        <span>Available for live conversation</span>
+<!-- ════════════════ HERO ════════════════ -->
+<section class="hero">
+  <div class="hero-stage">
+    <!-- Left: copy + CTAs + live chips -->
+    <div class="hero-copy">
+      <span class="eyebrow">
+        <span class="pip-live"></span>
+        Now live · Built by SSPM Consultants · Savant.ai
+      </span>
+      <h1 class="display">The end of the<br><em>AI chatbot.</em></h1>
+      <p class="lead">
+        Meet your Super Human — she speaks, listens, understands, and books meetings like your best GTM rep. Drop her on your website, inside your product, or on a Zoom call.
+      </p>
+      <div class="cta-row">
+        <button class="btn btn-primary" data-launch-avatar data-persona="default">
+          <span class="dot"></span>
+          Talk to Aiza
+        </button>
+        <a class="btn btn-ghost" href="#build">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="6 4 20 12 6 20 6 4"/>
+          </svg>
+          See how to build her
+        </a>
+      </div>
+      <div class="live-chips">
+        <span class="live-chip"><span class="pp"></span><span class="v">4,238</span>&nbsp;conversations today</span>
+        <span class="live-chip"><span class="v">184</span>&nbsp;calls joined this week</span>
+        <span class="live-chip"><span class="v">28</span>&nbsp;languages · live</span>
+        <span class="live-chip"><span class="v">280ms</span>&nbsp;response</span>
       </div>
     </div>
+
+    <!-- Right: Aiza video -->
+    <div class="hero-aiza-col">
+      <div class="hero-aiza-glow"></div>
+      <div class="hero-aiza breath" id="hero-aiza" data-state="idle" data-launch-avatar data-persona="default" role="button" tabindex="0" aria-label="Launch live Aiza session">
+        <video autoplay loop muted playsinline preload="auto" poster="">
+          <source src="/static/aiza.mp4" type="video/mp4">
+        </video>
+        <div class="hero-aiza-tag"><span class="pip"></span>Live · on air now</div>
+        <div class="hero-aiza-name">
+          Aiza <span class="role" id="hero-aiza-role">· idle</span>
+        </div>
+        <div class="hero-aiza-caption" id="hero-aiza-caption">
+          <span class="eq">
+            <span style="height:8px"></span>
+            <span style="height:14px"></span>
+            <span style="height:10px"></span>
+            <span style="height:16px"></span>
+          </span>
+          <span class="txt" id="hero-aiza-caption-text">Listening…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ AI BUILDER ════════════════ -->
+<section class="sec" id="build">
+  <div class="sec-head">
+    <div>
+      <span class="eyebrow">02 · Interactive builder</span>
+      <h2 class="h2" style="margin-top:14px;">Build your Super Human in four steps.</h2>
+    </div>
+    <p class="desc">
+      Pick a job. Feed her your knowledge. Give her a voice. She's online in four minutes — and she's already talking to your visitors before you finish reading this.
+    </p>
+  </div>
+
+  <div class="builder-tabs" id="builder-tabs"></div>
+
+  <div class="builder-stage" id="builder-stage"></div>
+</section>
+
+<!-- ════════════════ INTEGRATIONS ════════════════ -->
+<section class="sec" id="integrations">
+  <div class="sec-head">
+    <div>
+      <span class="eyebrow">03 · Integrations</span>
+      <h2 class="h2" style="margin-top:14px;">She lives inside your stack.</h2>
+    </div>
+    <p class="desc">
+      Aiza connects to the tools your team already uses. No data leaves your tenant. No new logins for your customers.
+    </p>
+  </div>
+  <div class="integ-grid" id="integ-grid"></div>
+</section>
+
+<!-- ════════════════ ANALYTICS ════════════════ -->
+<section class="sec" id="analytics">
+  <div class="sec-head">
+    <div>
+      <span class="eyebrow">04 · Analytics</span>
+      <h2 class="h2" style="margin-top:14px;">See every conversation, every outcome.</h2>
+    </div>
+    <p class="desc">
+      Aiza's manager dashboard. Drill into any conversation, see what closed, what stalled, and why — across every Super Human you hire.
+    </p>
+  </div>
+  <div class="analytics-grid" id="analytics-grid"></div>
+</section>
+
+<!-- ════════════════ SECURITY ════════════════ -->
+<section class="sec" id="security">
+  <div class="sec-head">
+    <div>
+      <span class="eyebrow">05 · Security &amp; compliance</span>
+      <h2 class="h2" style="margin-top:14px;">Built for the world's most regulated teams.</h2>
+    </div>
+    <p class="desc">
+      Aiza is deployed by Fortune 500 banks, insurers, hospitals, and law firms. Your security review will be the easiest part.
+    </p>
+  </div>
+  <div class="security-grid" id="security-grid"></div>
+  <div class="cert-row" id="cert-row"></div>
+</section>
+
+<!-- ════════════════ TEAM ════════════════ -->
+<section class="sec" id="team">
+  <div class="sec-head">
+    <div>
+      <span class="eyebrow">06 · Meet the team</span>
+      <h2 class="h2" style="margin-top:14px;">Every Super Human has a name, a job,<br>and a customer who hired her.</h2>
+    </div>
+    <p class="desc">
+      Each Super Human is trained on one company's data, tone, and playbook. Click any face below — talk to her live, right here.
+    </p>
+  </div>
+  <div class="team-grid" id="team-grid"></div>
+</section>
+
+<!-- ════════════════ STORIES ════════════════ -->
+<section class="sec" id="stories">
+  <div class="sec-head">
+    <div>
+      <span class="eyebrow">07 · Customer success</span>
+      <h2 class="h2" style="margin-top:14px;">Teams that replaced their chatbot.</h2>
+    </div>
+    <p class="desc">
+      Companies of every shape have hired a Super Human. Here's what changed in the first 30 days.
+    </p>
+  </div>
+  <div class="stories-grid" id="stories-grid"></div>
+</section>
+
+<!-- ════════════════ CAPTURE / CONTACT ════════════════ -->
+<section class="capture-section" id="contact">
+  <div class="capture-card">
+    <div class="capture-text">
+      <span class="eyebrow" style="margin-bottom:18px;display:block;">08 · Hire your first Super Human</span>
+      <h2>Deploy your first Aiza in 24 hours.</h2>
+      <p>Tell us what you need her to do. We'll have her trained on your product, voice, and playbook — and live on your site within a day.</p>
+      <div class="capture-bullets">
+        <div class="b"><span class="ck">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 12 9 18 21 6"/></svg>
+        </span>Voice + text · 28 languages</div>
+        <div class="b"><span class="ck">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 12 9 18 21 6"/></svg>
+        </span>Salesforce, HubSpot, Slack, Calendly, Zoom</div>
+        <div class="b"><span class="ck">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 12 9 18 21 6"/></svg>
+        </span>Dedicated tenant · SOC 2 path</div>
+      </div>
+    </div>
+    <form class="capture-form" id="contact-form" autocomplete="on">
+      <div>
+        <label for="cf-name">Name</label>
+        <input type="text" id="cf-name" name="name" required>
+      </div>
+      <div>
+        <label for="cf-email">Work Email</label>
+        <input type="email" id="cf-email" name="email" required>
+      </div>
+      <div>
+        <label for="cf-company">Company</label>
+        <input type="text" id="cf-company" name="company">
+      </div>
+      <div>
+        <label for="cf-message">What should your Super Human do?</label>
+        <textarea id="cf-message" name="message" rows="3" placeholder="E.g. 'Qualify inbound leads on our pricing page and book meetings on my calendar.'"></textarea>
+      </div>
+      <button type="submit" id="cf-submit">Hire your first Super Human →</button>
+      <div class="capture-success" id="cf-success">Done — we'll be in touch within 24 hours with a Super Human trained on your product.</div>
+      <div class="capture-error" id="cf-error">Something went wrong. Please email <a href="mailto:hello@savant.ai" style="color:inherit;text-decoration:underline;">hello@savant.ai</a> instead.</div>
+    </form>
+  </div>
+</section>
+
+<!-- ════════════════ FINAL CTA ════════════════ -->
+<section class="sec" id="final" style="padding-top:40px;padding-bottom:120px;">
+  <div class="final-cta">
+    <div class="ring-glow"></div>
+    <div class="ring-glow r2"></div>
+    <div class="ring-glow r3"></div>
+
+    <div class="final-cta-portrait" data-launch-avatar data-persona="default" role="button" tabindex="0" aria-label="Talk to Aiza">
+      <video autoplay loop muted playsinline preload="auto">
+        <source src="/static/aiza.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <span class="eyebrow" style="display:inline-flex;align-items:center;gap:8px;">
+      <span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:#6ee7ff;box-shadow:0 0 8px #6ee7ff;animation:pip 1.4s ease-in-out infinite;"></span>
+      Aiza is online right now
+    </span>
+
+    <h2 class="display" style="max-width:900px;">Talk to her.<br>Then decide.</h2>
+    <p class="lead" style="max-width:540px;">
+      Skip the form. Skip the demo. Skip the trial. Just say hello — she'll do the rest.
+    </p>
+    <div class="cta-row">
+      <button class="btn btn-primary" style="font-size:15px;padding:15px 24px;" data-launch-avatar data-persona="default">
+        <span class="dot"></span>
+        Talk to Aiza now
+      </button>
+      <a class="btn btn-ghost" style="font-size:15px;padding:15px 24px;" href="#contact">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        Book a strategy call
+      </a>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-3);letter-spacing:0.1em;text-transform:uppercase;margin-top:24px;position:relative;z-index:1;">
+      No credit card · No setup · Live in 4 minutes
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<footer class="foot">
+  <a class="nav-logo" href="/" style="gap:9px;">
+    <span class="nav-mark" style="width:20px;height:20px;" aria-hidden="true"></span>
+    <span>savant<span style="color:var(--ink-2)">.ai</span></span>
+  </a>
+  <div class="leg">© 2026 Savant Labs · Built by SSPM Consultants</div>
+  <div class="leg">SOC 2 · ISO 27001 · GDPR · HIPAA</div>
+</footer>
+
+</div><!-- /.shell -->
+
+<!-- ════════════════ FLOATING PRESENTER ════════════════ -->
+<div class="float-presenter" id="float-presenter" data-state="idle" aria-hidden="true">
+  <div class="fp-card">
+    <button class="fp-close" id="fp-close" aria-label="Hide Aiza bubble" type="button">✕</button>
+    <div class="fp-orbit"></div>
+    <div class="fp-lang">EN</div>
+    <div class="fp-portrait-lg">
+      <video autoplay loop muted playsinline preload="auto">
+        <source src="/static/aiza.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div class="fp-name">Meet Aiza</div>
+    <div class="fp-sub">Real-time answers · ask anything</div>
+    <button class="fp-talk" data-launch-avatar data-persona="default" type="button">
+      <span class="dot"></span>
+      Let's Talk
+    </button>
   </div>
 </div>
 
-<!-- STATS -->
-<section>
-  <div class="stats-row">
-    <div class="stat"><div class="stat-num">3&times;</div><div class="stat-label">More engagement vs text chat</div></div>
-    <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Always on, never off-shift</div></div>
-    <div class="stat"><div class="stat-num">&lt;2s</div><div class="stat-label">Response time</div></div>
-    <div class="stat"><div class="stat-num">80%+</div><div class="stat-label">Gross margin for partners</div></div>
+<!-- ════════════════ AVATAR MODAL ════════════════ -->
+<div class="modal-overlay" id="avatar-modal" role="dialog" aria-modal="true" aria-label="Live Aiza session" aria-hidden="true">
+  <div class="modal-frame">
+    <div class="modal-bar">
+      <span class="mb-tag"><span class="pip"></span><span id="modal-tag-text">Live · 60-second session</span></span>
+      <button type="button" class="modal-close" id="modal-close" aria-label="Close live session">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <iframe id="avatar-iframe" title="Live Aiza session" allow="camera; microphone; autoplay; clipboard-write" referrerpolicy="origin"></iframe>
   </div>
-</section>
-
-<!-- USE CASES -->
-<section id="personas" class="usecase-value-section">
-  <div class="section-header center">
-    <div class="section-label">Use Cases</div>
-    <div class="section-title">One platform. Every role.</div>
-    <p class="section-sub">Each specialist saves real money ? and pays for itself fast.</p>
-  </div>
-  <div class="usecase-value-grid" id="usecase-value-grid"></div>
-</section>
-
-<!-- LIVE DEMO -->
-<section id="demo">
-  <div class="demo-section">
-    <div class="section-label">Try It</div>
-    <h2>Talk to a specialist now</h2>
-    <p>No sign-up. Start a live conversation in your browser.</p>
-    <a href="/call" class="btn-hero btn-hero-primary" style="font-size:18px;padding:18px 48px">Start Conversation</a>
-    <div class="demo-meta">
-      <span>No account required</span>
-      <span>Works in your browser</span>
-      <span>Live voice &amp; video</span>
-    </div>
-  </div>
-</section>
-
-<!-- DEMOS -->
-<section id="demos">
-  <div class="section-header center">
-    <div class="section-label">Specialists</div>
-    <div class="section-title">Pick a role. Start talking.</div>
-  </div>
-  <div class="demo-videos-grid" id="demo-cards-row"></div>
-</section>
-
-<!-- PRICING -->
-<section id="pricing">
-  <div class="section-header center">
-    <div class="section-label">Pricing</div>
-    <div class="section-title">Simple plans. Real ROI.</div>
-    <p class="section-sub">Less than half the cost of one junior hire. Setup fee applies on Professional and above.</p>
-  </div>
-  <div class="pricing-grid">
-    <div class="plan">
-      <div class="plan-name">Pilot</div>
-      <div class="plan-price">$997<span>/mo</span></div>
-      <div class="plan-period">30-day proof of value</div>
-      <div class="plan-desc">Test on your staging site before you commit.</div>
-      <ul class="plan-features">
-        <li>1 specialist</li>
-        <li>200 conversation minutes</li>
-        <li>Knowledge upload included</li>
-        <li>Staging embed</li>
-        <li class="no">Production avatar</li>
-      </ul>
-      <a href="mailto:info@sspmconsultants.com?subject=Rehu%20Pilot" class="plan-btn plan-btn-outline">Book Pilot</a>
-    </div>
-    <div class="plan featured">
-      <div class="plan-badge">Most Popular</div>
-      <div class="plan-name">Professional</div>
-      <div class="plan-price">$1,999<span>/mo</span></div>
-      <div class="plan-period">+ $2,500 setup</div>
-      <div class="plan-desc">One production specialist on your website.</div>
-      <ul class="plan-features">
-        <li>1 production specialist</li>
-        <li>500 minutes/month</li>
-        <li>Website embed widget</li>
-        <li>Unlimited knowledge base</li>
-        <li>Email support</li>
-      </ul>
-      <a href="mailto:info@sspmconsultants.com?subject=Rehu%20Professional" class="plan-btn plan-btn-fill">Get Started</a>
-    </div>
-    <div class="plan">
-      <div class="plan-name">Business</div>
-      <div class="plan-price">$3,499<span>/mo</span></div>
-      <div class="plan-period">+ $5,000 setup</div>
-      <div class="plan-desc">Sales, HR, and support ? three roles, one platform.</div>
-      <ul class="plan-features">
-        <li>Up to 3 specialists</li>
-        <li>2,000 minutes/month</li>
-        <li>Custom domain</li>
-        <li>Priority support</li>
-        <li>Monthly optimization call</li>
-      </ul>
-      <a href="mailto:info@sspmconsultants.com?subject=Rehu%20Business" class="plan-btn plan-btn-outline">Contact Sales</a>
-    </div>
-    <div class="plan">
-      <div class="plan-name">Enterprise</div>
-      <div class="plan-price">Custom</div>
-      <div class="plan-period">Annual contracts</div>
-      <div class="plan-desc">Dedicated infrastructure, SLAs, and compliance for large teams.</div>
-      <ul class="plan-features">
-        <li>Unlimited specialists</li>
-        <li>Dedicated instance</li>
-        <li>SSO / SAML</li>
-        <li>HIPAA / GDPR review</li>
-        <li>On-premise option</li>
-      </ul>
-      <a href="mailto:info@sspmconsultants.com?subject=Rehu%20Enterprise" class="plan-btn plan-btn-outline">Contact Sales</a>
-    </div>
-  </div>
-</section>
-
-<!-- TESTIMONIALS -->
-<section>
-  <div class="section-header center">
-    <div class="section-label">Results</div>
-    <div class="section-title">Teams that switched</div>
-  </div>
-  <div class="testimonials-grid">
-    <div class="testimonial">
-      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-      <q>We put Maya on our pricing page and conversion jumped 3&times; in the first week. She knows our product better than some of our reps.</q>
-      <div class="testi-author">
-        <div class="testi-avatar">SR</div>
-        <div><div class="testi-name">Sarah Rahman</div><div class="testi-role">Head of Sales, TechFlow</div></div>
-      </div>
-    </div>
-    <div class="testimonial">
-      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-      <q>Support tickets dropped 68% in 30 days. Riley handles billing and how-to before our team ever sees the ticket.</q>
-      <div class="testi-author">
-        <div class="testi-avatar">MK</div>
-        <div><div class="testi-name">Marcus Kim</div><div class="testi-role">CTO, Launchpad SaaS</div></div>
-      </div>
-    </div>
-    <div class="testimonial">
-      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-      <q>We rolled this out to 12 clients in two weeks. Each gets their own specialist and we earn recurring revenue on every seat.</q>
-      <div class="testi-author">
-        <div class="testi-avatar">JT</div>
-        <div><div class="testi-name">James Thornton</div><div class="testi-role">CEO, PropTech Agency</div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- FINAL CTA -->
-<section style="padding-bottom:80px">
-  <div class="demo-section">
-    <div class="section-label">Get Started</div>
-    <h2>Your smartest rep is ready.</h2>
-    <p>Deploy on your website in days ? trained on your business, live around the clock.</p>
-    <a href="/call" class="btn-hero btn-hero-primary" style="font-size:18px;padding:18px 48px">Start Conversation</a>
-    <div class="demo-meta">
-      <span>Pilot from $997/mo</span>
-      <span>Setup in days</span>
-      <span>Cancel after pilot</span>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer>
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <div class="nav-logo" style="font-size:18px"><span class="logo-dot"></span><span>Rehu.ai</span></div>
-      <p>Your smartest rep in the room ? live on your website for sales, HR, support, and healthcare.</p>
-    </div>
-    <div class="footer-col">
-      <h4>Product</h4>
-      <a href="#personas">Use Cases</a>
-      <a href="#pricing">Pricing</a>
-      <a href="/call">Live Demo</a>
-      <a href="/admin">Admin</a>
-    </div>
-    <div class="footer-col">
-      <h4>Solutions</h4>
-      <a href="/call?persona=hr-interviewer">HR</a>
-      <a href="/call?persona=healthcare-guide">Healthcare</a>
-      <a href="/call">Sales</a>
-      <a href="/call?persona=support-agent">Support</a>
-      <a href="/call?persona=product-demo">Product Demo</a>
-    </div>
-    <div class="footer-col">
-      <h4>Company</h4>
-      <a href="mailto:info@sspmconsultants.com">Contact</a>
-      <a href="#">Privacy</a>
-      <a href="#">Terms</a>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <span>&copy; 2026 Rehu.ai &mdash; SSPM Consultants</span>
-  </div>
-</footer>
+</div>
 
 <script>
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
-    const target = document.querySelector(a.getAttribute('href'));
-    if (target) { e.preventDefault(); target.scrollIntoView({behavior:'smooth', block:'start'}); }
-  });
-});
+/* ════════════════════════════════════════════════════════════════════
+   Savant.ai — Homepage interaction layer (vanilla, no React)
+   State machine + builder + persona wiring + modal + capture
+   ════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
 
-const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('animate'); });
-}, {threshold: 0.1});
-document.querySelectorAll('.usecase-value-card, .plan, .testimonial, .stat, .demo-card').forEach(el => obs.observe(el));
+  const $  = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
 
-const VALUE_SLUGS = ['sales-demo', 'hr-interviews', 'healthcare', 'customer-support', 'product-demo', 'onboarding'];
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-async function loadHomePersonas() {
-  const grid = document.getElementById('usecase-value-grid');
-  const demos = document.getElementById('demo-cards-row');
-  if (!grid) return;
-  try {
-    const { solutions } = await fetch('/api/solutions').then(r => r.json());
-    const map = Object.fromEntries((solutions || []).map(s => [s.slug, s]));
-    const previews = await Promise.all(
-      VALUE_SLUGS.map(async slug => {
-        const s = map[slug];
-        if (!s || s.coming_soon) return null;
-        let img = '';
-        try {
-          const ex = await fetch(`/api/personas/${s.persona_id}/experience`).then(r => r.json());
-          img = ex.preview_url || '';
-        } catch (e) {}
-        return { ...s, preview_url: img };
-      })
-    );
-    grid.innerHTML = previews.filter(Boolean).map(s => useCaseValueHtml(s)).join('');
-    if (demos) {
-      demos.innerHTML = previews.filter(Boolean).map(s => demoCardHtml(s)).join('');
+  /* ═══════════ INLINE SVG ICONS ═══════════ */
+  const ICON = (name) => {
+    const common = 'width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
+    const PATHS = {
+      website:    '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 8h18"/><path d="M9 12h6"/>',
+      product:    '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+      sales:      '<path d="M22 16.92V21a1 1 0 0 1-1.1 1A19 19 0 0 1 2 4.1 1 1 0 0 1 3 3h4.1a1 1 0 0 1 1 .8l1 4a1 1 0 0 1-.3 1L7 10.5a16 16 0 0 0 6.5 6.5l1.7-1.7a1 1 0 0 1 1-.3l4 1a1 1 0 0 1 .8 1Z"/>',
+      support:    '<circle cx="12" cy="12" r="9"/><path d="M8 12h.01M12 12h.01M16 12h.01"/>',
+      health:     '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/>',
+      realestate: '<path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-7H10v7H5a2 2 0 0 1-2-2z"/>',
+      hr:         '<circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M15 20c0-2 2-3.5 4-3.5"/>',
+      concierge:  '<path d="M12 3l2.4 5.2 5.6.6-4.2 4 1.1 5.6L12 15.8 6.7 18.4l1.1-5.6L3.6 8.8 9.2 8.2z"/>',
+      globe:      '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+      doc:        '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>',
+      sparkles:   '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/>',
+      mic:        '<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+      play:       '<polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/>',
+      cam:        '<rect x="3" y="6" width="14" height="12" rx="2"/><path d="M17 10l4-2v8l-4-2z"/>',
+      mute:       '<path d="M11 5L6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/>',
+      shield:     '<path d="M12 3l8 4v5c0 4-3 8-8 9-5-1-8-5-8-9V7z"/>',
+      lock:       '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+      audit:      '<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>',
+      eye:        '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+      arrow:      '<path d="M5 12h14M13 5l7 7-7 7"/>',
+      check:      '<path d="M5 12l5 5 9-12"/>',
+      calendar:   '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+      bolt:       '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    };
+    return `<svg ${common}>${PATHS[name] || ''}</svg>`;
+  };
+
+  /* ═══════════ HERO STATE MACHINE ═══════════ */
+  const SCRIPT = [
+    { state: 'idle',       dur: 4200, captionAiza: "Hi, I'm Aiza. Not a chatbot — your Super Human." },
+    { state: 'listening',  dur: 4200, captionUser: "Where can I put you to work?" },
+    { state: 'speaking',   dur: 5500, captionAiza: "Three places. On your website, inside your product, and on Zoom calls. Let me show you who I'm talking to right now." },
+    { state: 'presenting', dur: 6500 },
+    { state: 'speaking',   dur: 5000, captionAiza: "All live, all today. I don't sleep, and I never miss a meeting." },
+  ];
+
+  const heroAiza  = $('#hero-aiza');
+  const heroRole  = $('#hero-aiza-role');
+  const heroCap   = $('#hero-aiza-caption');
+  const heroCapTx = $('#hero-aiza-caption-text');
+
+  let cursor = 0, beatStart = performance.now(), rafId = null;
+
+  function applyBeat(beat) {
+    const s = beat.state;
+    heroAiza.setAttribute('data-state', s);
+    heroRole.textContent = '· ' + s;
+    if (s === 'speaking' && beat.captionAiza) {
+      heroCapTx.textContent = beat.captionAiza;
+      heroCap.classList.add('shown');
+    } else if (s === 'listening' && beat.captionUser) {
+      heroCapTx.textContent = '"' + beat.captionUser + '"';
+      heroCap.classList.add('shown');
+    } else {
+      heroCap.classList.remove('shown');
     }
-  } catch (e) {
-    grid.innerHTML = '<p style="color:var(--muted);text-align:center">Use cases load when the server is running.</p>';
   }
-}
+  applyBeat(SCRIPT[0]);
 
-function useCaseValueHtml(s) {
-  const img = s.preview_url || '';
-  const benefits = (s.benefits || []).slice(0, 3);
-  const save = s.cost_saving ? `<div class="uv-save">${esc(s.cost_saving)}</div>` : '';
-  return `<article class="usecase-value-card">
-    <div class="uv-visual">${img ? `<img src="${img}" alt="${esc(s.persona_name)}" loading="lazy"/>` : ''}<span class="uv-live">Live specialist</span></div>
-    <div class="uv-body">
-      <div class="uv-category">${esc(s.category || 'Enterprise')}</div>
-      <h3>${esc(s.title)}</h3>
-      <p class="uv-intro">${esc(s.tagline)}</p>
-      ${save}
-      <div class="uv-roi"><span class="uv-roi-val">${esc(s.roi_value || '')}</span><span class="uv-roi-lbl">${esc(s.roi_label || 'Impact')}</span></div>
-      <ul class="uv-benefits">${benefits.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
-      <a href="${s.try_url}" class="uv-cta">Talk to ${esc(s.persona_name)}</a>
-    </div>
-  </article>`;
-}
+  function tick() {
+    const now = performance.now();
+    const elapsed = now - beatStart;
+    const beat = SCRIPT[cursor];
+    if (elapsed >= beat.dur) {
+      cursor = (cursor + 1) % SCRIPT.length;
+      beatStart = now;
+      applyBeat(SCRIPT[cursor]);
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+  if (!prefersReducedMotion) rafId = requestAnimationFrame(tick);
 
-function demoCardHtml(s) {
-  const img = s.preview_url || '';
-  return `<div class="demo-card">
-    <div class="demo-thumb-photo">${img ? `<img src="${img}" alt="" loading="lazy"/>` : ''}</div>
-    <div class="demo-card-body">
-      <h3>${esc(s.title)}</h3>
-      <p>Speak with ${esc(s.persona_name)} live.</p>
-      <a href="${s.try_url}">Start session</a>
-    </div>
-  </div>`;
-}
+  /* ═══════════ DATA ═══════════ */
 
-function esc(t) {
-  const d = document.createElement('div');
-  d.textContent = t || '';
-  return d.innerHTML;
-}
+  // 8 use-case Super Humans → mapped to real backend persona IDs
+  const PERSONA_MAP = {
+    website:    'default',
+    product:    'product-demo',
+    sales:      'default',
+    support:    'support-agent',
+    health:     'healthcare-guide',
+    realestate: 'default',
+    hr:         'hr-interviewer',
+    concierge:  'onboarding-guide',
+  };
 
-loadHomePersonas();
-window.addEventListener('load', async () => {
-  if (window.RehuCall) RehuCall.initAlivePersona('#hero-persona-frame');
-  try {
-    const ex = await fetch('/api/personas/default/experience').then(r => r.json());
-    const poster = document.getElementById('hero-maya-poster');
-    if (poster && ex.preview_url) poster.src = ex.preview_url;
-  } catch (e) {}
-});
+  const SUPERHUMANS = [
+    { id: 'website',    name: 'Website Super Human',     sub: 'Greets every visitor on your site.',         tag: 'Most popular' },
+    { id: 'product',    name: 'In-Product Super Human',  sub: 'Live demos & onboarding inside your SaaS.',  tag: null },
+    { id: 'sales',      name: 'Sales Super Human',       sub: 'Qualifies leads. Books meetings.',           tag: null },
+    { id: 'support',    name: 'Support Super Human',     sub: 'Resolves tickets in 28 languages.',          tag: null },
+    { id: 'health',     name: 'Healthcare Assistant',    sub: 'Triages patients. Books appointments.',      tag: 'Beta' },
+    { id: 'realestate', name: 'Real Estate Assistant',   sub: 'Tours properties. Qualifies buyers.',        tag: null },
+    { id: 'hr',         name: 'HR Recruiter',            sub: 'Screens candidates. Schedules interviews.',  tag: null },
+    { id: 'concierge',  name: 'Enterprise Concierge',    sub: 'Onboards staff. Answers HR & IT.',           tag: null },
+  ];
+
+  const TRAIN_TOKENS = {
+    website:    ['/pricing', '/demo', 'FAQ', 'Case studies', 'Objections', 'Calendly'],
+    product:    ['Onboarding', 'Settings', 'Dashboard', 'Reports', 'Pro features', 'Admin'],
+    sales:      ['ICP', 'Discovery', 'BANT', 'Proposals', 'Pricing tiers', 'Calendly'],
+    support:    ['Tickets', 'Refunds', 'Bugs', 'KB articles', 'Macros', 'Escalation'],
+    health:     ['Triage', 'Intake', 'Symptoms', 'Scheduling', 'Insurance', 'Privacy'],
+    realestate: ['Listings', 'Pricing', 'Tours', 'MLS', 'Mortgage', 'Buyer ICP'],
+    hr:         ['Screening', 'Rubric', 'Calendar', 'Offer letter', 'EEO', 'ATS'],
+    concierge:  ['Policies', 'IT', 'Benefits', 'Travel', 'Org chart', 'Onboarding'],
+  };
+
+  const GREETING_BY_CASE = {
+    website:    "Hi, I'm Aiza. I'm on your site right now talking to 42 visitors. Want to be a 43rd?",
+    product:    "Welcome back. I noticed you started a report yesterday. Want me to finish setting it up?",
+    sales:      "I've got 3 calls today and a slot at 4pm. Should we run discovery?",
+    support:    "I've resolved 12 tickets this morning. What's broken? I'll fix it.",
+    health:     "Hi, I'm Aiza. Tell me what's going on — I'll triage and book you with the right doctor.",
+    realestate: "Ready for a tour? I can walk you through 15 Walnut or any of the 32 listings in your range.",
+    hr:         "Hi, I'm Aiza — your interviewer today. Ready when you are. We'll go 12 minutes.",
+    concierge:  "Welcome to day one. Coffee's at 9, your manager at 10. What's first?",
+  };
+
+  const INTEGRATIONS_FULL = [
+    { name: 'Salesforce', mark: 'SF', bg: 'linear-gradient(135deg,#00a1e0,#005fee)',  desc: 'Sync leads, contacts, and opportunities both ways. She updates fields in real time.', stat: 'Live · bidirectional' },
+    { name: 'HubSpot',    mark: 'HS', bg: 'linear-gradient(135deg,#ff7a59,#ff3c1f)',  desc: 'Push qualified leads into HubSpot with full conversation transcripts attached.',     stat: 'Lifecycle stages' },
+    { name: 'Slack',      mark: 'SL', bg: 'linear-gradient(135deg,#4a154b,#ecb22e)',  desc: 'Aiza pings the right rep when a deal needs a human. Threaded handoffs.',           stat: 'DM + channels' },
+    { name: 'Zendesk',    mark: 'ZD', bg: 'linear-gradient(135deg,#03363d,#17494d)',  desc: "Resolves tier 1–3 tickets, escalates anything she can't close.",                   stat: '40% auto-resolve' },
+    { name: 'Teams',      mark: 'MT', bg: 'linear-gradient(135deg,#4b53bc,#7b83eb)',  desc: 'Joins your Microsoft Teams calls as a recognized participant.',                    stat: 'Participant mode' },
+    { name: 'Zoom',       mark: 'ZM', bg: 'linear-gradient(135deg,#2d8cff,#0a4dc4)',  desc: 'Joins discovery and demo calls. Takes notes. Books next steps.',                   stat: '184 calls / wk' },
+    { name: 'Calendly',   mark: 'CL', bg: 'linear-gradient(135deg,#006bff,#3399ff)',  desc: 'Pulls availability and books meetings on your real calendar.',                     stat: 'Round-robin aware' },
+    { name: 'Notion',     mark: 'NO', bg: 'linear-gradient(135deg,#ffffff,#e0e0e0)',  desc: 'Reads your knowledge base. Always knows your latest playbook.',                    stat: '12k pages indexed', dark: true },
+  ];
+
+  const SECURITY_ITEMS = [
+    { ic: 'lock',     t: 'Your tenant, your data.',      d: 'Aiza runs inside your VPC. Customer data never leaves. Bring your own model keys, your own logs, your own region.' },
+    { ic: 'shield',   t: 'Enterprise-grade by default.', d: 'SOC 2 Type II, ISO 27001, HIPAA, GDPR. Penetration-tested quarterly. SSO, SCIM, audit log.' },
+    { ic: 'audit',    t: 'Every word is reviewable.',    d: 'Full conversation transcripts, action logs, and model decisions are exportable for compliance and review.' },
+    { ic: 'eye',      t: 'Hallucination guardrails.',    d: 'Aiza refuses to answer beyond your knowledge. Citations on every claim. Live red-team monitoring.' },
+    { ic: 'globe',    t: 'Regional residency.',          d: 'Pin every conversation to US, EU, UK, or APAC. No cross-border data flow.' },
+    { ic: 'sparkles', t: 'Human in the loop.',           d: 'Set escalation rules. Aiza routes anything ambiguous, sensitive, or contractual to the right human.' },
+  ];
+
+  const CERTS = ['SOC 2 Type II', 'ISO 27001', 'HIPAA', 'GDPR', 'PCI DSS', 'CCPA', 'FedRAMP (in process)'];
+
+  const TEAM = [
+    { name: 'Aiza',   role: 'Website Super Human · Savant.ai',          desc: 'Aiza greets every visitor on savant.ai, qualifies their use case in under a minute, and books a discovery call with our team.',                video: '/static/aiza.mp4', accent: 'linear-gradient(135deg, #6ee7ff, #8b5cf6)', persona: 'default',          cta: 'Talk to her' },
+    { name: 'Quincy', role: 'Onboarding Super Human · Quickbase',       desc: "Quincy guides prospects through their operational challenges — connecting data, automating workflows — then books them a tailored demo.",   img: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=720&h=720&fit=crop&crop=faces', accent: 'linear-gradient(135deg, #4f7cff, #6ee7ff)', persona: 'product-demo',     cta: 'Talk to him' },
+    { name: 'Jack',   role: 'Coach Super Human · Winning By Design',    desc: 'Jack matches prospects with the right training, consulting, and advisory using the SPICED methodology — driving predictable revenue.',     img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=720&h=720&fit=crop&crop=faces', accent: 'linear-gradient(135deg, #8b5cf6, #ff6b9d)', persona: 'default',          cta: 'Talk to him' },
+    { name: 'Mindy',  role: 'Trial Super Human · Monday.com',           desc: 'Mindy helps trial users get the most out of their setup — answering questions, showing key features, and tailoring the experience.',       img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=720&h=720&fit=crop&crop=faces', accent: 'linear-gradient(135deg, #ff6b9d, #ffd56b)', persona: 'product-demo',     cta: 'Talk to her' },
+    { name: 'Aria',   role: 'Patient Super Human · Mount Sinai',        desc: 'Aria triages patients via telehealth, captures intake forms, verifies insurance, and books appointments with the right specialist.',       img: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=720&h=720&fit=crop&crop=faces', accent: 'linear-gradient(135deg, #6ee7ff, #4f7cff)', persona: 'healthcare-guide', cta: 'Talk to her' },
+    { name: 'Hugo',   role: 'Onboarding Super Human · Mercury',         desc: "Hugo onboards new team members on day one — payroll, benefits, IT access, manager intros — all in 28 languages, all white-glove.",          img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=720&h=720&fit=crop&crop=faces', accent: 'linear-gradient(135deg, #4f7cff, #8b5cf6)', persona: 'onboarding-guide', cta: 'Talk to him' },
+  ];
+
+  const STORIES = [
+    { feature: true,
+      quote: "We replaced our chatbot, two SDRs, and a tier-1 support pod. Aiza books more meetings than any human we've hired — and she's the most consistent rep on the team.",
+      who: 'Maya Rodriguez', role: 'VP Operations · Vercel', av: 'MR', bg: 'linear-gradient(135deg,#4f7cff,#6ee7ff)',
+      metrics: [{v:'$1.24M', k:'Pipeline sourced · 30d'}, {v:'63%', k:'Visitor → demo booked'}] },
+    { quote: "Our in-product onboarding finally feels like a 1-on-1. NPS jumped 18 points.",
+      who: 'Jin Sato', role: 'Head of Product · Stripe', av: 'JS', bg: 'linear-gradient(135deg,#8b5cf6,#ff6b9d)' },
+    { quote: "She joined 184 sales calls last week. Took perfect notes. Sent the follow-ups. I slept.",
+      who: 'Aisha Khan', role: 'Founder · Linear', av: 'AK', bg: 'linear-gradient(135deg,#6ee7ff,#8b5cf6)' },
+    { quote: "Patient intake went from 14 minutes to 4. We see 28% more patients per day.",
+      who: 'Dr. Elena Aguilar', role: 'Mount Sinai Health', av: 'EA', bg: 'linear-gradient(135deg,#ffd56b,#ff6b9d)' },
+    { quote: "Our concierge desk runs in 28 languages now. New hires are productive on day one.",
+      who: 'Daniel Mensah', role: 'CHRO · Mercury', av: 'DM', bg: 'linear-gradient(135deg,#4f7cff,#8b5cf6)' },
+  ];
+
+  /* ═══════════ BUILDER ═══════════ */
+
+  const stepDefs = [
+    { n: '01', name: 'Choose' },
+    { n: '02', name: 'Train' },
+    { n: '03', name: 'Personalize' },
+    { n: '04', name: 'Meet' },
+  ];
+
+  const builderState = {
+    step: 0,
+    picked: 'website',
+    language: 'English (US)',
+    personality: 'friendly',
+    training: false,
+    progress: 0,
+    crm: new Set(['Salesforce', 'Calendly']),
+    url: 'yoursaas.com',
+  };
+
+  const tabsHost  = $('#builder-tabs');
+  const stageHost = $('#builder-stage');
+
+  function renderTabs() {
+    tabsHost.innerHTML = '';
+    stepDefs.forEach((s, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `builder-tab ${i === builderState.step ? 'active' : ''} ${i < builderState.step ? 'done' : ''}`;
+      b.innerHTML = `<span class="num">${s.n}</span>${s.name}`;
+      b.addEventListener('click', () => { builderState.step = i; renderBuilder(); });
+      tabsHost.appendChild(b);
+    });
+  }
+
+  /* ── Step 1: Choose ── */
+  function renderStepChoose() {
+    const cards = SUPERHUMANS.map((s) => `
+      <button class="sh-card ${builderState.picked === s.id ? 'picked' : ''}" data-pick="${s.id}" type="button">
+        <div class="ic">${ICON(s.id)}</div>
+        <div class="nm">${esc(s.name)}</div>
+        <div class="sb">${esc(s.sub)}</div>
+        <div class="meta">${builderState.picked === s.id ? 'Selected' : (s.tag || 'Tap to preview')}</div>
+      </button>
+    `).join('');
+    return `
+      <div class="sh-grid">${cards}</div>
+      ${renderWorldMock(builderState.picked)}
+    `;
+  }
+
+  function renderWorldMock(id) {
+    const worlds = {
+      website: {
+        chrome: 'browser', url: 'yoursaas.com',
+        body: `
+          <div style="padding:8px 12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+              <span style="font-size:13px;font-weight:500;">YourSaaS</span>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--ink-3);">Product · Pricing · Demo</span>
+            </div>
+            <div style="font-size:30px;line-height:1.05;letter-spacing:-0.025em;font-weight:500;max-width:360px;margin-bottom:14px;">Reports that build themselves.</div>
+            <div style="font-size:13px;color:var(--ink-2);max-width:360px;line-height:1.45;">The first analytics platform built around your data warehouse, not against it.</div>
+            <div class="world-aiza-bubble">Hey — want a 2-minute tour? I can show you how Maya at Vercel cut reporting from 3h to 12 min.</div>
+          </div>`,
+        showAiza: true,
+      },
+      product: {
+        chrome: 'browser', url: 'app.yoursaas.com/dashboard',
+        body: `
+          <div style="display:grid;grid-template-columns:140px 1fr;gap:14px;height:100%;">
+            <div style="display:flex;flex-direction:column;gap:6px;border-right:0.5px solid var(--line-1);padding-right:12px;">
+              ${['Overview','Reports','Pipelines','Connections','Settings'].map((it,i)=>`<div style="font-size:12px;padding:6px 8px;border-radius:6px;background:${i===1?'rgba(79,124,255,.12)':'transparent'};color:${i===1?'var(--ink-0)':'var(--ink-2)'};">${it}</div>`).join('')}
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <span style="font-size:14px;font-weight:500;">Reports</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--ink-3);">247 active · 3 building</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                ${['Pipeline · Q4','NRR · last 90d','Activation · cohort'].map((it,i)=>`
+                  <div style="padding:12px;border-radius:10px;background:rgba(255,255,255,.025);border:0.5px solid var(--line-1);font-size:12px;color:var(--ink-1);">
+                    <div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono);">REPORT · ${String(i+1).padStart(2,'0')}</div>
+                    <div style="margin-top:4px;">${it}</div>
+                    <svg style="margin-top:8px;width:100%;height:28px;" viewBox="0 0 100 30" preserveAspectRatio="none"><polyline fill="none" stroke="#6ee7ff" stroke-width="1.2" points="${i===0?'0,22 15,18 30,20 45,12 60,15 75,8 100,5':i===1?'0,18 20,15 40,16 60,8 80,10 100,4':'0,25 25,20 50,18 75,10 100,6'}"/></svg>
+                  </div>`).join('')}
+              </div>
+            </div>
+          </div>`,
+        showAiza: true,
+      },
+      sales: {
+        chrome: 'zoom', url: 'Zoom · Discovery call · 4 participants',
+        body: `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;height:100%;">
+            ${[
+              { name: 'Aiza',           tag: 'Your Super Human', isAiza: true },
+              { name: 'Maya Rodriguez', tag: 'VP Ops · Vercel' },
+              { name: 'James Park',     tag: 'CFO · Vercel' },
+              { name: 'Priya Desai',    tag: 'Eng · Vercel' },
+            ].map((p,i)=>`
+              <div style="position:relative;border-radius:8px;overflow:hidden;aspect-ratio:16/10;background:${p.isAiza?'#050509':['linear-gradient(135deg,#1a2738,#0d1726)','linear-gradient(135deg,#2a1830,#160a26)','linear-gradient(135deg,#1a2e20,#0a1f10)'][i-1]};border:${p.isAiza?'1.5px solid var(--accent-c)':'0.5px solid var(--line-2)'};box-shadow:${p.isAiza?'0 0 30px rgba(110,231,255,.4)':'none'};">
+                ${p.isAiza?'<video autoplay loop muted playsinline preload="auto" style="width:100%;height:100%;object-fit:cover;"><source src="/static/aiza.mp4" type="video/mp4"></video>':''}
+                <div style="position:absolute;bottom:4px;left:6px;font-family:var(--font-mono);font-size:9.5px;padding:2px 7px;border-radius:4px;background:rgba(8,8,16,.7);color:var(--ink-0);">${p.name}</div>
+                ${p.isAiza?'<div style="position:absolute;top:4px;left:6px;font-family:var(--font-mono);font-size:9px;padding:2px 6px;border-radius:999px;background:rgba(110,231,255,.15);color:var(--accent-c);">● PRESENTING</div>':''}
+              </div>
+            `).join('')}
+          </div>`,
+      },
+      support: {
+        chrome: 'browser', url: 'Zendesk · Ticket #41209',
+        body: `
+          <div style="padding:4px;">
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin-bottom:8px;">TICKET · #41209 · OPEN · P2</div>
+            <div style="font-size:16px;font-weight:500;margin-bottom:14px;">API rate-limit on /reports endpoint</div>
+            ${[
+              { who: 'Elena Aguilar · Customer',           text: 'Getting 429s on /reports after 100 calls/min. Pro plan should be 500.', time: '2m ago' },
+              { who: 'Aiza · Support Super Human',         text: "Hi Elena — checking. Your tenant is on Pro tier but the 500/min uplift wasn't enabled. I've turned it on now. Try the next call?", time: '1m ago', her: true },
+              { who: 'Elena Aguilar · Customer',           text: 'Working. Thanks!', time: 'just now' },
+            ].map((m)=>`
+              <div style="padding:10px 12px;border-radius:10px;margin-bottom:6px;font-size:12.5px;line-height:1.45;background:${m.her?'linear-gradient(135deg, rgba(79,124,255,.16), rgba(139,92,246,.12))':'rgba(255,255,255,.03)'};border:0.5px solid ${m.her?'rgba(139,92,246,.3)':'var(--line-1)'};">
+                <div style="display:flex;justify-content:space-between;margin-bottom:2px;font-size:11px;color:var(--ink-2);font-family:var(--font-mono);"><span>${m.who}</span><span>${m.time}</span></div>
+                <div>${esc(m.text)}</div>
+              </div>`).join('')}
+          </div>`,
+      },
+      health: {
+        chrome: 'zoom', url: 'Telehealth · New patient · Aiza is on call',
+        body: `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;height:100%;">
+            <div style="position:relative;border-radius:8px;overflow:hidden;background:#050509;">
+              <video autoplay loop muted playsinline preload="auto" style="width:100%;height:100%;object-fit:cover;"><source src="/static/aiza.mp4" type="video/mp4"></video>
+              <div style="position:absolute;bottom:6px;left:8px;font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(8,8,16,.7);">Aiza · Intake</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;">Live intake form</div>
+              ${[
+                { lab: 'Patient',        val: 'Sarah Lin · 34 · F' },
+                { lab: 'Chief complaint', val: 'Persistent migraines · 3 wks' },
+                { lab: 'Medications',    val: 'Sumatriptan · OTC ibuprofen' },
+                { lab: 'Allergies',      val: 'None reported' },
+                { lab: 'Insurance',      val: 'Aetna · verified ✓' },
+              ].map((f)=>`
+                <div style="padding:8px 12px;border-radius:8px;background:rgba(255,255,255,.025);border:0.5px solid var(--line-1);font-size:12px;">
+                  <div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono);letter-spacing:.06em;text-transform:uppercase;">${f.lab}</div>
+                  <div style="margin-top:2px;color:var(--ink-0);">${f.val}</div>
+                </div>`).join('')}
+              <div style="padding:8px 12px;border-radius:8px;background:rgba(110,231,255,.08);border:0.5px solid rgba(110,231,255,.2);font-size:12px;color:var(--accent-c);">⏵ Scheduled · Dr. Patel · Tue 3:30 PM</div>
+            </div>
+          </div>`,
+      },
+      realestate: {
+        chrome: 'browser', url: '15 Walnut St, Brooklyn · Aiza tour',
+        body: `
+          <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;height:100%;">
+            <div style="border-radius:10px;overflow:hidden;background:linear-gradient(135deg,#2a2a3a,#16161e);display:grid;place-items:center;font-family:var(--font-mono);font-size:11px;color:var(--ink-3);">
+              <div style="text-align:center;padding:14px;">
+                <div style="font-size:22px;color:var(--ink-0);font-weight:500;letter-spacing:-0.02em;">$1.85M</div>
+                <div style="margin-top:6px;">3 BD · 2.5 BA · 1,840 sqft</div>
+                <div style="margin-top:24px;font-size:9px;letter-spacing:.16em;">● LIVE VIRTUAL TOUR</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="font-size:13px;font-weight:500;">15 Walnut Street</div>
+              <div style="font-size:11px;color:var(--ink-2);">Cobble Hill, Brooklyn · NY</div>
+              <div style="margin-top:10px;padding:8px 10px;border-radius:8px;background:linear-gradient(135deg, rgba(79,124,255,.16), rgba(139,92,246,.12));border:0.5px solid rgba(139,92,246,.3);font-size:12px;line-height:1.4;">That's the parlor on your left — original 1890 details. Want me to walk you through the garden?</div>
+              <div style="margin-top:6px;font-family:var(--font-mono);font-size:10px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;">Aiza · narrating live</div>
+            </div>
+          </div>`,
+        showAiza: true,
+      },
+      hr: {
+        chrome: 'zoom', url: 'Greenhouse · Initial screen · 12 min',
+        body: `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;height:100%;">
+            <div style="position:relative;border-radius:8px;overflow:hidden;background:#050509;">
+              <video autoplay loop muted playsinline preload="auto" style="width:100%;height:100%;object-fit:cover;"><source src="/static/aiza.mp4" type="video/mp4"></video>
+              <div style="position:absolute;bottom:6px;left:8px;font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(8,8,16,.7);">Aiza · Recruiter</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.1em;text-transform:uppercase;">Live rubric</div>
+              ${[
+                { lab: 'Years of Python',        val: '6.5',                 good: true },
+                { lab: 'Distributed systems',     val: 'Yes · Kafka, Spark', good: true },
+                { lab: 'Salary expectation',     val: '$185k–$210k',         good: true },
+                { lab: 'Earliest start',         val: '6 wks notice',         good: false },
+                { lab: 'Visa',                   val: 'US citizen',         good: true },
+              ].map((f)=>`
+                <div style="display:flex;justify-content:space-between;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,.025);border:0.5px solid var(--line-1);font-size:12px;gap:8px;">
+                  <div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono);letter-spacing:.06em;text-transform:uppercase;">${f.lab}</div><div style="color:var(--ink-0);">${f.val}</div></div>
+                  <div style="color:${f.good?'#6ee7ff':'#ffd56b'};font-size:16px;">${f.good?'✓':'•'}</div>
+                </div>`).join('')}
+            </div>
+          </div>`,
+      },
+      concierge: {
+        chrome: 'browser', url: 'workspace.yourco.com · Day 1',
+        body: `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;height:100%;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="font-size:19px;font-weight:500;letter-spacing:-0.015em;">Welcome, Daniel.</div>
+              <div style="font-size:12.5px;color:var(--ink-2);margin-bottom:8px;">Day 1 — Aiza is your onboarding guide.</div>
+              ${[
+                { it: 'Set up payroll · ADP',           done: true },
+                { it: 'Choose health plan · Aetna Gold', done: true },
+                { it: 'Equipment delivery · Thu',       done: false },
+                { it: 'IT access · Okta provisioned',   done: true },
+                { it: '1:1 with manager · Fri 10a',     done: false },
+              ].map((s)=>`
+                <div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:rgba(255,255,255,.02);border:0.5px solid var(--line-1);font-size:12px;">
+                  <span style="width:14px;height:14px;border-radius:999px;background:${s.done?'var(--accent-grad)':'transparent'};border:${s.done?'none':'1px solid var(--line-3)'};display:grid;place-items:center;color:#fff;font-size:8px;">${s.done?'✓':''}</span>
+                  <span style="color:${s.done?'var(--ink-2)':'var(--ink-0)'};text-decoration:${s.done?'line-through':'none'};">${s.it}</span>
+                </div>`).join('')}
+            </div>
+            <div class="world-aiza-bubble" style="position:relative;right:auto;bottom:auto;align-self:flex-end;">Hey Daniel — your equipment ships Thursday. Want me to walk you through the dental plan next?</div>
+          </div>`,
+        showAiza: true,
+      },
+    };
+    const u = worlds[id] || worlds.website;
+    const isZoom = u.chrome === 'zoom';
+    return `
+      <div class="world-mock">
+        <div class="world-head">
+          <div class="wdots"><span></span><span></span><span></span></div>
+          <div class="url">${isZoom?'◉ ':'https://'}${esc(u.url)}</div>
+          <div style="width:48px;"></div>
+        </div>
+        <div class="world-body">
+          ${u.body}
+          ${u.showAiza ? `<div class="world-aiza"><video autoplay loop muted playsinline preload="auto"><source src="/static/aiza.mp4" type="video/mp4"></video></div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  /* ── Step 2: Train ── */
+  function renderStepTrain() {
+    const tokens = TRAIN_TOKENS[builderState.picked] || TRAIN_TOKENS.website;
+    const integ = [
+      { n: 'Salesforce', m: 'SF', bg: 'linear-gradient(135deg,#00a1e0,#005fee)' },
+      { n: 'HubSpot',    m: 'HS', bg: 'linear-gradient(135deg,#ff7a59,#ff3c1f)' },
+      { n: 'Slack',      m: 'SL', bg: 'linear-gradient(135deg,#4a154b,#ecb22e)' },
+      { n: 'Calendly',   m: 'CL', bg: 'linear-gradient(135deg,#006bff,#3399ff)' },
+      { n: 'Zoom',       m: 'ZM', bg: 'linear-gradient(135deg,#2d8cff,#0a4dc4)' },
+      { n: 'Notion',     m: 'NO', bg: 'linear-gradient(135deg,#ffffff,#e0e0e0)', dark: true },
+      { n: 'Zendesk',    m: 'ZD', bg: 'linear-gradient(135deg,#03363d,#17494d)' },
+    ];
+    const progress = builderState.progress;
+    return `
+      <div class="train-grid">
+        <div class="train-form">
+          <div>
+            <div class="field-label">Company website</div>
+            <input class="field-input" id="train-url" value="${esc(builderState.url)}" placeholder="yourcompany.com">
+          </div>
+          <div>
+            <div class="field-label">Knowledge files</div>
+            <div class="drop-zone">
+              ${ICON('doc')}
+              <div class="lg">Drop PDFs, docs, CSVs, or your playbook</div>
+              <div class="sm">She reads everything in 12 seconds</div>
+              <div class="files">
+                <span class="drop-file">◉ playbook.pdf</span>
+                <span class="drop-file">◉ product-faq.md</span>
+                <span class="drop-file">◉ pricing.csv</span>
+                <span class="drop-file" style="background:rgba(255,255,255,.04);border-color:var(--line-2);color:var(--ink-2);">+ add</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">Connect your stack</div>
+            <div class="crm-chips">
+              ${integ.map((c)=>`
+                <button class="crm-chip ${builderState.crm.has(c.n)?'on':''}" data-crm="${esc(c.n)}" type="button">
+                  <span class="swatch" style="background:${c.bg};color:${c.dark?'#111':'#fff'};">${c.m}</span>
+                  ${esc(c.n)}
+                </button>`).join('')}
+            </div>
+          </div>
+          <button class="next-btn" id="train-go" type="button" style="align-self:flex-start;margin-top:8px;" ${builderState.training?'disabled':''}>
+            ${builderState.training ? `<span class="dot" style="animation:pip 0.6s ease-in-out infinite"></span>Training Aiza…` : `${ICON('bolt')}Train Aiza`}
+          </button>
+        </div>
+
+        <div class="brain-stage">
+          <div class="brain-head">
+            <span><span class="pip"></span>Knowledge ingestion · ${esc(builderState.picked)}</span>
+            <span>v${Math.floor(progress * 0.04 + 4)}.${Math.floor(progress / 10)}</span>
+          </div>
+          <div class="brain-canvas">
+            <div class="brain-orbit o2"></div>
+            <div class="brain-orbit o1"></div>
+            <div class="brain-core"></div>
+            ${tokens.map((t,i)=>{
+              const angle = (i / tokens.length) * 2 * Math.PI;
+              const r = i % 2 === 0 ? 175 : 235;
+              const x = Math.cos(angle) * r;
+              const y = Math.sin(angle) * r;
+              return `<div class="brain-token" style="transform:translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px));animation:breathe ${(3 + i * 0.3).toFixed(1)}s ease-in-out infinite;">${esc(t)}</div>`;
+            }).join('')}
+          </div>
+          <div class="brain-meter">
+            ${[
+              { lab: 'Documents',   pct: Math.min(100, progress + 12) },
+              { lab: 'Tone & voice', pct: Math.min(100, progress) },
+              { lab: 'Edge cases',  pct: Math.min(100, Math.max(0, progress - 12)) },
+            ].map((m)=>`
+              <div class="row"><span class="lab">${m.lab}</span><span class="bar"><i style="width:${m.pct}%"></i></span><span class="pct">${Math.round(m.pct)}%</span></div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ── Step 3: Personalize ── */
+  const LANGUAGES = ['English (US)', 'English (UK)', 'Español', 'Français', 'Deutsch', '日本語', '中文', 'العربية', 'Português', 'हिन्दी'];
+  const PERSONALITIES = [
+    { id: 'professional', name: 'Professional', sub: 'Calm, precise, executive tone',           ic: 'P' },
+    { id: 'friendly',     name: 'Friendly',     sub: 'Warm, conversational, on first names',   ic: 'F' },
+    { id: 'concierge',    name: 'Luxury Concierge', sub: 'White-glove. Pauses. Lingers.',      ic: 'L' },
+    { id: 'sales',        name: 'Sales Expert', sub: 'Direct, asks for the close, never pushy', ic: 'S' },
+    { id: 'technical',    name: 'Technical Expert', sub: 'Specific. References the docs.',     ic: 'T' },
+  ];
+  const PERSONALITY_SAMPLES = {
+    professional: "Good morning. I've reviewed your account — I'd recommend the Pro tier. Shall I book a 15-minute walk-through?",
+    friendly:     "Hey! Welcome — I peeked at your traffic and I think Pro is the move. Want me to grab a quick 15 with you?",
+    concierge:    "Lovely to have you. I've prepared a tailored plan. May I propose a brief, private consultation?",
+    sales:        "I'll keep it simple: Pro fits you, ROI is 4× in 60 days. Tuesday 2pm or Thursday 10am?",
+    technical:    "Looking at your stack, Pro unlocks the 500/min rate limit and webhook v2. Want me to walk you through the migration?",
+  };
+
+  function renderStepPersonalize() {
+    const langs = LANGUAGES.map((l)=>`<button class="lang-chip ${builderState.language === l?'on':''}" data-lang="${esc(l)}" type="button">${esc(l)}</button>`).join('');
+    const pers  = PERSONALITIES.map((p)=>`
+      <button class="personality ${builderState.personality === p.id?'on':''}" data-pers="${p.id}" type="button">
+        <div class="pic">${p.ic}</div>
+        <div><div class="nm">${esc(p.name)}</div><div class="sb">${esc(p.sub)}</div></div>
+        <div class="pn-state">${builderState.personality === p.id?'◉ Active':'Try'}</div>
+      </button>`).join('');
+    const subtitle = PERSONALITY_SAMPLES[builderState.personality] || PERSONALITY_SAMPLES.friendly;
+    const persName = PERSONALITIES.find(p => p.id === builderState.personality)?.name || 'Friendly';
+    return `
+      <div class="persona-grid">
+        <div class="persona-form">
+          <div><div class="field-label">Speaking language</div><div class="lang-select">${langs}</div></div>
+          <div><div class="field-label">Personality</div><div class="personality-list">${pers}</div></div>
+        </div>
+        <div class="voice-stage">
+          <div class="voice-head">
+            <div class="who">
+              <div class="av"><video autoplay loop muted playsinline preload="auto"><source src="/static/aiza.mp4" type="video/mp4"></video></div>
+              <div><div class="nm">Aiza · sample</div><div class="sb">${esc(builderState.language)} · ${esc(persName)}</div></div>
+            </div>
+            <div class="tag">◉ Live preview</div>
+          </div>
+          <div class="voice-wave-big">
+            ${Array.from({length:32}).map((_,i)=>{
+              const h = 12 + Math.abs(Math.sin((i / 32) * Math.PI * 2 + i)) * 80;
+              return `<i style="animation-delay:${(-i*.08).toFixed(2)}s;height:${h.toFixed(0)}px;"></i>`;
+            }).join('')}
+          </div>
+          <div class="voice-subtitle">"${esc(subtitle)}"<span class="cursor"></span></div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ── Step 4: Meet ── */
+  function renderStepMeet() {
+    const greeting = GREETING_BY_CASE[builderState.picked] || GREETING_BY_CASE.website;
+    const personaId = PERSONA_MAP[builderState.picked] || 'default';
+    return `
+      <div class="live-stage">
+        <div class="live-presenter" data-launch-avatar data-persona="${esc(personaId)}" role="button" tabindex="0" aria-label="Launch live Aiza session">
+          <video autoplay loop muted playsinline preload="auto"><source src="/static/aiza.mp4" type="video/mp4"></video>
+          <div class="live-tag-floating"><span class="pip"></span>Recording · 0:14</div>
+          <div class="live-controls">
+            <button class="ctl" type="button" aria-label="mic">${ICON('mic')}</button>
+            <button class="ctl" type="button" aria-label="cam">${ICON('cam')}</button>
+            <div class="live-sub">${esc(greeting)}</div>
+            <button class="ctl red" type="button" aria-label="mute">${ICON('mute')}</button>
+          </div>
+        </div>
+        <div class="live-side">
+          <div class="live-card">
+            <div class="ttl"><span><span class="pip"></span>Conversation</span><span>0:14</span></div>
+            <div class="live-msgs">
+              <div class="live-msg her">${esc(greeting)}</div>
+              <div class="live-msg you">Tell me what you can do.</div>
+              <div class="live-msg her">I speak, I listen, I close. I remember everything you've ever told me. And I never sleep. Want to see the live dashboard?</div>
+            </div>
+          </div>
+          <div class="live-card">
+            <div class="ttl"><span><span class="pip"></span>Aiza can also</span><span>now</span></div>
+            <div class="live-actions">
+              <button class="live-action" type="button">${ICON('calendar')}Book it</button>
+              <button class="live-action" type="button">${ICON('doc')}Send proposal</button>
+              <button class="live-action" type="button">${ICON('play')}Show demo</button>
+              <button class="live-action" type="button">${ICON('arrow')}Hand off</button>
+              <button class="live-action" type="button">${ICON('globe')}Switch lang</button>
+              <button class="live-action" type="button">${ICON('sparkles')}Summarize</button>
+            </div>
+            <button class="live-go-btn" type="button" data-launch-avatar data-persona="${esc(personaId)}">
+              <span class="dot"></span>
+              Talk to her live (60s · free)
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderBuilder() {
+    renderTabs();
+    let body = '';
+    let summary = '';
+    switch (builderState.step) {
+      case 0:
+        body = renderStepChoose();
+        summary = `You picked <strong>${esc(SUPERHUMANS.find(s => s.id === builderState.picked)?.name)}</strong>. Next: feed her your knowledge.`;
+        break;
+      case 1:
+        body = renderStepTrain();
+        summary = builderState.training ? `Reading your knowledge · ${builderState.progress}%` : `Press <strong>Train Aiza</strong> to ingest.`;
+        break;
+      case 2:
+        body = renderStepPersonalize();
+        const persName = PERSONALITIES.find(p => p.id === builderState.personality)?.name || 'Friendly';
+        summary = `Speaking <strong>${esc(builderState.language)}</strong> in <strong>${esc(persName)}</strong> mode.`;
+        break;
+      case 3:
+        body = renderStepMeet();
+        break;
+    }
+    const showActions = builderState.step !== 3;
+    stageHost.innerHTML = `
+      ${body}
+      ${showActions ? `
+        <div class="builder-actions">
+          <div class="summary">${summary}</div>
+          <button class="next-btn" id="builder-next" type="button" ${builderState.training?'disabled':''}>
+            Next · ${esc(stepDefs[Math.min(3, builderState.step + 1)].name)} ${ICON('arrow')}
+          </button>
+        </div>` : ''}
+    `;
+    attachStageHandlers();
+  }
+
+  function attachStageHandlers() {
+    // Step 1 picks
+    $$('[data-pick]', stageHost).forEach((b) => {
+      b.addEventListener('click', () => {
+        builderState.picked = b.dataset.pick;
+        renderBuilder();
+      });
+    });
+    // Step 2 inputs
+    const urlInput = $('#train-url', stageHost);
+    if (urlInput) urlInput.addEventListener('input', (e) => { builderState.url = e.target.value; });
+    $$('[data-crm]', stageHost).forEach((b) => {
+      b.addEventListener('click', () => {
+        const n = b.dataset.crm;
+        if (builderState.crm.has(n)) builderState.crm.delete(n);
+        else builderState.crm.add(n);
+        renderBuilder();
+      });
+    });
+    const trainGo = $('#train-go', stageHost);
+    if (trainGo) trainGo.addEventListener('click', () => {
+      if (builderState.training) return;
+      builderState.training = true;
+      builderState.progress = 0;
+      renderBuilder();
+      const id = setInterval(() => {
+        builderState.progress = Math.min(100, builderState.progress + 4);
+        if (builderState.progress >= 100) {
+          clearInterval(id);
+          builderState.training = false;
+          setTimeout(() => { builderState.step = 2; renderBuilder(); }, 400);
+        } else {
+          // Only re-render the meter every tick, but full re-render is fine here (lightweight)
+          renderBuilder();
+        }
+      }, 100);
+    });
+    // Step 3 chooses
+    $$('[data-lang]', stageHost).forEach((b) => {
+      b.addEventListener('click', () => { builderState.language = b.dataset.lang; renderBuilder(); });
+    });
+    $$('[data-pers]', stageHost).forEach((b) => {
+      b.addEventListener('click', () => { builderState.personality = b.dataset.pers; renderBuilder(); });
+    });
+    // Next
+    const nextBtn = $('#builder-next', stageHost);
+    if (nextBtn) nextBtn.addEventListener('click', () => {
+      builderState.step = Math.min(3, builderState.step + 1);
+      renderBuilder();
+    });
+    // Re-bind launch handlers on dynamic content
+    bindLaunchHandlers(stageHost);
+  }
+
+  renderBuilder();
+
+  /* ═══════════ INTEGRATIONS / ANALYTICS / SECURITY / TEAM / STORIES ═══════════ */
+
+  function renderIntegrations() {
+    $('#integ-grid').innerHTML = INTEGRATIONS_FULL.map((i)=>`
+      <div class="integ-tile">
+        <div class="logo-lg" style="background:${i.bg};color:${i.dark?'#111':'#fff'};">${i.mark}</div>
+        <div class="nm">${esc(i.name)}</div>
+        <div class="sb">${esc(i.desc)}</div>
+        <div class="stat">${esc(i.stat)}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderAnalytics() {
+    const days = Array.from({ length: 30 }, (_, i) => i);
+    const series = days.map((d) => {
+      const base = 30 + Math.sin(d / 4) * 10;
+      return Math.max(8, base + Math.sin(d * 0.7) * 6 + d * 1.4);
+    });
+    const max = Math.max(...series);
+    const points = series.map((v, i) => `${(i / (series.length - 1)) * 100},${(100 - (v / max) * 90).toFixed(1)}`).join(' ');
+
+    $('#analytics-grid').innerHTML = `
+      <div class="chart-card">
+        <div class="head">
+          <div>
+            <div class="nm">Conversations · last 30 days</div>
+            <div class="sb">Aggregated across all Super Humans on your account</div>
+          </div>
+          <div class="big">48,209<span class="delta">↑ 38%</span></div>
+        </div>
+        <div class="chart-area">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6ee7ff" stop-opacity="0.45"/>
+                <stop offset="100%" stop-color="#6ee7ff" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="ln" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#6ee7ff"/>
+                <stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+            </defs>
+            <polygon fill="url(#ag)" points="0,100 ${points} 100,100"/>
+            <polyline fill="none" stroke="url(#ln)" stroke-width="1.4" points="${points}"/>
+          </svg>
+        </div>
+        <div class="chart-bottom-row">
+          ${[
+            { v: '0:28', k: 'avg first reply' },
+            { v: '94%',  k: 'resolved alone' },
+            { v: '6%',   k: 'human handoff' },
+            { v: '4.86', k: 'CSAT / 5' },
+          ].map((m)=>`<div><div class="v">${esc(m.v)}</div><div class="k">${esc(m.k)}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="mini-stats">
+        ${[
+          { ic: 'calendar', v: '3,184', d: '↑ 21%', k: 'Meetings booked · 30d' },
+          { ic: 'globe',    v: '28',    d: 'live',  k: 'Languages spoken' },
+          { ic: 'bolt',     v: '$2.41M',d: '↑ 3.1×', k: 'Pipeline sourced' },
+          { ic: 'sparkles', v: '99.4%', d: 'SLA',   k: 'Uptime · 90d' },
+        ].map((m)=>`
+          <div class="mini-stat">
+            <div class="ic">${ICON(m.ic)}</div>
+            <div>
+              <div class="v">${esc(m.v)}<span class="d">${esc(m.d)}</span></div>
+              <div class="k">${esc(m.k)}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderSecurity() {
+    $('#security-grid').innerHTML = SECURITY_ITEMS.map((it)=>`
+      <div class="sec-card">
+        <div class="ic-lg">${ICON(it.ic)}</div>
+        <div class="ttl">${esc(it.t)}</div>
+        <div class="desc">${esc(it.d)}</div>
+      </div>
+    `).join('');
+    $('#cert-row').innerHTML = CERTS.map((c)=>`
+      <span class="cert"><span class="ic">${esc(c.split(' ')[0].slice(0,2))}</span>${esc(c)}</span>
+    `).join('');
+  }
+
+  function renderTeam() {
+    $('#team-grid').innerHTML = TEAM.map((p)=>`
+      <div class="team-card">
+        <div class="team-portrait" style="--ring:${p.accent};" data-launch-avatar data-persona="${esc(p.persona)}" role="button" tabindex="0" aria-label="Talk to ${esc(p.name)} live">
+          ${p.video
+            ? `<video autoplay loop muted playsinline preload="auto"><source src="${esc(p.video)}" type="video/mp4"></video>`
+            : `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy">`}
+          <div class="team-live"><span class="pip"></span>Live</div>
+        </div>
+        <div class="team-info">
+          <div class="team-name">Meet <em>${esc(p.name)}</em></div>
+          <div class="team-role">${esc(p.role)}</div>
+          <div class="team-desc">${esc(p.desc)}</div>
+          <button class="team-cta" type="button" data-launch-avatar data-persona="${esc(p.persona)}">
+            ${esc(p.cta)}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderStories() {
+    $('#stories-grid').innerHTML = STORIES.map((s, idx)=>`
+      <div class="story-card ${s.feature?'feature':''}">
+        <div class="quote">"${esc(s.quote)}"</div>
+        <div class="who">
+          <div class="av" style="background:${s.bg};">${esc(s.av)}</div>
+          <div><div class="nm">${esc(s.who)}</div><div class="role">${esc(s.role)}</div></div>
+        </div>
+        ${s.metrics ? `<div class="metric-row">${s.metrics.map(m=>`<div><div class="v">${esc(m.v)}</div><div class="k">${esc(m.k)}</div></div>`).join('')}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  renderIntegrations();
+  renderAnalytics();
+  renderSecurity();
+  renderTeam();
+  renderStories();
+
+  /* ═══════════ AVATAR MODAL ═══════════ */
+
+  const modal      = $('#avatar-modal');
+  const modalIfr   = $('#avatar-iframe');
+  const modalClose = $('#modal-close');
+  const modalTag   = $('#modal-tag-text');
+
+  const PERSONA_NAME = {
+    'default':           'Aiza',
+    'product-demo':      'Casey',
+    'support-agent':     'Riley',
+    'healthcare-guide':  'Elena',
+    'hr-interviewer':    'Alex',
+    'onboarding-guide':  'Sam',
+    'human-chatbot':     'Jordan',
+    'meeting-assistant': 'Taylor',
+  };
+
+  function openAvatarModal(persona) {
+    if (modal.classList.contains('show')) return;
+    const id = persona || 'default';
+    const src = `/call?persona=${encodeURIComponent(id)}&demo=1&timer=60&modal=1`;
+    modalIfr.src = src;
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    modalTag.textContent = `Live · ${PERSONA_NAME[id] || 'Aiza'} · 60-second session`;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAvatarModal() {
+    if (!modal.classList.contains('show')) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    setTimeout(() => { modalIfr.src = 'about:blank'; }, 350);
+  }
+
+  function bindLaunchHandlers(root) {
+    $$('[data-launch-avatar]', root).forEach((el) => {
+      if (el._launchBound) return;
+      el._launchBound = true;
+      el.addEventListener('click', (e) => {
+        // Don't intercept clicks on inner buttons that have their own handler
+        if (e.target.closest('[data-launch-avatar]') !== el) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openAvatarModal(el.dataset.persona || 'default');
+      });
+      if (el.tagName !== 'BUTTON' && el.tagName !== 'A') {
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openAvatarModal(el.dataset.persona || 'default');
+          }
+        });
+      }
+    });
+  }
+  bindLaunchHandlers(document);
+
+  modalClose.addEventListener('click', () => {
+    closeAvatarModal();
+    scrollToCapture();
+  });
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeAvatarModal();
+      scrollToCapture();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('show')) closeAvatarModal();
+  });
+  // /call posts this when modal=1 and the session ends
+  window.addEventListener('message', (e) => {
+    const msg = e.data;
+    if (msg && typeof msg === 'object' && msg.type === 'sh:session_ended') {
+      closeAvatarModal();
+      scrollToCapture();
+    }
+  });
+  function scrollToCapture() {
+    const target = $('#contact');
+    if (!target) return;
+    setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+  }
+
+  /* ═══════════ CONTACT CAPTURE ═══════════ */
+
+  const form    = $('#contact-form');
+  const success = $('#cf-success');
+  const errorEl = $('#cf-error');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#cf-submit');
+    success.classList.remove('show');
+    errorEl.classList.remove('show');
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Sending…';
+    const data = {
+      name:    $('#cf-name').value.trim(),
+      email:   $('#cf-email').value.trim(),
+      company: $('#cf-company').value.trim(),
+      message: $('#cf-message').value.trim(),
+      source: 'homepage_contact',
+    };
+    try {
+      const r = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!r.ok) throw new Error('lead failed');
+      form.querySelectorAll('input, textarea, button').forEach((el) => { el.disabled = true; });
+      success.classList.add('show');
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = original;
+      errorEl.classList.add('show');
+    }
+  });
+
+  /* ═══════════ FLOATING PRESENTER ═══════════ */
+
+  const floater = $('#float-presenter');
+  let floaterDismissed = sessionStorage.getItem('sh:floater:dismissed') === '1';
+  function updateFloater() {
+    if (floaterDismissed) {
+      floater.classList.remove('visible');
+      return;
+    }
+    const past = window.scrollY > window.innerHeight * 0.6;
+    floater.classList.toggle('visible', past);
+  }
+  updateFloater();
+  window.addEventListener('scroll', updateFloater, { passive: true });
+  $('#fp-close').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    floaterDismissed = true;
+    sessionStorage.setItem('sh:floater:dismissed', '1');
+    floater.classList.remove('visible');
+  });
+
+})();
 </script>
 </body>
 </html>

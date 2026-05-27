@@ -58,12 +58,12 @@ AVATAR_KEYWORDS: dict[str, list[str]] = {
 
 PERSONA_EXPERIENCE: dict[str, dict] = {
     "default": {
-        "role_title": "Business Consultant · Sales & Product",
+        "role_title": "Savant.ai Business Expert",
         "connecting_messages": [
-            "Hold on — we're connecting you to your smartest AI person…",
-            "Your specialist is joining now…",
+            "Hold on — we're connecting you to Aiza…",
+            "Your Savant.ai Business Expert is joining now…",
             "Preparing your real-time conversation experience…",
-            "Maya is almost here — get ready to talk…",
+            "Aiza is almost here — get ready to talk…",
         ],
     },
     "hr-interviewer": {
@@ -204,7 +204,7 @@ def resolve_voice_id(persona_id: str, fallback: Optional[str] = None) -> Optiona
     return (b or {}).get("voice_id") or fallback
 
 
-def get_experience(persona_id: str, persona_name: str = "Maya") -> dict:
+def get_experience(persona_id: str, persona_name: str = "Aiza") -> dict:
     base = PERSONA_EXPERIENCE.get(persona_id) or PERSONA_EXPERIENCE["default"]
     binding = get_avatar_binding(persona_id)
     messages = []
@@ -231,5 +231,5 @@ def pick_avatar_preview(persona_id: str, avatars: list, persona_name: str = "") 
     binding = get_avatar_binding(persona_id)
     if binding and binding.get("preview_url"):
         return binding["preview_url"]
-    exp = get_experience(persona_id, persona_name or "Maya")
+    exp = get_experience(persona_id, persona_name or "Aiza")
     return exp.get("preview_url") or ""

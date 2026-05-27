@@ -1,4 +1,4 @@
-# SuperHuman AI Persona Platform — Python Dependencies (Python 3.14 compatible)
+# Savant.ai — Python Dependencies (Python 3.14 compatible)
 # No pipecat / numba — uses direct SDK calls instead
 
 fastapi==0.115.5
@@ -24,3 +24,7 @@ beautifulsoup4>=4.12
 
 # PDF support
 pypdf>=4.0.0
+
+# Ride-along meeting bot (Playwright joins Zoom/Meet/Teams as a participant)
+playwright>=1.46.0
+playwright-stealth>=1.0.6

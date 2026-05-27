@@ -1,12 +1,12 @@
-# Rehu.ai — Sales Playbook
+# Savant.ai — Sales Playbook
 
-**Simple guide to sell, price, and deliver Rehu.ai to clients.**
+**Simple guide to sell, price, and deliver Savant.ai to clients.**
 
 ---
 
 ## What You Are Selling
 
-Rehu.ai puts **your client's smartest rep in the room** — on their website, 24/7.
+Savant.ai puts **your client's smartest rep in the room** — on their website, 24/7.
 
 Not a chatbot. A **live specialist** with a face, a voice, and deep knowledge of the client's business.
 
@@ -91,7 +91,7 @@ Use these in proposals and on the homepage:
 | **Product demo** | $5,000+/mo demo engineers | Every visitor gets a live walkthrough |
 | **Onboarding** | $2,000–3,000/mo HR/IT time | 40–50% fewer handbook questions |
 
-**ROI framing:** Rehu at $1,999/mo costs less than **half of one junior hire** ($4,000–6,000/mo loaded).
+**ROI framing:** Savant at $1,999/mo costs less than **half of one junior hire** ($4,000–6,000/mo loaded).
 
 ---
 
@@ -138,7 +138,7 @@ Use these in proposals and on the homepage:
 
 ## What to Deliver (per client)
 
-1. Deployed Rehu instance (Railway or client cloud)
+1. Deployed Savant instance (Railway or client cloud)
 2. 1+ personas configured with company name
 3. Knowledge base uploaded (client docs)
 4. Embed script for their website

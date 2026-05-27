@@ -1,5 +1,5 @@
 """
-SuperHuman AI Persona Platform -- Knowledge Base (RAG)
+Savant.ai -- Knowledge Base (RAG)
 Pure Python BM25 implementation -- no GPU, no heavy ML libraries.
 Works on Python 3.14+.
 """
@@ -12,14 +12,23 @@ from typing import List, Optional
 from rank_bm25 import BM25Okapi
 
 from .config import settings
+from . import tenants
 
 logger = logging.getLogger(__name__)
 
-# -- In-memory store per persona ----------------------------------------------
-# { persona_id: { "chunks": [...], "titles": [...], "bm25": BM25Okapi } }
-_stores: dict[str, dict] = {}
+# -- In-memory store per (tenant, persona) ------------------------------------
+_stores: dict[tuple[str, str], dict] = {}
 
-PERSIST_DIR = Path(settings.CHROMA_PERSIST_DIR)
+
+def _persist_dir() -> Path:
+    base = tenants.tenant_dir(tenants.active_tenant_id())
+    if tenants.active_tenant_id() == tenants.DEFAULT_TENANT_ID:
+        return Path(settings.CHROMA_PERSIST_DIR)
+    return base / "chromadb"
+
+
+def _key(persona_id: str) -> tuple[str, str]:
+    return tenants.active_tenant_id(), persona_id
 
 
 def _tokenize(text: str) -> List[str]:
@@ -27,15 +36,16 @@ def _tokenize(text: str) -> List[str]:
 
 
 def _save_to_disk(persona_id: str):
-    PERSIST_DIR.mkdir(parents=True, exist_ok=True)
-    store = _stores.get(persona_id, {})
-    path = PERSIST_DIR / f"{persona_id}.json"
+    persist_dir = _persist_dir()
+    persist_dir.mkdir(parents=True, exist_ok=True)
+    store = _stores.get(_key(persona_id), {})
+    path = persist_dir / f"{persona_id}.json"
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"chunks": store.get("chunks", []), "titles": store.get("titles", [])}, f)
 
 
 def _load_from_disk(persona_id: str):
-    path = PERSIST_DIR / f"{persona_id}.json"
+    path = _persist_dir() / f"{persona_id}.json"
     if not path.exists():
         return
     try:
@@ -45,7 +55,7 @@ def _load_from_disk(persona_id: str):
         titles = data.get("titles", [])
         if chunks:
             tokenized = [_tokenize(c) for c in chunks]
-            _stores[persona_id] = {
+            _stores[_key(persona_id)] = {
                 "chunks": chunks,
                 "titles": titles,
                 "bm25": BM25Okapi(tokenized),
@@ -55,7 +65,7 @@ def _load_from_disk(persona_id: str):
 
 
 def _ensure_loaded(persona_id: str):
-    if persona_id not in _stores:
+    if _key(persona_id) not in _stores:
         _load_from_disk(persona_id)
 
 
@@ -83,7 +93,7 @@ async def add_knowledge(
     if not chunks:
         return 0
 
-    store = _stores.setdefault(persona_id, {"chunks": [], "titles": [], "bm25": None})
+    store = _stores.setdefault(_key(persona_id), {"chunks": [], "titles": [], "bm25": None})
     store["chunks"].extend(chunks)
     store["titles"].extend([title or "Untitled"] * len(chunks))
 
@@ -113,7 +123,7 @@ async def add_knowledge_from_url(persona_id: str, url: str, title: Optional[str]
 async def query_knowledge(persona_id: str, query: str, top_k: int = None) -> str:
     top_k = top_k or settings.RAG_TOP_K
     _ensure_loaded(persona_id)
-    store = _stores.get(persona_id)
+    store = _stores.get(_key(persona_id))
     if not store or not store.get("bm25") or not store["chunks"]:
         return ""
 
@@ -135,8 +145,8 @@ async def query_knowledge(persona_id: str, query: str, top_k: int = None) -> str
 
 
 async def delete_persona_knowledge(persona_id: str) -> bool:
-    _stores.pop(persona_id, None)
-    path = PERSIST_DIR / f"{persona_id}.json"
+    _stores.pop(_key(persona_id), None)
+    path = _persist_dir() / f"{persona_id}.json"
     if path.exists():
         path.unlink()
     return True
@@ -144,6 +154,6 @@ async def delete_persona_knowledge(persona_id: str) -> bool:
 
 async def get_knowledge_stats(persona_id: str) -> dict:
     _ensure_loaded(persona_id)
-    store = _stores.get(persona_id)
+    store = _stores.get(_key(persona_id))
     count = len(store["chunks"]) if store else 0
     return {"persona_id": persona_id, "chunk_count": count, "status": "active" if count > 0 else "empty"}

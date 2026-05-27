@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  <defs>
+    <!-- Main 4-stop gradient: blue → violet → pink → orange -->
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#1565C0"/>
+      <stop offset="28%"  stop-color="#6A1FD8"/>
+      <stop offset="62%"  stop-color="#D81B60"/>
+      <stop offset="100%" stop-color="#FF6D00"/>
+    </linearGradient>
+    <!-- Secondary gradient for inner fold/highlight -->
+    <linearGradient id="g2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#5E35B1" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#E040FB" stop-opacity="0.4"/>
+    </linearGradient>
+    <!-- Face silhouette clip -->
+    <clipPath id="triClip">
+      <path d="M 60,20 C 38,20 20,38 20,60 L 20,440 C 20,462 38,480 60,480 C 72,480 83,475 91,466 L 475,265 C 483,260 488,252 488,243 C 488,234 483,226 475,221 L 91,34 C 83,25 72,20 60,20 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- ── Play button body ── -->
+  <path d="M 60,20 C 38,20 20,38 20,60 L 20,440 C 20,462 38,480 60,480 C 72,480 83,475 91,466 L 475,265 C 483,260 488,252 488,243 C 488,234 483,226 475,221 L 91,34 C 83,25 72,20 60,20 Z"
+        fill="url(#g1)"/>
+
+  <!-- ── Inner fold / depth — right triangular wedge ── -->
+  <path d="M 220,120 L 440,243 L 220,366 Z"
+        fill="white" opacity="0.12"/>
+
+  <!-- ── Human face profile (white silhouette, facing right) ── -->
+  <g clip-path="url(#triClip)" opacity="0.22" fill="white">
+    <!-- Skull/cranium -->
+    <path d="
+      M 75,80
+      C 80,60  100,50  122,52
+      C 148,54  162,74  160,98
+      C 158,116 148,130 134,138
+      C 128,142 125,148 126,156
+      C 127,164 124,170 118,174
+      C 112,178 104,178  98,174
+      C 90,170  86,162  88,152
+      C 90,142  94,135  96,124
+      C 99,110  95,96   88,88
+      C 82,83   75,80   75,80 Z
+    "/>
+    <!-- Neck -->
+    <rect x="100" y="174" width="28" height="48" rx="10"/>
+    <!-- Shoulder suggestion -->
+    <path d="M 72,222 Q 88,210 114,214 Q 140,218 152,230 L 152,270 L 72,270 Z"/>
+  </g>
+
+</svg>

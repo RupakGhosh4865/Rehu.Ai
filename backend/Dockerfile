@@ -1,13 +1,15 @@
-# SuperHuman AI Persona Platform — Backend Dockerfile
+# Savant.ai — Backend Dockerfile
 # Optimised for Railway.app deployment
 
 FROM python:3.11-slim
 
-# System deps for audio processing and chromadb
+# System deps for audio processing, chromadb, and the ride-along Playwright bot
 RUN apt-get update && apt-get install -y \
     build-essential \
     libffi-dev \
     libssl-dev \
+    wget \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -16,8 +18,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Ride-along meeting bot — install Chromium + its OS dependencies
+# (apt deps are pulled in by `playwright install-deps`).
+RUN playwright install chromium && playwright install-deps chromium
+
 # Pre-download the embedding model so it's baked into the image
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')" || true
 
 # Copy application code
 COPY . .

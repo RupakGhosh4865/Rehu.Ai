@@ -1,5 +1,5 @@
 """
-SuperHuman AI Persona Platform -- Voice Pipeline & Opening Pitch Generator
+Savant.ai -- Voice Pipeline & Opening Pitch Generator
 
 In LiveAvatar (FULL) mode:  generate_opening_pitch() feeds the LiveAvatar context.
 In voice-only fallback mode: handle_voice_session() runs a WebSocket voice loop.
@@ -40,19 +40,46 @@ def build_system_prompt(
     persona_name: str, company_name: str,
     knowledge_context: str, tone: str = "professional",
     prompt_override: Optional[str] = None,
+    language: str = "en",
+    calendly_url: Optional[str] = None,
+    user_context: Optional[str] = None,
 ) -> str:
+    from .languages import language_name, normalize_language
+    lang_code = normalize_language(language)
+    lang_label = language_name(lang_code)
+    lang_instruction = (
+        f"Respond entirely in {lang_label}. Do not switch languages unless the visitor explicitly asks."
+        if lang_code != "en"
+        else ""
+    )
+    lead_instruction = (
+        "After initial rapport, if you do not know the visitor's name or email, ask naturally for both "
+        "so the team can follow up. When they provide details, confirm spelling and thank them."
+    )
+    booking_instruction = ""
+    if calendly_url:
+        booking_instruction = (
+            f"If the visitor wants to book a meeting, demo, or follow-up call, share this booking link: "
+            f"{calendly_url}. Say something natural like: 'Great — you can pick a time that works here: "
+            f"{calendly_url}'. Confirm their email so the team can join."
+        )
+    user_ctx_block = f"User context: {user_context}" if user_context else ""
     if prompt_override:
-        return (
+        base = (
             f"{prompt_override}\n\n"
             f"Current knowledge about {company_name}:\n"
             f"{knowledge_context or 'No documents uploaded yet — use general expertise and ask clarifying questions.'}"
         )
+        extras = "\n".join(x for x in (user_ctx_block, lang_instruction, lead_instruction, booking_instruction) if x)
+        return f"{base}\n\n{extras}" if extras else base
     tone_map = {
         "professional": "You are polished, confident, and knowledgeable — like a top sales executive.",
         "friendly":     "You are warm, enthusiastic, and personable. Like a trusted friend who is an expert.",
         "casual":       "You are relaxed, natural, and conversational. No corporate speak.",
         "formal":       "You are precise, measured, and authoritative.",
     }
+    booking_block = f"{booking_instruction}\n\n" if booking_instruction else ""
+    user_ctx_line = f"{user_ctx_block}\n\n" if user_ctx_block else ""
     return (
         f"You are {persona_name}, a human expert representing {company_name}. "
         f"You have memorized every product, feature, price, and use case for {company_name}. "
@@ -60,6 +87,10 @@ def build_system_prompt(
         f"Use the visitor's name if you know it. Be direct, confident, never robotic. "
         f"Never say you are an AI, a bot, or an assistant unless directly asked. "
         f"{tone_map.get(tone, tone_map['professional'])}\n\n"
+        f"{user_ctx_line}"
+        f"{lead_instruction}\n\n"
+        f"{booking_block}"
+        f"{lang_instruction + chr(10) + chr(10) if lang_instruction else ''}"
         f"Your knowledge about {company_name}:\n{knowledge_context or 'Ready to help — ask me anything!'}"
     )
 
@@ -151,20 +182,21 @@ async def handle_voice_session(
     websocket: WebSocket,
     session_id: str,
     persona_id: str = "default",
-    persona_name: str = "Maya",
+    persona_name: str = "Aiza",
     company_name: str = "our company",
     tone: str = "professional",
     prompt_override: Optional[str] = None,
     heygen_session_id: Optional[str] = None,
     visitor_name: Optional[str] = None,
     opening_text: str = "",
+    language: str = "en",
 ):
     openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
     el_client     = AsyncElevenLabs(api_key=settings.ELEVENLABS_API_KEY)
     dg_client     = AsyncDeepgramClient(api_key=settings.DEEPGRAM_API_KEY)
 
     conversation_history = []
-    _active_sessions[session_id] = {"websocket": websocket, "persona_id": persona_id}
+    _active_sessions[session_id] = {"websocket": websocket, "persona_id": persona_id, "language": language}
 
     async def send(msg: dict):
         try:
@@ -174,7 +206,8 @@ async def handle_voice_session(
 
     knowledge_ctx = await query_knowledge(persona_id, "overview products services features")
     system_prompt = build_system_prompt(
-        persona_name, company_name, knowledge_ctx, tone, prompt_override=prompt_override,
+        persona_name, company_name, knowledge_ctx, tone,
+        prompt_override=prompt_override, language=language,
     )
     conversation_history.append({"role": "system", "content": system_prompt})
 
@@ -202,16 +235,31 @@ async def handle_voice_session(
                 if user_text:
                     await _process_input(user_text, openai_client, el_client, conversation_history,
                                         persona_name, company_name, tone, persona_id, send,
-                                        prompt_override=prompt_override)
+                                        prompt_override=prompt_override, language=language)
+
+            elif msg_type == "language":
+                from .languages import language_name, normalize_language
+                language = normalize_language(msg.get("language"))
+                if session_id in _active_sessions:
+                    _active_sessions[session_id]["language"] = language
+                conversation_history[0]["content"] = build_system_prompt(
+                    persona_name, company_name, knowledge_ctx, tone,
+                    prompt_override=prompt_override, language=language,
+                )
+                await send({
+                    "type": "status",
+                    "message": f"language:{language_name(language)}",
+                    "language": language,
+                })
 
             elif msg_type == "audio":
                 audio_data = base64.b64decode(msg.get("data", ""))
                 if len(audio_data) >= 500:
-                    transcript = await _transcribe(dg_client, audio_data)
+                    transcript = await _transcribe(dg_client, audio_data, language=language)
                     if transcript and len(transcript.strip()) > 2:
                         await _process_input(transcript, openai_client, el_client, conversation_history,
                                             persona_name, company_name, tone, persona_id, send,
-                                            prompt_override=prompt_override)
+                                            prompt_override=prompt_override, language=language)
 
     except WebSocketDisconnect:
         logger.info("Voice session %s disconnected", session_id)
@@ -223,12 +271,12 @@ async def handle_voice_session(
 
 async def _process_input(user_text, openai_client, el_client, history,
                          persona_name, company_name, tone, persona_id, send,
-                         prompt_override: Optional[str] = None):
+                         prompt_override: Optional[str] = None, language: str = "en"):
     await send({"type": "transcript", "role": "user", "text": user_text})
     await send({"type": "status", "message": "thinking"})
     ctx = await query_knowledge(persona_id, user_text)
     history[0]["content"] = build_system_prompt(
-        persona_name, company_name, ctx, tone, prompt_override=prompt_override,
+        persona_name, company_name, ctx, tone, prompt_override=prompt_override, language=language,
     )
     history.append({"role": "user", "content": user_text})
     response = await _llm(openai_client, history)
@@ -269,11 +317,12 @@ async def _speak(el_client: AsyncElevenLabs, text: str, send):
         logger.error("ElevenLabs TTS error: %s", e)
 
 
-async def _transcribe(dg_client: AsyncDeepgramClient, audio_bytes: bytes) -> Optional[str]:
+async def _transcribe(dg_client: AsyncDeepgramClient, audio_bytes: bytes, language: str = "en") -> Optional[str]:
+    from .languages import deepgram_language
     try:
         r = await dg_client.listen.v1.media.transcribe_file(
             request=audio_bytes, model=settings.DEEPGRAM_MODEL,
-            language=settings.DEEPGRAM_LANGUAGE, smart_format=True,
+            language=deepgram_language(language), smart_format=True,
         )
         t = r.results.channels[0].alternatives[0].transcript
         return t.strip() if t else None

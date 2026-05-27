@@ -1,5 +1,5 @@
 /**
- * Rehu.ai — Premium persona preview & immersive connect experience
+ * Savant.ai — Premium persona preview & immersive connect experience
  */
 window.RehuCall = (function () {
   let experience = null;

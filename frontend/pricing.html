@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing — Savant.ai</title>
+  <link rel="icon" type="image/svg+xml" href="/static/savant-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <style>
+    body{font-family:'Inter',system-ui,sans-serif;background:radial-gradient(circle at 20% -10%,#1e293b 0%,#020617 70%);min-height:100vh;color:#e2e8f0;padding:40px 24px;}
+    .wrap{max-width:1080px;margin:0 auto;}
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:32px;justify-content:space-between;}
+    .brand img{height:28px;}
+    .brand a{color:#A78BFA;text-decoration:none;font-weight:600;font-size:14px;}
+    h1{font-size:36px;font-weight:800;color:#fff;margin:0 0 10px;text-align:center;}
+    .subtitle{color:rgba(226,232,240,.7);text-align:center;margin:0 auto 38px;max-width:620px;}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;}
+    .plan{background:rgba(15,23,42,.78);border:1px solid rgba(148,163,184,.18);border-radius:18px;padding:28px;display:flex;flex-direction:column;}
+    .plan h3{margin:0;font-size:18px;color:#fff;font-weight:800;}
+    .price{margin:16px 0 2px;font-size:32px;font-weight:800;color:#fff;}
+    .price small{font-size:14px;color:rgba(226,232,240,.6);font-weight:600;}
+    .meta{color:rgba(226,232,240,.6);font-size:13px;margin-bottom:18px;}
+    .plan ul{list-style:none;padding:0;margin:0 0 22px;flex:1;}
+    .plan li{padding:6px 0;color:rgba(226,232,240,.86);font-size:13px;}
+    .plan button{background:#7C3AED;color:#fff;border:none;border-radius:10px;padding:12px;font-weight:700;cursor:pointer;}
+    .plan.featured{border-color:#7C3AED;box-shadow:0 30px 80px rgba(124,58,237,.25);}
+    .pill{display:inline-flex;background:rgba(124,58,237,.18);color:#C4B5FD;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px;}
+    .footnote{margin-top:24px;text-align:center;color:rgba(226,232,240,.55);font-size:12px;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <img src="/static/savant-logo.svg" alt="Savant.ai"/>
+    <a href="/admin">Open Admin →</a>
+  </div>
+  <h1>Plans that scale with your conversations</h1>
+  <p class="subtitle">Start free, pay only when Aiza becomes part of your team. Plans include live AI presenter minutes, knowledge MB, and persona slots.</p>
+  <div class="grid" id="plans-grid"></div>
+  <div class="footnote">Plans renew monthly. Cancel anytime via Stripe customer portal.</div>
+</div>
+<script>
+const PLAN_FEATURES = {
+  trial: ["1 persona","60 minutes / month","Sandbox avatar (~1 min sessions)","Lead capture, transcripts","Email + webhook on lead"],
+  pilot: ["1 persona","250 minutes / month","Sandbox avatar","Custom branding","Lead capture, transcripts","Email + webhook on lead"],
+  professional: ["1 persona","500 minutes / month","Production avatar","Embed widget","HubSpot + Google Calendar","Priority support"],
+  business: ["3 personas","2000 minutes / month","Production avatar","Premium presenter slides","All integrations","Priority support"],
+  enterprise: ["Unlimited personas","Custom minute pool","Dedicated infra option","SSO + audit logs","SLA + 24/7 support","Solution architect"],
+};
+const HEADERS = {'Content-Type':'application/json'};
+
+async function loadPlans(){
+  const r = await fetch('/api/billing/plans');
+  const data = await r.json();
+  const grid = document.getElementById('plans-grid');
+  grid.innerHTML = (data.plans||[]).map(p => planHtml(p, data.configured)).join('');
+}
+function planHtml(p, billingConfigured){
+  const feats = PLAN_FEATURES[p.id] || [];
+  const price = p.monthly_price_usd;
+  const priceLabel = price === 0 ? 'Free' : (price ? `$${price.toLocaleString()}` : 'Custom');
+  const period = price && price !== 0 ? '<small>/month</small>' : '';
+  const featured = p.id === 'professional' ? 'featured' : '';
+  const cta = p.id === 'trial' ? 'Start free' : (p.id === 'enterprise' ? 'Contact sales' : 'Subscribe');
+  return `<div class="plan ${featured}">
+    ${featured?'<div class="pill">Most popular</div>':''}
+    <h3>${p.label||p.id}</h3>
+    <div class="price">${priceLabel}${period}</div>
+    <div class="meta">${p.minute_limit?`${p.minute_limit} minutes / month`:'Unlimited minutes'} · ${p.persona_limit?`${p.persona_limit} persona${p.persona_limit>1?'s':''}`:'Unlimited personas'}</div>
+    <ul>${feats.map(f=>`<li>${f}</li>`).join('')}</ul>
+    <button onclick="checkout('${p.id}')" ${(!billingConfigured && p.id!=='trial' && p.id!=='enterprise')?'disabled':''}>${cta}</button>
+  </div>`;
+}
+async function checkout(plan){
+  if(plan==='trial'){ location.href='/signup'; return; }
+  if(plan==='enterprise'){ location.href='mailto:sales@savant.ai?subject=Enterprise%20plan'; return; }
+  const token = localStorage.getItem('savant_token');
+  if(!token){ location.href = `/signup?plan=${plan}`; return; }
+  const r = await fetch('/api/billing/checkout',{method:'POST',headers:{...HEADERS,Authorization:`Bearer ${token}`},body:JSON.stringify({plan})});
+  if(!r.ok){alert((await r.json()).detail||'Checkout failed');return;}
+  const data = await r.json();
+  if(data.url) location.href = data.url;
+}
+loadPlans();
+</script>
+</body>
+</html>

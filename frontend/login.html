@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — Savant.ai</title>
+  <link rel="icon" type="image/svg+xml" href="/static/savant-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <style>
+    body{font-family:'Inter',system-ui,sans-serif;background:radial-gradient(circle at 20% -10%,#1e293b 0%,#020617 70%);min-height:100vh;display:flex;align-items:center;justify-content:center;color:#fff;padding:24px;}
+    .auth-card{background:rgba(15,23,42,.85);border:1px solid rgba(148,163,184,.18);border-radius:18px;padding:36px;max-width:420px;width:100%;backdrop-filter:blur(20px);box-shadow:0 30px 80px rgba(0,0,0,.5);}
+    .auth-card h1{font-size:22px;margin:0 0 6px;color:#fff;font-weight:800;}
+    .auth-card p.subtitle{margin:0 0 24px;color:rgba(226,232,240,.7);font-size:14px;}
+    .auth-card label{display:block;font-size:12px;font-weight:600;color:rgba(226,232,240,.75);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;}
+    .auth-card input{width:100%;background:rgba(2,6,23,.55);border:1px solid rgba(148,163,184,.25);border-radius:10px;color:#fff;padding:11px 13px;font-size:14px;outline:none;}
+    .auth-card input:focus{border-color:#7C3AED;box-shadow:0 0 0 3px rgba(124,58,237,.18);}
+    .auth-card button{margin-top:22px;width:100%;background:#7C3AED;color:#fff;border:none;border-radius:10px;padding:13px;font-weight:700;font-size:14px;cursor:pointer;}
+    .auth-card .swap{margin-top:16px;font-size:13px;color:rgba(226,232,240,.6);text-align:center;}
+    .auth-card .swap a{color:#A78BFA;text-decoration:none;font-weight:600;}
+    .error{margin-top:14px;color:#FCA5A5;font-size:13px;display:none;}
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+    .brand img{height:28px;}
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <div class="brand"><img src="/static/savant-logo.svg" alt="Savant.ai"/></div>
+    <h1>Sign in</h1>
+    <p class="subtitle">Welcome back to your AI employee dashboard.</p>
+    <form onsubmit="login(event)">
+      <label>Email</label>
+      <input id="email" type="email" required autocomplete="email"/>
+      <label>Password</label>
+      <input id="password" type="password" required autocomplete="current-password"/>
+      <button type="submit">Sign in</button>
+      <div class="error" id="error"></div>
+    </form>
+    <div class="swap">New here? <a href="/signup">Create a workspace</a></div>
+  </div>
+<script>
+async function login(e){
+  e.preventDefault();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const err = document.getElementById('error');
+  err.style.display='none';
+  try{
+    const r = await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    if(!r.ok){const data=await r.json().catch(()=>({detail:'Error'}));throw new Error(data.detail||'Login failed');}
+    const data = await r.json();
+    localStorage.setItem('savant_token', data.token);
+    document.cookie = `savant_token=${data.token}; path=/; max-age=${60*60*24*7}; SameSite=Lax`;
+    location.href = '/admin';
+  }catch(ex){err.textContent=ex.message;err.style.display='block';}
+}
+</script>
+</body>
+</html>

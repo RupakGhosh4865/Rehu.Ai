@@ -1,15 +1,32 @@
 /**
- * SuperHuman AI Persona — Embeddable Website Widget SDK
- * Drop this single script tag on any website to add your AI persona.
+ * Savant.ai — Embeddable Website Widget SDK
+ * Drop this single script tag on any website to deploy your Savant Superhuman.
  *
- * Usage:
+ * Basic usage:
  * <script src="https://your-app.railway.app/sdk/superhuman-widget.js"
  *   data-persona="default"
  *   data-position="bottom-right"
  *   data-color="#2E86AB"
- *   data-label="Talk to our AI Expert"
+ *   data-label="Talk to our Expert"
  *   data-api="https://your-app.railway.app">
  * </script>
+ *
+ * In-product triggers (open automatically based on visitor behaviour):
+ *   data-trigger="auto"
+ *   data-trigger-delay="30"            (seconds on page)
+ *   data-trigger-scroll="50"           (% of page scrolled)
+ *   data-trigger-exit="true"           (exit intent — mouse leaves viewport top)
+ *   data-trigger-idle="60"             (seconds with no mouse/keyboard activity)
+ *   data-trigger-selector=".upgrade-btn"  (open on hover over a CSS selector)
+ *
+ * User context (passed to the AI as system prompt context):
+ *   data-user-id="..."
+ *   data-user-plan="free|pro|enterprise"
+ *   data-user-stage="trial|active|churning"
+ *   data-page-context="Pricing page"
+ *
+ * The public global remains `window.SuperHuman` for backward compatibility with
+ * existing embeds; we expose `window.Savant` as an alias.
  */
 
 (function () {
@@ -19,14 +36,34 @@
   const scriptTag = document.currentScript ||
     document.querySelector('script[data-persona]');
 
+  const attr = (name, fallback) => {
+    const v = scriptTag?.getAttribute(name);
+    return v == null ? fallback : v;
+  };
+  const decoded = (name, fallback) => decodeURIComponent(attr(name, fallback));
+
   const CONFIG = {
-    personaId:  scriptTag?.getAttribute('data-persona') || 'default',
-    position:   scriptTag?.getAttribute('data-position') || 'bottom-right',
-    color:      decodeURIComponent(scriptTag?.getAttribute('data-color') || '#2E86AB'),
-    label:      decodeURIComponent(scriptTag?.getAttribute('data-label') || 'Talk to our AI Expert'),
-    apiBase:    scriptTag?.getAttribute('data-api') || '',
-    autoOpen:   scriptTag?.getAttribute('data-auto-open') === 'true',
-    greeting:   decodeURIComponent(scriptTag?.getAttribute('data-greeting') || ''),
+    personaId:        attr('data-persona', 'default'),
+    position:         attr('data-position', 'bottom-right'),
+    color:            decoded('data-color', '#2E86AB'),
+    label:            decoded('data-label', 'Talk to our Expert'),
+    apiBase:          attr('data-api', ''),
+    autoOpen:         attr('data-auto-open', '') === 'true',
+    greeting:         decoded('data-greeting', ''),
+
+    // Triggers
+    trigger:          attr('data-trigger', ''),                  // "auto" enables condition-based opens
+    triggerDelay:     parseInt(attr('data-trigger-delay', ''), 10),
+    triggerScroll:    parseInt(attr('data-trigger-scroll', ''), 10),
+    triggerExit:      attr('data-trigger-exit', '') === 'true',
+    triggerIdle:      parseInt(attr('data-trigger-idle', ''), 10),
+    triggerSelector:  attr('data-trigger-selector', ''),
+
+    // User context
+    userId:           attr('data-user-id', ''),
+    userPlan:         attr('data-user-plan', ''),
+    userStage:        attr('data-user-stage', ''),
+    pageContext:      decoded('data-page-context', ''),
   };
 
   // ── Prevent double-init ───────────────────────────────────────────────
@@ -36,6 +73,25 @@
   // ── State ─────────────────────────────────────────────────────────────
   let isOpen = false;
   let hasLoaded = false;
+  let activeGreeting = CONFIG.greeting;     // can be overridden by triggers
+  let triggerListenersBound = false;
+  const FIRED_KEY = 'sh_widget_fired';      // sessionStorage flag
+
+  // Contextual greetings per trigger source
+  const CONTEXTUAL_GREETINGS = {
+    exit:     'Wait — before you go, can I answer any questions?',
+    selector: 'Thinking about upgrading? I can walk you through what changes.',
+    idle:     "Still exploring? I'm here if you have questions.",
+    scroll:   "Looks like you're going deep — want me to summarise this for you?",
+    delay:    "Hey — got a quick minute? I can save you a lot of reading.",
+  };
+
+  function hasFired() {
+    try { return sessionStorage.getItem(FIRED_KEY) === '1'; } catch (_) { return false; }
+  }
+  function markFired() {
+    try { sessionStorage.setItem(FIRED_KEY, '1'); } catch (_) { /* ignore */ }
+  }
 
   // ── Positioning ───────────────────────────────────────────────────────
   const POSITIONS = {
@@ -122,7 +178,12 @@
   document.body.appendChild(container);
 
   // ── Open / close ──────────────────────────────────────────────────────
-  function openWidget() {
+  function openWidget(opts) {
+    opts = opts || {};
+    // Allow triggers to override the greeting once before load
+    if (opts.greeting) activeGreeting = opts.greeting;
+    if (opts.fromTrigger) markFired();
+
     if (!hasLoaded) {
       loadIframe();
       hasLoaded = true;
@@ -131,10 +192,13 @@
     container.classList.add('open');
     btn.innerHTML = `<span style="font-size:18px;">✕</span> Close`;
 
-    // Notify the iframe it is now visible
+    // Notify the iframe it is now visible (and pass updated greeting)
     const iframe = document.getElementById('sh-widget-iframe');
     if (iframe) {
-      iframe.contentWindow?.postMessage({ type: 'sh:visible' }, '*');
+      iframe.contentWindow?.postMessage(
+        { type: 'sh:visible', greeting: activeGreeting || undefined },
+        '*'
+      );
     }
   }
 
@@ -155,7 +219,13 @@
       widget: '1',
       color: CONFIG.color,
     });
-    if (CONFIG.greeting) params.set('greeting', CONFIG.greeting);
+    if (activeGreeting) params.set('greeting', activeGreeting);
+
+    // User + page context as URL params (read by the call page)
+    if (CONFIG.userId)      params.set('user_id', CONFIG.userId);
+    if (CONFIG.userPlan)    params.set('user_plan', CONFIG.userPlan);
+    if (CONFIG.userStage)   params.set('user_stage', CONFIG.userStage);
+    if (CONFIG.pageContext) params.set('page', CONFIG.pageContext);
 
     const iframe = document.createElement('iframe');
     iframe.id = 'sh-widget-iframe';
@@ -178,12 +248,112 @@
     if (e.key === 'Escape' && isOpen) closeWidget();
   });
 
-  // ── Auto-open if configured ───────────────────────────────────────────
+  // ── Auto-open (legacy data-auto-open) ─────────────────────────────────
   if (CONFIG.autoOpen) {
-    setTimeout(openWidget, 2000);  // 2-second delay to not interrupt page load
+    setTimeout(() => openWidget({ fromTrigger: true }), 2000);
+  }
+
+  // ── In-product triggers ───────────────────────────────────────────────
+  function fireTrigger(source) {
+    if (isOpen || hasFired()) return;
+    const greeting = CONTEXTUAL_GREETINGS[source] || activeGreeting || '';
+    openWidget({ greeting, fromTrigger: true });
+  }
+
+  function bindTriggers() {
+    if (triggerListenersBound) return;
+    triggerListenersBound = true;
+
+    // Delay trigger
+    if (CONFIG.triggerDelay && CONFIG.triggerDelay > 0) {
+      setTimeout(() => fireTrigger('delay'), CONFIG.triggerDelay * 1000);
+    }
+
+    // Scroll-depth trigger
+    if (CONFIG.triggerScroll && CONFIG.triggerScroll > 0 && CONFIG.triggerScroll <= 100) {
+      const onScroll = () => {
+        if (hasFired() || isOpen) {
+          window.removeEventListener('scroll', onScroll);
+          return;
+        }
+        const doc = document.documentElement;
+        const scrollable = Math.max(1, (doc.scrollHeight || document.body.scrollHeight) - window.innerHeight);
+        const pct = Math.min(100, (window.scrollY / scrollable) * 100);
+        if (pct >= CONFIG.triggerScroll) {
+          fireTrigger('scroll');
+          window.removeEventListener('scroll', onScroll);
+        }
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+    }
+
+    // Exit-intent trigger
+    if (CONFIG.triggerExit) {
+      const onLeave = (e) => {
+        // Only fire when the pointer leaves through the top of the viewport
+        if (e.clientY <= 0 && !hasFired() && !isOpen) {
+          fireTrigger('exit');
+          document.removeEventListener('mouseleave', onLeave);
+        }
+      };
+      document.addEventListener('mouseleave', onLeave);
+    }
+
+    // Idle trigger
+    if (CONFIG.triggerIdle && CONFIG.triggerIdle > 0) {
+      let idleTimer = null;
+      const resetIdle = () => {
+        if (hasFired() || isOpen) return;
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => fireTrigger('idle'), CONFIG.triggerIdle * 1000);
+      };
+      ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'].forEach((evt) =>
+        window.addEventListener(evt, resetIdle, { passive: true })
+      );
+      resetIdle();
+    }
+
+    // Selector hover trigger
+    if (CONFIG.triggerSelector) {
+      try {
+        const nodes = document.querySelectorAll(CONFIG.triggerSelector);
+        nodes.forEach((node) => {
+          const onHover = () => {
+            if (!hasFired() && !isOpen) {
+              fireTrigger('selector');
+              node.removeEventListener('mouseenter', onHover);
+            }
+          };
+          node.addEventListener('mouseenter', onHover, { once: true });
+        });
+      } catch (e) {
+        console.warn('[SuperHuman] Invalid data-trigger-selector:', CONFIG.triggerSelector);
+      }
+    }
+  }
+
+  // Trigger logic runs after the page is ready — never blocks rendering
+  if (CONFIG.trigger === 'auto' ||
+      CONFIG.triggerDelay || CONFIG.triggerScroll ||
+      CONFIG.triggerExit || CONFIG.triggerIdle || CONFIG.triggerSelector) {
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', bindTriggers, { once: true });
+    } else {
+      bindTriggers();
+    }
   }
 
   // ── Public API ────────────────────────────────────────────────────────
-  window.SuperHuman = { open: openWidget, close: closeWidget, toggle: toggleWidget };
+  const PublicAPI = {
+    open: openWidget,
+    close: closeWidget,
+    toggle: toggleWidget,
+    /** Programmatically open with a custom greeting (does not consume the "fired once" flag). */
+    openWithGreeting: (text) => openWidget({ greeting: text }),
+    /** Programmatically reset the once-per-session flag (for testing). */
+    resetTriggers: () => { try { sessionStorage.removeItem(FIRED_KEY); } catch(_) {} },
+  };
+  window.Savant = PublicAPI;
+  window.SuperHuman = PublicAPI;
 
 })();

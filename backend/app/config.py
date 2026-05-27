@@ -1,5 +1,5 @@
 """
-SuperHuman AI Persona Platform -- Configuration
+Savant.ai -- Configuration
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     )
 
     # App
-    APP_NAME:    str  = "SuperHuman AI Persona Platform"
+    APP_NAME:    str  = "Savant.ai"
     APP_VERSION: str  = "2.0.0"
     DEBUG:       bool = False
     HOST:        str  = "0.0.0.0"
@@ -56,13 +56,46 @@ class Settings(BaseSettings):
     RAG_TOP_K:           int = 5
     RAG_MAX_CONTEXT_CHARS: int = 3000
 
+    # ── Notifications (SMTP for outbound email) ───────────────────────────────
+    SMTP_HOST:        str  = ""
+    SMTP_PORT:        int  = 587
+    SMTP_USERNAME:    str  = ""
+    SMTP_PASSWORD:    str  = ""
+    SMTP_USE_TLS:     bool = True
+    SMTP_USE_SSL:     bool = False
+    SMTP_FROM_EMAIL:  str  = ""
+
+    # ── Stripe Billing ────────────────────────────────────────────────────────
+    STRIPE_API_KEY:        str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PRICE_PILOT:        str = ""
+    STRIPE_PRICE_PROFESSIONAL: str = ""
+    STRIPE_PRICE_BUSINESS:     str = ""
+
+    # ── Multi-tenant ──────────────────────────────────────────────────────────
+    APP_BASE_URL:     str  = "http://localhost:8000"
+    APP_ROOT_DOMAIN:  str  = ""           # e.g. savant.ai (enables tenant subdomains)
+    JWT_SECRET:       str  = "change-me-jwt-secret"
+    JWT_TTL_HOURS:    int  = 168          # 7 days
+
+    # ── HubSpot integration ────────────────────────────────────────────────────
+    HUBSPOT_CLIENT_ID:     str = ""
+    HUBSPOT_CLIENT_SECRET: str = ""
+    HUBSPOT_REDIRECT_URI:  str = ""
+
+    # ── Google Calendar integration ────────────────────────────────────────────
+    GOOGLE_CLIENT_ID:     str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI:  str = ""
+
     # ── Persona Defaults ──────────────────────────────────────────────────────
-    DEFAULT_PERSONA_NAME: str = "Maya"
+    DEFAULT_PERSONA_NAME: str = "Aiza"
     DEFAULT_SYSTEM_PROMPT: str = (
         "You are {persona_name}, a human expert representing {company_name}. "
         "You have memorized every product, feature, use case, and benefit. "
         "Speak naturally -- short punchy sentences, maximum 2-3 per response. "
         "Be warm, confident, and direct. Never say you are an AI unless asked. "
+        "{user_context}"
         "Context from the knowledge base:\n\n{knowledge_context}"
     )
 

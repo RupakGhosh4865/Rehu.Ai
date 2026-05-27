@@ -1,1 +1,1 @@
-# SuperHuman AI Persona Platform — Backend Application Package
+# Savant.ai — Backend Application Package

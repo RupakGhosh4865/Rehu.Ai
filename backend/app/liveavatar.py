@@ -1,5 +1,5 @@
 """
-SuperHuman AI Persona Platform -- LiveAvatar Client
+Savant.ai -- LiveAvatar Client
 New HeyGen API: https://api.liveavatar.com  (replaces deprecated api.heygen.com)
 
 Flow:
@@ -53,7 +53,7 @@ def _bearer(token: str) -> dict:
 async def create_context(
     prompt: str,
     opening_text: str = "",
-    display_name: str = "Maya Context",
+    display_name: str = "Aiza Context",
 ) -> Optional[str]:
     """
     Create a LiveAvatar context (system prompt + opening greeting).
@@ -225,6 +225,29 @@ async def stop_session(session_id: str, session_token: str = "") -> bool:
         return r.status_code in (200, 204)
     except Exception as e:
         logger.warning("LiveAvatar stop_session error: %s", e)
+        return False
+
+
+async def keep_session_alive(session_id: str) -> bool:
+    """Reset LiveAvatar idle timeout for an active session."""
+    if not session_id or not settings.LIVEAVATAR_API_KEY:
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.post(
+                f"{LA_BASE}/v1/sessions/keep-alive",
+                headers=_headers(),
+                json={"session_id": session_id},
+            )
+            data = r.json() if r.content else {}
+        ok = r.status_code == 200 and data.get("code", 100) in (100, 1000)
+        if ok:
+            logger.debug("LiveAvatar keep-alive sent: %s", session_id)
+        else:
+            logger.warning("LiveAvatar keep-alive failed %s: %s", r.status_code, data)
+        return ok
+    except Exception as e:
+        logger.warning("LiveAvatar keep-alive error: %s", e)
         return False
 
 

@@ -1,5 +1,5 @@
 """
-SuperHuman AI Persona Platform -- HeyGen Streaming Avatar Client
+Savant.ai -- HeyGen Streaming Avatar Client
 HeyGen Interactive Avatar v2 API: https://docs.heygen.com/reference/streaming-avatar
 
 WebRTC flow:

@@ -3,12 +3,14 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Solution — Rehu.ai</title>
-<link rel="stylesheet" href="/static/rehu-light.css"/>
+<title>Solution — The Smart Human.ai</title>
+<link rel="icon" type="image/svg+xml" href="/static/savant-icon.svg"/>
+<link rel="apple-touch-icon" href="/static/savant-icon.svg"/>
+<link rel="stylesheet" href="/static/savant-light.css"/>
 </head>
 <body>
 <nav>
-  <a href="/" class="nav-logo"><span class="logo-dot"></span> Rehu.ai</a>
+  <a href="/" class="nav-logo"><img src="/static/savant-logo.svg" alt="Savant.ai"/></a>
   <div style="display:flex;gap:20px">
     <a href="/#solutions" style="color:var(--muted);text-decoration:none;font-size:14px;font-weight:500">Solutions</a>
     <a href="/admin" style="color:var(--muted);text-decoration:none;font-size:14px;font-weight:500">Admin</a>
@@ -30,7 +32,7 @@ async function load() {
       fetch(`/api/solutions/${slug}`).then(r => r.ok ? r.json() : Promise.reject()),
       fetch('/api/solutions').then(r => r.json()),
     ]);
-    document.title = `${sol.title} — Rehu.ai`;
+    document.title = `${sol.title} — The Smart Human.ai`;
     const tryBtn = sol.coming_soon
       ? `<span class="btn-hero btn-hero-ghost" style="opacity:.65;cursor:not-allowed">Coming soon — Scale plan</span>`
       : `<a href="${sol.try_url}" class="btn-hero btn-hero-primary">Start Conversation</a>`;

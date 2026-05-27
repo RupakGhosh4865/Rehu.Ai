@@ -1,5 +1,5 @@
 """
-SuperHuman AI Persona Platform — Daily.co Room Management
+Savant.ai — Daily.co Room Management
 Creates/deletes Daily.co rooms and generates short-lived participant tokens.
 """
 import logging

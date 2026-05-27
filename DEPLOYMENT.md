@@ -1,8 +1,8 @@
-# Rehu.ai — Client Deployment Guide
+# Savant.ai — Client Deployment Guide
 
 **Version:** 2.0  
-**Platform:** SuperHuman / Rehu.ai  
-**Repository:** `Blugig/Rehu.Ai`  
+**Platform:** Savant.ai  
+**Repository:** `Blugig/Rehu.Ai` *(rename to `Savant/savant-platform` pending)*  
 **Last updated:** May 2026  
 
 ---
@@ -33,7 +33,7 @@
 
 ## 1. Executive Summary
 
-Rehu.ai is a **Human Digital Workforce Platform** that deploys photorealistic AI personas on a client's website or intranet. Each persona speaks in real time (voice + video), powered by product knowledge uploaded via an Admin panel.
+Savant.ai is a **Human Digital Workforce Platform** that deploys photorealistic AI personas on a client's website or intranet. Each persona speaks in real time (voice + video), powered by product knowledge uploaded via an Admin panel.
 
 **Deployment model today:** **One hosted instance per client.**
 
@@ -55,14 +55,14 @@ Rehu.ai is a **Human Digital Workforce Platform** that deploys photorealistic AI
 │                     CLIENT WEBSITE                               │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │  Embed Widget (superhuman-widget.js)                      │   │
-│  │  → Floating "Talk to our AI Expert" button                │   │
-│  │  → Opens iframe → https://rehu.client.com/call            │   │
+│  │  → Floating "Talk to our Expert" button                  │   │
+│  │  → Opens iframe → https://savant.client.com/call          │   │
 │  └──────────────────────────────────────────────────────────┘   │
 └────────────────────────────┬────────────────────────────────────┘
                              │ HTTPS
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              REHU BACKEND (FastAPI on Railway/Docker)            │
+│              SAVANT BACKEND (FastAPI on Railway/Docker)          │
 │  ┌─────────────┐  ┌──────────────┐  ┌────────────────────────┐  │
 │  │ /admin      │  │ /call        │  │ /api/sessions          │  │
 │  │ Configure   │  │ Live call UI │  │ Create LiveAvatar sess │  │
@@ -124,7 +124,7 @@ Rehu.ai is a **Human Digital Workforce Platform** that deploys photorealistic AI
 
 ### Model A — You host for the client (recommended)
 
-You deploy Rehu on Railway or cloud. Client embeds your URL on their public website.
+You deploy Savant on Railway or cloud. Client embeds your URL on their public website.
 
 **Best for:** SaaS agencies, MSPs, quick client go-live, most commercial deployments.
 
@@ -145,7 +145,7 @@ Same Docker image runs inside the client's Azure, AWS, or on-prem environment.
 
 Host on VPN or internal DNS. No public embed — direct link inside SharePoint, HR portal, etc.
 
-**Example URL:** `https://rehu.internal.acme.com/call?persona=hr-interviewer`
+**Example URL:** `https://savant.internal.acme.com/call?persona=hr-interviewer`
 
 ---
 
@@ -170,7 +170,7 @@ Host on VPN or internal DNS. No public embed — direct link inside SharePoint, 
 
 ### 4.3 Network requirements (client environment)
 
-**Outbound HTTPS required from Rehu server:**
+**Outbound HTTPS required from Savant server:**
 
 - `api.liveavatar.com`
 - `api.openai.com`
@@ -179,7 +179,7 @@ Host on VPN or internal DNS. No public embed — direct link inside SharePoint, 
 
 **Inbound HTTPS required:**
 
-- Public access to your Rehu URL (or internal-only for Model C)
+- Public access to your Savant URL (or internal-only for Model C)
 - Port 443 (or host-assigned `PORT` on Railway)
 
 ---
@@ -298,7 +298,7 @@ Expected response includes `"status": "healthy"`, `"liveavatar_key_set": true`.
 ### Step 6 — Custom domain (optional)
 
 Railway → **Settings** → **Domains** → Add custom domain  
-Client DNS: CNAME `rehu.acme.com` → Railway-assigned hostname
+Client DNS: CNAME `savant.acme.com` → Railway-assigned hostname
 
 ### Step 7 — Smoke test URLs
 
@@ -452,13 +452,13 @@ Admin → **Embed Widget**:
 Paste before `</body>` on the client's website:
 
 ```html
-<!-- Rehu.ai AI Persona Widget -->
-<script src="https://rehu.acme.com/sdk/superhuman-widget.js"
+<!-- Savant.ai AI Persona Widget -->
+<script src="https://savant.acme.com/sdk/superhuman-widget.js"
   data-persona="hr-interviewer"
   data-position="bottom-right"
   data-color="#2E86AB"
   data-label="Talk to HR"
-  data-api="https://rehu.acme.com">
+  data-api="https://savant.acme.com">
 </script>
 ```
 
@@ -466,7 +466,7 @@ Paste before `</body>` on the client's website:
 
 | Attribute | Required | Description |
 |-----------|----------|-------------|
-| `data-api` | Yes | Your deployed Rehu base URL |
+| `data-api` | Yes | Your deployed Savant base URL |
 | `data-persona` | Yes | Persona ID (e.g. `hr-interviewer`) |
 | `data-position` | No | `bottom-right` (default) or `bottom-left` |
 | `data-color` | No | Hex brand color (default `#2E86AB`) |
@@ -477,15 +477,16 @@ Paste before `</body>` on the client's website:
 **JavaScript API (optional):**
 
 ```javascript
-window.SuperHuman.open();   // Open widget programmatically
-window.SuperHuman.close();  // Close widget
-window.SuperHuman.toggle(); // Toggle open/close
+window.Savant.open();   // Open widget programmatically
+window.Savant.close();  // Close widget
+window.Savant.toggle(); // Toggle open/close
+// (window.SuperHuman is retained as a backward-compat alias)
 ```
 
 ### 10.2 Direct link (no widget)
 
 ```html
-<a href="https://rehu.acme.com/call?persona=support-agent"
+<a href="https://savant.acme.com/call?persona=support-agent"
    class="btn-primary">
   Chat with our AI Support
 </a>
@@ -496,7 +497,7 @@ window.SuperHuman.toggle(); // Toggle open/close
 Send visitors directly to:
 
 ```
-https://rehu.acme.com/call?persona=default
+https://savant.acme.com/call?persona=default
 ```
 
 Use for email campaigns, QR codes, or dedicated landing pages.
@@ -506,7 +507,7 @@ Use for email campaigns, QR codes, or dedicated landing pages.
 Link from internal portal — no public embed required:
 
 ```
-https://rehu.internal.acme.com/call?persona=hr-interviewer
+https://savant.internal.acme.com/call?persona=hr-interviewer
 ```
 
 ### 10.5 Widget mode
@@ -560,9 +561,9 @@ Mapped in `backend/app/persona_experience.py`:
 
 ### Infrastructure
 
-- [ ] Rehu deployed and `/health` returns healthy
+- [ ] Savant deployed and `/health` returns healthy
 - [ ] Persistent volume mounted for `./data` (knowledge + personas)
-- [ ] Custom domain configured (e.g. `rehu.acme.com`)
+- [ ] Custom domain configured (e.g. `savant.acme.com`)
 - [ ] HTTPS enabled (TLS certificate valid)
 
 ### API keys & mode
@@ -612,7 +613,9 @@ Mapped in `backend/app/persona_experience.py`:
 | API key storage | Environment variables (host-managed) |
 | CORS | Configurable via `CORS_ORIGINS` |
 | Knowledge data | Stored on server disk (JSON files) |
-| Visitor PII | Optional `visitor_name` / `visitor_email` on session create |
+| Visitor PII | Optional `visitor_name` / `visitor_email` on session create; mid-session updates via `PATCH /api/sessions/{id}/visitor` |
+| Session logs | Completed sessions persisted to `./data/sessions/` (transcript + lead fields); view in Admin → Sessions |
+| Multi-language | Curated set: English, Spanish, French, German, Portuguese — pass `language` on session create |
 | Multi-tenant isolation | **Not applicable** — one instance per client |
 
 ### Recommendations for client environments
@@ -728,7 +731,7 @@ Look for LiveAvatar session creation errors and RAG query output.
 
 ## 19. Appendix — API Endpoints
 
-Base URL: `https://your-rehu-url.com`
+Base URL: `https://your-savant-url.com`
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -750,7 +753,7 @@ Full interactive docs: `https://your-url/docs` (Swagger UI)
 ### Example — Start session
 
 ```bash
-curl -X POST https://rehu.acme.com/api/sessions \
+curl -X POST https://savant.acme.com/api/sessions \
   -H "Content-Type: application/json" \
   -d '{"persona_id": "hr-interviewer", "visitor_name": "Jane"}'
 ```
@@ -762,14 +765,14 @@ Response includes `livekit_url`, `livekit_client_token`, `opening_text`, `mode`.
 ## Quick Reference — Acme Corp Example
 
 ```
-1. Deploy  →  https://rehu-acme.up.railway.app
+1. Deploy  →  https://savant-acme.up.railway.app
 2. Admin     →  Clone hr-interviewer, company = "Acme Corp"
 3. Knowledge →  Upload employee handbook + benefits PDF
 4. Embed     →  Paste script on acme.com/careers
-5. Go-live   →  LIVEAVATAR_USE_SANDBOX=false, CNAME rehu.acme.com
+5. Go-live   →  LIVEAVATAR_USE_SANDBOX=false, CNAME savant.acme.com
 ```
 
 ---
 
-**Document owner:** SSPM Consultants / Rehu.ai  
+**Document owner:** SSPM Consultants — Savant.ai  
 **Support:** Configure via `/admin` · API docs at `/docs` · Health at `/health`
