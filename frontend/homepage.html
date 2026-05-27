@@ -1424,68 +1424,166 @@ img, video { max-width: 100%; }
 }
 .fp-close:hover { background: rgba(255,255,255,.12); color: var(--ink-0); }
 
-/* ── Avatar modal ── */
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(2, 2, 8, 0.82);
-  backdrop-filter: blur(14px) saturate(120%);
-  -webkit-backdrop-filter: blur(14px) saturate(120%);
-  display: none;
-  align-items: center; justify-content: center;
-  padding: 28px;
-  opacity: 0;
-  transition: opacity .35s cubic-bezier(.2,.7,.3,1);
-}
-.modal-overlay.show { display: flex; opacity: 1; }
-.modal-frame {
-  position: relative;
-  width: 100%; max-width: 1180px;
-  height: min(86vh, 760px);
-  background: var(--bg-0);
-  border-radius: 22px;
-  border: 0.5px solid var(--line-2);
-  box-shadow:
-    0 60px 120px -40px rgba(0,0,0,.9),
-    0 0 0 1px rgba(110,231,255,.08),
-    0 0 80px rgba(79,124,255,.18);
-  overflow: hidden;
-  transform: scale(.98) translateY(8px);
-  transition: transform .4s cubic-bezier(.2,.7,.3,1);
-}
-.modal-overlay.show .modal-frame { transform: scale(1) translateY(0); }
-.modal-frame iframe {
-  width: 100%; height: 100%; border: 0; display: block;
-  background: var(--bg-0);
-}
-.modal-bar {
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 52px; z-index: 2;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 16px 0 22px;
-  background: linear-gradient(180deg, rgba(8,8,16,.85), rgba(8,8,16,.0));
+/* ── Docked AI side panel (1mind / Intercom / Linear style) ──
+   Slides in from the right, never blocks the page, page stays scrollable. */
+.sidepanel {
+  position: fixed;
+  top: 16px; right: 16px; bottom: 16px;
+  width: min(440px, calc(100vw - 32px));
+  z-index: 200;
+  /* Container never blocks the page when closed; pointer-events live on .sp-frame */
   pointer-events: none;
+  transition: width .55s cubic-bezier(.2,.7,.3,1);
 }
-.modal-bar .mb-tag {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--font-mono); font-size: 11px;
-  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-1);
+.sidepanel.presenting {
+  width: min(780px, calc(100vw - 32px));
 }
-.modal-bar .mb-tag .pip {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #ff5d8f; box-shadow: 0 0 10px #ff5d8f;
+.sp-frame {
+  pointer-events: auto;
+  position: relative; height: 100%;
+  background:
+    linear-gradient(180deg, rgba(14,14,26,0.78) 0%, rgba(8,8,18,0.86) 100%);
+  border-radius: 22px;
+  border: 0.5px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(32px) saturate(140%);
+  -webkit-backdrop-filter: blur(32px) saturate(140%);
+  box-shadow:
+    0 40px 100px -25px rgba(0,0,0,0.85),
+    0 0 0 0.5px rgba(110,231,255,0.10),
+    0 0 70px rgba(79,124,255,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  transform: translateX(calc(100% + 32px));
+  opacity: 0;
+  transition:
+    transform .55s cubic-bezier(.2,.7,.3,1),
+    opacity .35s ease-out;
+  will-change: transform, opacity;
+}
+.sidepanel.show .sp-frame {
+  transform: translateX(0);
+  opacity: 1;
+}
+/* Ambient gradient rim that softly cycles */
+.sp-frame::before {
+  content: ""; position: absolute; inset: 0;
+  border-radius: inherit; pointer-events: none;
+  padding: 0.5px;
+  background: linear-gradient(135deg,
+    rgba(110,231,255,0.35) 0%,
+    rgba(167,139,250,0.15) 35%,
+    transparent 60%,
+    rgba(255,93,143,0.25) 100%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+          mask-composite: exclude;
+  opacity: 0.6;
+  animation: spRim 7s ease-in-out infinite;
+}
+@keyframes spRim {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.85; }
+}
+
+/* Header */
+.sp-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 14px 12px 14px;
+  border-bottom: 0.5px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(18,18,30,0.55), transparent);
+  flex-shrink: 0; position: relative; z-index: 3;
+}
+.sp-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  position: relative; overflow: hidden; flex-shrink: 0;
+  background: radial-gradient(circle at 30% 30%, var(--accent-c) 0%, var(--accent-a) 60%, var(--accent-b) 100%);
+  box-shadow:
+    0 0 0 1.5px rgba(255,255,255,0.10),
+    0 0 18px rgba(167,139,250,0.55);
+}
+.sp-avatar video {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.sp-avatar::after {
+  content: ""; position: absolute; right: -1px; bottom: -1px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #46d09a;
+  border: 1.5px solid #0a0a14;
+  box-shadow: 0 0 8px #46d09a;
+}
+.sp-meta { flex: 1; min-width: 0; }
+.sp-meta .sp-name {
+  font-size: 14px; font-weight: 600; color: var(--ink-0); line-height: 1.15;
+  letter-spacing: -0.005em;
+}
+.sp-meta .sp-status {
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.10em; text-transform: uppercase; color: var(--ink-2);
+  display: flex; align-items: center; gap: 6px; margin-top: 3px;
+}
+.sp-meta .sp-status .pip {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #46d09a; box-shadow: 0 0 10px #46d09a;
   animation: pip 1.4s ease-in-out infinite;
 }
-.modal-close {
-  pointer-events: auto;
-  appearance: none; border: 0; cursor: pointer;
-  width: 34px; height: 34px; border-radius: 999px;
-  background: rgba(255,255,255,.06);
-  border: 0.5px solid var(--line-2);
-  color: var(--ink-0);
-  display: grid; place-items: center;
-  transition: background .2s, transform .2s;
+.sp-lang {
+  appearance: none; cursor: pointer;
+  padding: 5px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 0.5px solid rgba(255,255,255,0.10);
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.08em; color: var(--ink-1);
+  transition: background .2s, color .2s;
 }
-.modal-close:hover { background: rgba(255,255,255,.12); transform: scale(1.05); }
+.sp-lang:hover { background: rgba(255,255,255,0.12); color: var(--ink-0); }
+.sp-btn {
+  appearance: none; border: 0; cursor: pointer;
+  width: 30px; height: 30px; border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 0.5px solid rgba(255,255,255,0.08);
+  color: var(--ink-1);
+  display: grid; place-items: center;
+  transition: background .2s, color .2s, transform .2s;
+}
+.sp-btn:hover { background: rgba(255,255,255,0.12); color: var(--ink-0); transform: scale(1.06); }
+.sp-btn.is-active { background: var(--accent-grad); color: #fff; border-color: transparent;
+                    box-shadow: 0 0 16px rgba(167,139,250,0.55); }
+
+/* Iframe stage */
+.sp-stage {
+  flex: 1; position: relative; overflow: hidden;
+  background: #06060c;
+}
+.sp-stage iframe {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  border: 0; display: block;
+  background: transparent;
+}
+/* Connecting skeleton inside stage (shown until iframe loads) */
+.sp-loading {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: radial-gradient(ellipse at center, rgba(79,124,255,0.15), transparent 60%), #06060c;
+  pointer-events: none;
+  opacity: 1; transition: opacity .4s;
+}
+.sp-loading.hidden { opacity: 0; }
+.sp-loading-orb {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--accent-c), var(--accent-a) 60%, var(--accent-b));
+  box-shadow: 0 0 40px rgba(167,139,250,0.7);
+  animation: spPulse 1.6s ease-in-out infinite;
+}
+@keyframes spPulse {
+  0%, 100% { transform: scale(0.94); opacity: 0.85; }
+  50%      { transform: scale(1.04); opacity: 1; }
+}
 
 /* ── Responsive ── */
 @media (max-width: 1280px) {
@@ -1541,8 +1639,9 @@ img, video { max-width: 100%; }
 
   .foot { padding: 40px 18px; flex-direction: column; gap: 14px; text-align: center; }
 
-  .modal-overlay { padding: 0; }
-  .modal-frame { height: 100vh; width: 100vw; max-width: none; border-radius: 0; border: 0; }
+  /* Side panel adapts to small screens but stays anchored to the right */
+  .sidepanel { top: 12px; right: 12px; bottom: 12px; width: calc(100vw - 24px); }
+  .sidepanel.presenting { width: calc(100vw - 24px); }
 
   .float-presenter { right: 14px; bottom: 14px; }
   .fp-card { width: 170px; padding: 14px 14px 14px; }
@@ -1842,21 +1941,45 @@ img, video { max-width: 100%; }
   </div>
 </div>
 
-<!-- ════════════════ AVATAR MODAL ════════════════ -->
-<div class="modal-overlay" id="avatar-modal" role="dialog" aria-modal="true" aria-label="Live Aiza session" aria-hidden="true">
-  <div class="modal-frame">
-    <div class="modal-bar">
-      <span class="mb-tag"><span class="pip"></span><span id="modal-tag-text">Live · 60-second session</span></span>
-      <button type="button" class="modal-close" id="modal-close" aria-label="Close live session">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<!-- ════════════════ DOCKED AI COMPANION PANEL ════════════════
+     Slides in from the right. Never blocks the page. Page stays scrollable. -->
+<aside class="sidepanel" id="sidepanel" role="complementary" aria-label="Aiza live AI companion" aria-hidden="true">
+  <div class="sp-frame">
+    <div class="sp-head">
+      <div class="sp-avatar" aria-hidden="true">
+        <video autoplay loop muted playsinline preload="auto">
+          <source src="/static/aiza.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="sp-meta">
+        <div class="sp-name" id="sp-name">Aiza</div>
+        <div class="sp-status">
+          <span class="pip"></span>
+          <span id="sp-status">Live · connecting</span>
+        </div>
+      </div>
+      <button type="button" class="sp-lang" id="sp-lang" title="Language" aria-label="Select language">EN</button>
+      <button type="button" class="sp-btn" id="sp-expand" title="Toggle presentation mode" aria-label="Toggle presentation mode" aria-pressed="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 3 21 3 21 9"/>
+          <polyline points="9 21 3 21 3 15"/>
+          <line x1="21" y1="3" x2="14" y2="10"/>
+          <line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>
+      </button>
+      <button type="button" class="sp-btn" id="sp-close" title="Close panel" aria-label="Close Aiza panel">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
     </div>
-    <iframe id="avatar-iframe" title="Live Aiza session" allow="camera; microphone; autoplay; clipboard-write" referrerpolicy="origin"></iframe>
+    <div class="sp-stage">
+      <div class="sp-loading" id="sp-loading"><div class="sp-loading-orb" aria-hidden="true"></div></div>
+      <iframe id="sp-iframe" title="Live Aiza session" allow="camera; microphone; autoplay; clipboard-write" referrerpolicy="origin"></iframe>
+    </div>
   </div>
-</div>
+</aside>
 
 <script>
 /* ════════════════════════════════════════════════════════════════════
@@ -2678,12 +2801,19 @@ img, video { max-width: 100%; }
   renderTeam();
   renderStories();
 
-  /* ═══════════ AVATAR MODAL ═══════════ */
+  /* ═══════════ DOCKED AI SIDE PANEL ═══════════
+     Slides in from the right. Page stays scrollable. Persistent presence:
+     clicking a different persona while open smoothly swaps the session. */
 
-  const modal      = $('#avatar-modal');
-  const modalIfr   = $('#avatar-iframe');
-  const modalClose = $('#modal-close');
-  const modalTag   = $('#modal-tag-text');
+  const panel       = $('#sidepanel');
+  const panelFrame  = panel.querySelector('.sp-frame');
+  const panelIfr    = $('#sp-iframe');
+  const panelClose  = $('#sp-close');
+  const panelExpand = $('#sp-expand');
+  const panelName   = $('#sp-name');
+  const panelStatus = $('#sp-status');
+  const panelLang   = $('#sp-lang');
+  const panelLoad   = $('#sp-loading');
 
   const PERSONA_NAME = {
     'default':           'Aiza',
@@ -2695,42 +2825,105 @@ img, video { max-width: 100%; }
     'human-chatbot':     'Jordan',
     'meeting-assistant': 'Taylor',
   };
+  const LANGS = ['EN', 'ES', 'FR', 'DE', 'JA', 'HI'];
 
-  function openAvatarModal(persona) {
-    if (modal.classList.contains('show')) return;
+  function buildCallSrc(id) {
+    return `/call?persona=${encodeURIComponent(id)}&demo=1&timer=60&modal=1`;
+  }
+
+  function setPanelPersona(id) {
+    panel.dataset.persona = id;
+    panelName.textContent = PERSONA_NAME[id] || 'Aiza';
+    panelStatus.textContent = 'Live · connecting';
+  }
+
+  function openPanel(persona) {
     const id = persona || 'default';
-    const src = `/call?persona=${encodeURIComponent(id)}&demo=1&timer=60&modal=1`;
-    modalIfr.src = src;
-    modal.classList.add('show');
-    modal.setAttribute('aria-hidden', 'false');
-    modalTag.textContent = `Live · ${PERSONA_NAME[id] || 'Aiza'} · 60-second session`;
-    document.body.style.overflow = 'hidden';
+
+    // Already open → smoothly swap persona without re-mounting the panel.
+    if (panel.classList.contains('show')) {
+      if (panel.dataset.persona !== id) {
+        panelLoad.classList.remove('hidden');
+        setPanelPersona(id);
+        panelIfr.src = buildCallSrc(id);
+      }
+      return;
+    }
+
+    setPanelPersona(id);
+    panelLoad.classList.remove('hidden');
+    panelIfr.src = buildCallSrc(id);
+    panel.classList.add('show');
+    panel.setAttribute('aria-hidden', 'false');
+    // NOTE: We deliberately do NOT lock body scroll — the page must stay browsable.
   }
 
-  function closeAvatarModal() {
-    if (!modal.classList.contains('show')) return;
-    modal.classList.remove('show');
-    modal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-    setTimeout(() => { modalIfr.src = 'about:blank'; }, 350);
+  function closePanel() {
+    if (!panel.classList.contains('show')) return;
+    panel.classList.remove('show');
+    panel.classList.remove('presenting');
+    panelExpand.classList.remove('is-active');
+    panelExpand.setAttribute('aria-pressed', 'false');
+    panel.setAttribute('aria-hidden', 'true');
+    panelStatus.textContent = 'Live · ended';
+    // Release the iframe after the slide-out finishes so it doesn't keep the mic open.
+    setTimeout(() => {
+      panelIfr.src = 'about:blank';
+      panelLoad.classList.remove('hidden');
+    }, 600);
   }
+
+  function togglePresentation(force) {
+    const next = (typeof force === 'boolean') ? force : !panel.classList.contains('presenting');
+    panel.classList.toggle('presenting', next);
+    panelExpand.classList.toggle('is-active', next);
+    panelExpand.setAttribute('aria-pressed', next ? 'true' : 'false');
+    // Let /call know so it can rearrange its layout if it wants to.
+    try {
+      panelIfr.contentWindow?.postMessage({
+        type: 'sh:presentation_mode',
+        presenting: next,
+      }, '*');
+    } catch (_) {}
+  }
+
+  function cycleLang() {
+    const cur = panelLang.textContent.trim();
+    const i = LANGS.indexOf(cur);
+    const next = LANGS[(i + 1) % LANGS.length];
+    panelLang.textContent = next;
+    try {
+      panelIfr.contentWindow?.postMessage({
+        type: 'sh:language_change',
+        language: next,
+      }, '*');
+    } catch (_) {}
+  }
+
+  panelIfr.addEventListener('load', () => {
+    if (panelIfr.src === 'about:blank') return;
+    // Small grace period so the call page can mount its own UI.
+    setTimeout(() => {
+      panelLoad.classList.add('hidden');
+      panelStatus.textContent = 'Live · listening';
+    }, 450);
+  });
 
   function bindLaunchHandlers(root) {
     $$('[data-launch-avatar]', root).forEach((el) => {
       if (el._launchBound) return;
       el._launchBound = true;
       el.addEventListener('click', (e) => {
-        // Don't intercept clicks on inner buttons that have their own handler
         if (e.target.closest('[data-launch-avatar]') !== el) return;
         e.preventDefault();
         e.stopPropagation();
-        openAvatarModal(el.dataset.persona || 'default');
+        openPanel(el.dataset.persona || 'default');
       });
       if (el.tagName !== 'BUTTON' && el.tagName !== 'A') {
         el.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            openAvatarModal(el.dataset.persona || 'default');
+            openPanel(el.dataset.persona || 'default');
           }
         });
       }
@@ -2738,32 +2931,37 @@ img, video { max-width: 100%; }
   }
   bindLaunchHandlers(document);
 
-  modalClose.addEventListener('click', () => {
-    closeAvatarModal();
-    scrollToCapture();
-  });
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      closeAvatarModal();
-      scrollToCapture();
+  panelClose.addEventListener('click', closePanel);
+  panelExpand.addEventListener('click', () => togglePresentation());
+  panelLang.addEventListener('click', cycleLang);
+
+  document.addEventListener('keydown', (e) => {
+    if (!panel.classList.contains('show')) return;
+    if (e.key === 'Escape') {
+      closePanel();
+    } else if (e.key === 'F' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
+      e.preventDefault();
+      togglePresentation();
     }
   });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal.classList.contains('show')) closeAvatarModal();
-  });
-  // /call posts this when modal=1 and the session ends
+
+  // Cross-frame events from /call
   window.addEventListener('message', (e) => {
     const msg = e.data;
-    if (msg && typeof msg === 'object' && msg.type === 'sh:session_ended') {
-      closeAvatarModal();
-      scrollToCapture();
+    if (!msg || typeof msg !== 'object') return;
+    if (msg.type === 'sh:session_ended') {
+      // Don't yank the panel — just update status. User decides when to close.
+      panelStatus.textContent = 'Live · ended';
+      panelLoad.classList.remove('hidden');
+    } else if (msg.type === 'sh:session_started') {
+      panelStatus.textContent = 'Live · listening';
+      panelLoad.classList.add('hidden');
+    } else if (msg.type === 'sh:presenting') {
+      togglePresentation(true);
+    } else if (msg.type === 'sh:stopped_presenting') {
+      togglePresentation(false);
     }
   });
-  function scrollToCapture() {
-    const target = $('#contact');
-    if (!target) return;
-    setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
-  }
 
   /* ═══════════ CONTACT CAPTURE ═══════════ */
 
