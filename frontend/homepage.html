@@ -169,7 +169,7 @@ img, video { max-width: 100%; }
 .nav {
   position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
   z-index: 50; display: flex; align-items: center; gap: 28px;
-  padding: 8px 8px 8px 22px; border-radius: 999px;
+  padding: 6px 8px 6px 18px; border-radius: 999px;
   background: rgba(10, 10, 18, 0.55);
   border: 0.5px solid var(--line-2);
   backdrop-filter: blur(24px) saturate(140%);
@@ -177,21 +177,33 @@ img, video { max-width: 100%; }
   box-shadow: 0 10px 40px -10px rgba(0,0,0,.6);
 }
 .nav-logo {
-  display: inline-flex; align-items: center; gap: 9px;
-  font-weight: 600; font-size: 16px; letter-spacing: -0.01em;
+  display: inline-flex; align-items: center; gap: 0;
   text-decoration: none; color: var(--ink-0);
+  line-height: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 4px 16px -4px rgba(79, 124, 255, 0.35),
+    0 8px 30px -10px rgba(139, 92, 246, 0.40);
+  transition: transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .25s;
 }
-.nav-mark {
-  width: 24px; height: 24px; border-radius: 6px;
-  background: var(--accent-grad);
-  display: grid; place-items: center;
-  box-shadow: 0 0 18px rgba(139,92,246,.55), inset 0 1px 0 rgba(255,255,255,.4);
-  position: relative;
+.nav-logo:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 8px 24px -4px rgba(110, 231, 255, 0.45),
+    0 12px 40px -10px rgba(139, 92, 246, 0.50);
 }
-.nav-mark::after {
-  content: ""; position: absolute; inset: 4px; border-radius: 3px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.7), transparent 60%);
+.nav-logo img {
+  height: 30px; width: auto; display: block;
 }
+.foot-logo {
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.94);
+}
+.foot-logo img { height: 36px; }
 .nav-links { display: flex; gap: 22px; }
 .nav-links a {
   color: var(--ink-1); text-decoration: none; font-size: 13.5px; font-weight: 450;
@@ -1493,10 +1505,13 @@ img, video { max-width: 100%; }
 }
 
 @media (max-width: 960px) {
-  .nav { gap: 14px; padding: 6px 8px 6px 14px; }
+  .nav { gap: 14px; padding: 5px 8px 5px 6px; }
   .nav-links { display: none; }
   .nav-cta { font-size: 12.5px; padding: 8px 14px; }
-  .nav-logo { font-size: 14px; }
+  .nav-logo { padding: 3px 10px; }
+  .nav-logo img { height: 24px; }
+  .foot-logo { padding: 5px 12px; }
+  .foot-logo img { height: 28px; }
 
   .hero { padding: 110px 18px 60px; }
   .hero-stage { grid-template-columns: 1fr; gap: 32px; }
@@ -1553,9 +1568,8 @@ img, video { max-width: 100%; }
 
 <!-- ════════════════ NAV ════════════════ -->
 <nav class="nav" aria-label="Primary">
-  <a class="nav-logo" href="/">
-    <span class="nav-mark" aria-hidden="true"></span>
-    <span>savant<span style="color:var(--ink-2)">.ai</span></span>
+  <a class="nav-logo" href="/" aria-label="Savant.ai home">
+    <img src="/static/savant-logo.svg" alt="Savant.ai">
   </a>
   <div class="nav-links">
     <a href="#build">Build</a>
@@ -1799,9 +1813,8 @@ img, video { max-width: 100%; }
 
 <!-- ════════════════ FOOTER ════════════════ -->
 <footer class="foot">
-  <a class="nav-logo" href="/" style="gap:9px;">
-    <span class="nav-mark" style="width:20px;height:20px;" aria-hidden="true"></span>
-    <span>savant<span style="color:var(--ink-2)">.ai</span></span>
+  <a class="nav-logo foot-logo" href="/" aria-label="Savant.ai home">
+    <img src="/static/savant-logo.svg" alt="Savant.ai">
   </a>
   <div class="leg">© 2026 Savant Labs · Built by SSPM Consultants</div>
   <div class="leg">SOC 2 · ISO 27001 · GDPR · HIPAA</div>
