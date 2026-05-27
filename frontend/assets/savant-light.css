@@ -1571,12 +1571,20 @@ body.modal-embed .tmsg {
   box-shadow: none !important;
 }
 body.modal-embed .tmsg.ai {
+  /* Base rule uses `display: grid` with a 26px avatar column. With the
+     avatar hidden the grid would shrink to the longest single word and
+     wrap every word onto its own line — flip to plain block so the
+     bubble fills max-width like the user bubble. */
+  display: block !important;
   background: rgba(255,255,255,0.06) !important;
   border: 0.5px solid rgba(255,255,255,0.06) !important;
-  grid-template-columns: 0 minmax(0,1fr) !important;
-  column-gap: 0 !important;
+  color: #fff !important;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 body.modal-embed .tmsg-avatar { display: none !important; }
+/* The body child no longer needs to be a grid item */
+body.modal-embed .tmsg.ai .tmsg-body { min-width: 0; }
 body.modal-embed .tmsg.me {
   background: linear-gradient(135deg, #4f7cff, #a78bfa) !important;
 }
