@@ -152,6 +152,7 @@
             <span id="avatar-presence-label">Ask me anything</span>
           </div>
           <section class="presentation-stage hidden" id="presentation-stage" aria-label="Product presentation">
+            <div class="presentation-shared-label" id="presentation-shared-label">Content shared by Aiza</div>
             <button class="presentation-close" type="button" onclick="closePresentation()" aria-label="Close presentation">×</button>
             <div class="slide-viewport">
               <img id="presentation-image" class="presentation-image hidden" alt="Presentation slide" />
@@ -936,6 +937,7 @@ function finalizeTranscript(role, text) {
     lastUserIntentText = text;
     addMsg(role, text, { persist: true });
     maybeShowProductCard(text);
+    if (isPresentationActive() && !isPresentationTrigger(text)) schedulePresentationReturn(6000);
     maybePromptMeeting(text);
     captureLeadDetails(text);
   } else {
@@ -1056,10 +1058,19 @@ async function sendChatMessage(event) {
 }
 
 async function maybeShowProductCard(text, opts={}) {
-  if (!sessionId || !isProductIntent(text)) return;
-  if (opts.fromAssistant && !isPresentationCue(opts.cueText || text)) return;
+  if (!sessionId) return;
+  if (opts.fromAssistant) {
+    if (!isPresentationCue(opts.cueText || text)) return;
+    if (!isPresentationTrigger(lastUserIntentText || text)) return;
+  } else if (!isPresentationTrigger(text)) {
+    if (isPresentationActive() && !isPresentationTrigger(text)) {
+      schedulePresentationReturn(5000);
+    }
+    return;
+  }
   try {
-    const data = await fetch(`/api/sessions/${sessionId}/visual?topic=${encodeURIComponent(text)}`).then(r => r.ok ? r.json() : null);
+    const topic = opts.fromAssistant ? (lastUserIntentText || text) : text;
+    const data = await fetch(`/api/sessions/${sessionId}/visual?topic=${encodeURIComponent(topic)}`).then(r => r.ok ? r.json() : null);
     const card = data?.product_card;
     if (!card || card.id === activeProductCardId) return;
     activeProductCardId = card.id;
@@ -1067,8 +1078,16 @@ async function maybeShowProductCard(text, opts={}) {
   } catch(e) {}
 }
 
+/** Only open the slide deck for explicit presentation asks — not pricing, features, etc. */
+function isPresentationTrigger(text) {
+  const t = String(text || '').toLowerCase();
+  return /\b(services?|overview|capabilities|walkthrough|presentation|offerings?)\b/.test(t)
+    || /\b(what do you (offer|do)|what can you (do|help)|tell me about (your )?(services?|product|company|offerings?))\b/.test(t)
+    || /\b(give me an overview|show me (your )?(services?|product|overview)|your services)\b/.test(t);
+}
+
 function isProductIntent(text) {
-  return /(product|service|pricing|price|cost|feature|overview|demo|solution|case stud|value|benefit|plan|package|offer)/i.test(text || '');
+  return isPresentationTrigger(text);
 }
 
 function renderProductCard(card) {
@@ -1106,7 +1125,14 @@ function renderProductCard(card) {
   stage.closest('.video-wrap')?.classList.add('presentation-mode');
   movePresenterToDock();
   presentationOpenedAt = Date.now();
-  schedulePresentationReturn(45000);
+  notifyPresentationState(true);
+  schedulePresentationReturn(25000);
+}
+
+function notifyPresentationState(active) {
+  try {
+    window.parent?.postMessage({ type: active ? 'sh:presenting' : 'sh:stopped_presenting' }, '*');
+  } catch (_) {}
 }
 
 function getCardSlideImages(card) {
@@ -1141,7 +1167,7 @@ function showPresentationSlide(direction) {
   if (!presentationSlides.length) return;
   presentationSlideIndex = (presentationSlideIndex + direction + presentationSlides.length) % presentationSlides.length;
   renderActivePresentationSlide();
-  schedulePresentationReturn(45000);
+  schedulePresentationReturn(25000);
 }
 
 function renderList(id, items) {
@@ -1177,6 +1203,7 @@ function closePresentation() {
   presentationSlideIndex = 0;
   renderActivePresentationSlide();
   movePresenterToStage();
+  notifyPresentationState(false);
   const poster = document.getElementById('call-poster');
   const video = document.getElementById('av-video');
   if (poster && (!video || video.style.opacity !== '1')) poster.classList.remove('hidden');
@@ -1214,7 +1241,7 @@ function isPresentationActive() {
   return !!stage && !stage.classList.contains('hidden');
 }
 
-function schedulePresentationReturn(delay=45000) {
+function schedulePresentationReturn(delay=25000) {
   if (presentationReturnTimer) clearTimeout(presentationReturnTimer);
   presentationReturnTimer = setTimeout(() => {
     presentationReturnTimer = null;
@@ -1329,6 +1356,7 @@ async function connectVoiceWS(openingText) {
       } else if (m.text !== openingText) {
         addMsg('ai', m.text || '', { persist: false });
         persistTranscriptLine('ai', m.text || '');
+        if (isPresentationCue(m.text)) maybeShowProductCard(lastUserIntentText || m.text, { fromAssistant: true, cueText: m.text });
       }
     }
     else if (m.type==='audio') playAudio(m.data);
