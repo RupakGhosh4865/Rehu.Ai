@@ -12,8 +12,9 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, WebSocket, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse
+from starlette.requests import Request as StarletteRequest
 
 from .config import settings
 from .models import (
@@ -91,8 +92,14 @@ def _format_user_context(req) -> str:
     if getattr(req, "user_id", None):
         parts.append("Logged-in user")
     if getattr(req, "page_context", None):
-        location = "on " + req.page_context.strip()
-        parts[0] = f"{parts[0]} {location}" if parts else f"Visitor {location}"
+        pc = req.page_context.strip()
+        if len(pc) > 2000:
+            pc = pc[:2000] + "…"
+        location = "on " + pc
+        if parts:
+            parts[0] = f"{parts[0]} {location}"
+        else:
+            parts.append(f"Visitor {location}")
     extras: list[str] = []
     if getattr(req, "user_plan", None):
         extras.append(f"Plan: {req.user_plan.strip()}")
@@ -104,6 +111,13 @@ def _format_user_context(req) -> str:
     if extras:
         return f"{head}. {'. '.join(extras)}."
     return f"{head}."
+
+
+def _persona_tone(persona: PersonaConfig) -> str:
+    tone = getattr(persona, "tone", None)
+    if tone is None:
+        return "professional"
+    return tone.value if hasattr(tone, "value") else str(tone)
 
 
 def _apply_avatar_bindings() -> None:
@@ -233,6 +247,15 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, lifespan=lifespan)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: StarletteRequest, exc: Exception):
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": f"Internal error: {exc}"})
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -691,6 +714,9 @@ async def upload_product_slide(
 
 # ── Sessions (LiveAvatar) ─────────────────────────────────────────────────────
 
+_MAX_SYSTEM_PROMPT_CHARS = 12000
+
+
 @app.post("/api/sessions", tags=["Sessions"])
 async def create_session(req: CreateSessionRequest, request: Request):
     """
@@ -707,131 +733,156 @@ async def create_session(req: CreateSessionRequest, request: Request):
         ok, reason = tenants.can_start_session(tenant)
         if not ok:
             raise HTTPException(402, reason)
+
     _personas_dict = _get_personas()
-    persona    = _personas_dict.get(req.persona_id, _personas_dict.get("default"))
+    persona = _personas_dict.get(req.persona_id) or _personas_dict.get("default")
+    if not persona:
+        raise HTTPException(404, f"Persona '{req.persona_id}' not found")
+
     session_id = str(uuid.uuid4())
-    lang       = languages.normalize_language(req.language)
+    try:
+        lang = languages.normalize_language(req.language)
 
-    persona_name = persona.persona_name
-    company_name = persona.company_name
+        persona_name = persona.persona_name
+        company_name = persona.company_name
 
-    # Build system prompt with knowledge + in-product user context
-    kb_query = _knowledge_query_for_persona(req.persona_id)
-    knowledge_ctx = await knowledge.query_knowledge(req.persona_id, kb_query)
-    user_ctx_text = _format_user_context(req)
-    system_prompt = agent.build_system_prompt(
-        persona_name, company_name, knowledge_ctx, persona.tone.value,
-        prompt_override=persona.system_prompt_override,
-        language=lang,
-        calendly_url=getattr(persona, "calendly_url", None),
-        user_context=user_ctx_text or None,
-    )
-
-    # Generate opening pitch (auto-demo)
-    role_hint = _role_hint_for_persona(req.persona_id)
-    fallback = _opening_fallback_for_persona(req.persona_id)
-    opening_text = (
-        _localized_aiza_opening(lang, req.visitor_name)
-        if req.persona_id == "default"
-        else fallback or f"Hi! I'm {persona_name} from {company_name}. How can I help?"
-    )
-    if req.persona_id != "default" and req.visitor_name and fallback:
-        opening_text = fallback.replace("Hi,", f"Hi {req.visitor_name},").replace("Hello,", f"Hello {req.visitor_name},")
-    # Use template opening for faster session start (LLM pitch adds 2–4s latency)
-
-    la_context_id = None
-    la_session_token = ""
-    la_session_id = ""
-    livekit_url = ""
-    livekit_client_token = ""
-    stream_avatar_id = None
-
-    if settings.LIVEAVATAR_API_KEY:
-        # Create LiveAvatar context
-        la_context_id = await liveavatar.create_context(
-            prompt=system_prompt,
-            opening_text=opening_text,
-            display_name=f"{persona_name} @ {company_name} {session_id[:8]}",
-        )
-
-        requested_avatar, stream_voice = _stream_avatar_and_voice(req.persona_id, persona)
-        token_data = await liveavatar.create_session_token(
-            avatar_id=requested_avatar,
-            context_id=la_context_id,
-            voice_id=stream_voice,
+        kb_query = _knowledge_query_for_persona(req.persona_id)
+        knowledge_ctx = await knowledge.query_knowledge(req.persona_id, kb_query)
+        user_ctx_text = _format_user_context(req)
+        persona_tone = _persona_tone(persona)
+        system_prompt = agent.build_system_prompt(
+            persona_name, company_name, knowledge_ctx, persona_tone,
+            prompt_override=persona.system_prompt_override,
             language=lang,
-            is_sandbox=settings.LIVEAVATAR_USE_SANDBOX,
+            calendly_url=getattr(persona, "calendly_url", None),
+            user_context=user_ctx_text or None,
         )
+        if len(system_prompt) > _MAX_SYSTEM_PROMPT_CHARS:
+            system_prompt = system_prompt[:_MAX_SYSTEM_PROMPT_CHARS] + "…"
 
-        stream_avatar_id = requested_avatar
-        if token_data:
-            la_session_token = token_data["session_token"]
-            stream_avatar_id = token_data.get("avatar_id") or requested_avatar
+        fallback = _opening_fallback_for_persona(req.persona_id)
+        opening_text = (
+            _localized_aiza_opening(lang, req.visitor_name)
+            if req.persona_id == "default"
+            else fallback or f"Hi! I'm {persona_name} from {company_name}. How can I help?"
+        )
+        if req.persona_id != "default" and req.visitor_name and fallback:
+            opening_text = fallback.replace("Hi,", f"Hi {req.visitor_name},").replace("Hello,", f"Hello {req.visitor_name},")
 
-            # Start session to get LiveKit credentials
-            start_data = await liveavatar.start_session(la_session_token)
-            if start_data:
-                la_session_id        = start_data["session_id"]
-                livekit_url          = start_data["livekit_url"]
-                livekit_client_token = start_data["livekit_client_token"]
+        la_context_id = None
+        la_session_token = ""
+        la_session_id = ""
+        livekit_url = ""
+        livekit_client_token = ""
+        stream_avatar_id = None
 
-    merged_metadata = dict(req.metadata or {})
-    user_block = {
-        "user_id":      req.user_id or merged_metadata.get("user_id"),
-        "user_plan":    req.user_plan or merged_metadata.get("user_plan"),
-        "user_stage":   req.user_stage or merged_metadata.get("user_stage"),
-        "page_context": req.page_context or merged_metadata.get("page_context"),
-    }
-    # Drop empty keys so the metadata dict stays tidy
-    user_block = {k: v for k, v in user_block.items() if v}
-    if user_block:
-        merged_metadata["user"] = user_block
-    if user_ctx_text:
-        merged_metadata["user_context"] = user_ctx_text
+        if settings.LIVEAVATAR_API_KEY:
+            try:
+                la_context_id = await liveavatar.create_context(
+                    prompt=system_prompt,
+                    opening_text=opening_text,
+                    display_name=f"{persona_name} @ {company_name} {session_id[:8]}",
+                )
 
-    _sessions[session_id] = {
-        "persona_id":         req.persona_id,
-        "persona_name":       persona_name,
-        "company_name":       company_name,
-        "tone":               persona.tone.value,
-        "visitor_name":       req.visitor_name,
-        "visitor_email":      req.visitor_email,
-        "language":           lang,
-        "started_at":         datetime.now(timezone.utc).isoformat(),
-        "transcript":         [],
-        "metadata":           merged_metadata,
-        "consent":            (req.metadata or {}).get("consent", {}),
-        "meeting_requests":   [],
-        "product_interests":  [],
-        "lead_summary":       {},
-        "la_session_id":      la_session_id,
-        "la_session_token":   la_session_token,
-        "la_context_id":      la_context_id,
-        "opening_text":       opening_text,
-        "tenant_id":          tenants.active_tenant_id(),
-    }
+                requested_avatar, stream_voice = _stream_avatar_and_voice(req.persona_id, persona)
+                token_data = await liveavatar.create_session_token(
+                    avatar_id=requested_avatar,
+                    context_id=la_context_id,
+                    voice_id=stream_voice,
+                    language=lang,
+                    is_sandbox=settings.LIVEAVATAR_USE_SANDBOX,
+                )
 
-    if opening_text:
-        _append_transcript(session_id, "assistant", opening_text)
+                stream_avatar_id = requested_avatar
+                if token_data:
+                    la_session_token = token_data["session_token"]
+                    stream_avatar_id = token_data.get("avatar_id") or requested_avatar
 
-    if la_session_id:
-        _sessions[session_id]["keepalive_task"] = asyncio.create_task(_liveavatar_keepalive_loop(session_id))
+                    start_data = await liveavatar.start_session(la_session_token)
+                    if start_data:
+                        la_session_id        = start_data["session_id"]
+                        livekit_url          = start_data["livekit_url"]
+                        livekit_client_token = start_data["livekit_client_token"]
+                    elif la_session_token:
+                        logger.warning(
+                            "LiveAvatar start_session failed for %s (persona=%s); falling back to voice_only",
+                            session_id[:8], req.persona_id,
+                        )
+                else:
+                    logger.warning(
+                        "LiveAvatar token failed for %s (persona=%s); falling back to voice_only",
+                        session_id[:8], req.persona_id,
+                    )
+            except Exception as e:
+                logger.warning(
+                    "LiveAvatar setup failed for %s (persona=%s): %s",
+                    session_id[:8], req.persona_id, e,
+                )
 
-    return {
-        "session_id":           session_id,
-        "persona_id":           req.persona_id,
-        "persona_name":         persona_name,
-        "company_name":         company_name,
-        "language":             lang,
-        "product_cards":        product_cards.get_product_cards(req.persona_id),
-        "livekit_url":          livekit_url,
-        "livekit_client_token": livekit_client_token,
-        "la_session_id":        la_session_id,
-        "opening_text":         opening_text,
-        "mode":                 "liveavatar" if livekit_url else "voice_only",
-        "stream_avatar_id":     stream_avatar_id if livekit_url else None,
-        "sandbox_stream":       settings.LIVEAVATAR_USE_SANDBOX,
-    }
+        merged_metadata = dict(req.metadata or {})
+        user_block = {
+            "user_id":      req.user_id or merged_metadata.get("user_id"),
+            "user_plan":    req.user_plan or merged_metadata.get("user_plan"),
+            "user_stage":   req.user_stage or merged_metadata.get("user_stage"),
+            "page_context": req.page_context or merged_metadata.get("page_context"),
+        }
+        user_block = {k: v for k, v in user_block.items() if v}
+        if user_block:
+            merged_metadata["user"] = user_block
+        if user_ctx_text:
+            merged_metadata["user_context"] = user_ctx_text
+
+        _sessions[session_id] = {
+            "persona_id":         req.persona_id,
+            "persona_name":       persona_name,
+            "company_name":       company_name,
+            "tone":               persona_tone,
+            "visitor_name":       req.visitor_name,
+            "visitor_email":      req.visitor_email,
+            "language":           lang,
+            "started_at":         datetime.now(timezone.utc).isoformat(),
+            "transcript":         [],
+            "metadata":           merged_metadata,
+            "consent":            (req.metadata or {}).get("consent", {}),
+            "meeting_requests":   [],
+            "product_interests":  [],
+            "lead_summary":       {},
+            "la_session_id":      la_session_id,
+            "la_session_token":   la_session_token,
+            "la_context_id":      la_context_id,
+            "opening_text":       opening_text,
+            "tenant_id":          tenants.active_tenant_id(),
+        }
+
+        if opening_text:
+            _append_transcript(session_id, "assistant", opening_text)
+
+        if la_session_id:
+            _sessions[session_id]["keepalive_task"] = asyncio.create_task(_liveavatar_keepalive_loop(session_id))
+
+        return {
+            "session_id":           session_id,
+            "persona_id":           req.persona_id,
+            "persona_name":         persona_name,
+            "company_name":         company_name,
+            "language":             lang,
+            "product_cards":        product_cards.get_product_cards(req.persona_id),
+            "livekit_url":          livekit_url,
+            "livekit_client_token": livekit_client_token,
+            "la_session_id":        la_session_id,
+            "opening_text":         opening_text,
+            "mode":                 "liveavatar" if livekit_url else "voice_only",
+            "stream_avatar_id":     stream_avatar_id if livekit_url else None,
+            "sandbox_stream":       settings.LIVEAVATAR_USE_SANDBOX,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(
+            "create_session failed session=%s persona=%s tenant=%s",
+            session_id[:8], req.persona_id, tenants.active_tenant_id(),
+        )
+        raise HTTPException(502, f"Could not start session: {e}") from e
 
 
 @app.get("/api/sessions/history/export", tags=["Sessions"])

@@ -574,6 +574,27 @@ function reportCallFailure(msg) {
   } catch (_) {}
 }
 
+function parseSessionApiError(status, errBody) {
+  if (errBody) {
+    try {
+      const parsed = JSON.parse(errBody);
+      if (parsed.detail) {
+        const detail = typeof parsed.detail === 'string'
+          ? parsed.detail
+          : Array.isArray(parsed.detail)
+            ? parsed.detail.map((d) => d.msg || d).join('; ')
+            : String(parsed.detail);
+        return `Connection failed (${detail})`;
+      }
+    } catch (_) {}
+    const snippet = errBody.trim().slice(0, 160);
+    if (snippet && snippet !== 'Internal Server Error') {
+      return `Connection failed (HTTP ${status}: ${snippet})`;
+    }
+  }
+  return `Connection failed (HTTP ${status}). Please try again.`;
+}
+
 function showCallError(msg) {
   if (isModalEmbed) {
     reportCallFailure(msg);
@@ -658,7 +679,7 @@ async function startCall() {
     });
     if (!res.ok) {
       const errBody = await res.text().catch(() => '');
-      throw new Error(`HTTP ${res.status}${errBody ? ': ' + errBody.slice(0, 120) : ''}`);
+      throw new Error(parseSessionApiError(res.status, errBody));
     }
     const data = await res.json();
     const openingLine = urlOpening || data.opening_text || '';
@@ -690,8 +711,9 @@ async function startCall() {
         return;
       }
     } else if (sessionMode === 'voice_only' && liveavatarKeySet) {
-      showCallError('Could not start video session. Please try again.');
-      return;
+      console.warn('LiveAvatar unavailable; falling back to voice mode');
+      await connectVoiceWS(openingLine);
+      if (window.RehuCall) RehuCall.hideConnectOverlay();
     } else {
       await connectVoiceWS(openingLine);
       if (window.RehuCall) RehuCall.hideConnectOverlay();
@@ -703,9 +725,7 @@ async function startCall() {
   } catch(e) {
     console.error(e);
     const detail = e?.message ? String(e.message) : '';
-    showCallError(detail.includes('HTTP')
-      ? `Connection failed (${detail}). Please try again.`
-      : 'Connection issue — retry or check microphone permissions.');
+    showCallError(detail || 'Connection issue — retry or check microphone permissions.');
   }
 }
 

@@ -285,52 +285,45 @@ img, video { max-width: 100%; }
     linear-gradient(180deg, transparent 50%, rgba(0,0,0,.55) 100%);
 }
 .hero-aiza.breath { animation: breathe 6s ease-in-out infinite; }
-
-.hero-aiza-tag {
-  position: absolute; top: 18px; left: 18px;
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 12px; border-radius: 999px;
-  background: rgba(8,8,16,.55); backdrop-filter: blur(14px);
-  border: 0.5px solid var(--line-2);
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--ink-0); z-index: 3;
+.hero-aiza:hover {
+  box-shadow:
+    0 60px 120px -40px rgba(0,0,0,.8),
+    0 0 0 2px rgba(110,231,255,.35),
+    0 0 80px -10px rgba(139,92,246,.45),
+    0 0 160px -30px rgba(79,124,255,.4),
+    inset 0 1px 0 rgba(255,255,255,.08);
 }
-.hero-aiza-tag .pip { width: 6px; height: 6px; border-radius: 999px; background: #ff5d8f; box-shadow: 0 0 8px #ff5d8f; animation: pip 1.4s ease-in-out infinite; }
-.hero-aiza-name {
-  position: absolute; top: 18px; right: 18px;
-  padding: 7px 12px; border-radius: 999px;
-  background: rgba(8,8,16,.55); backdrop-filter: blur(14px);
-  border: 0.5px solid var(--line-2);
-  font-size: 12px; color: var(--ink-0); font-weight: 450;
-  z-index: 3; display: inline-flex; align-items: center; gap: 8px;
-}
-.hero-aiza-name .role {
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--ink-2);
-}
-.hero-aiza-caption {
+.hero-aiza-cta {
   position: absolute; left: 18px; right: 18px; bottom: 18px;
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 16px; border-radius: 18px;
-  background: rgba(8,8,16,.65); backdrop-filter: blur(18px);
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px 18px; border-radius: 18px;
+  background: rgba(8,8,16,.72); backdrop-filter: blur(18px);
   border: 0.5px solid var(--line-2);
   z-index: 3;
-  opacity: 0; transform: translateY(8px);
-  transition: opacity .4s, transform .4s;
+  font-size: 13.5px; font-weight: 500; color: var(--ink-0);
+  pointer-events: none;
 }
-.hero-aiza-caption.shown { opacity: 1; transform: translateY(0); }
-.hero-aiza-caption .eq { display: inline-flex; gap: 3px; align-items: center; height: 18px; flex-shrink: 0; }
-.hero-aiza-caption .eq span {
-  display: block; width: 2.5px; background: linear-gradient(180deg, var(--accent-c), var(--accent-a));
-  border-radius: 2px; animation: wave 0.9s ease-in-out infinite;
+.hero-aiza-cta svg { flex-shrink: 0; opacity: .85; }
+.hero-aiza-chip {
+  position: absolute; top: 18px; left: 18px; right: 18px;
+  padding: 7px 12px; border-radius: 999px;
+  background: rgba(8,8,16,.55); backdrop-filter: blur(14px);
+  border: 0.5px solid var(--line-2);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+  color: var(--ink-1); z-index: 3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  pointer-events: none;
 }
-.hero-aiza-caption .eq span:nth-child(1) { animation-delay: -.1s }
-.hero-aiza-caption .eq span:nth-child(2) { animation-delay: -.3s }
-.hero-aiza-caption .eq span:nth-child(3) { animation-delay: -.5s }
-.hero-aiza-caption .eq span:nth-child(4) { animation-delay: -.2s }
-.hero-aiza-caption .txt {
-  font-size: 13.5px; line-height: 1.4; color: var(--ink-0);
-  flex: 1; min-width: 0;
+.hero-aiza-hint {
+  margin: 12px 0 0; text-align: center;
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.4;
+}
+.hero-aiza-hint strong { color: var(--ink-0); font-weight: 500; }
+.cta-row-hint {
+  margin-top: 10px; font-size: 12px; color: var(--ink-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-aiza.breath { animation: none; }
 }
 .hero-aiza-glow {
   position: absolute; top: 50%; left: 50%;
@@ -342,13 +335,8 @@ img, video { max-width: 100%; }
   filter: blur(60px); z-index: 0; pointer-events: none;
 }
 
-/* state-driven micro-animation on the frame */
-.hero-aiza[data-state="speaking"] { animation: speak 0.5s ease-in-out infinite; }
-.hero-aiza[data-state="listening"] { animation: breathe 2.2s ease-in-out infinite; }
-.hero-aiza[data-state="idle"] { animation: breathe 4.5s ease-in-out infinite; }
+/* subtle idle animation on the frame */
 @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.015); } }
-@keyframes speak   { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
-@keyframes wave    { 0%, 100% { height: 8px; } 50% { height: 32px; } }
 @keyframes spin    { to { transform: translate(-50%, -50%) rotate(360deg); } }
 @keyframes pip     { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 @keyframes fadeUp  { to { opacity: 1; transform: translateY(0); } }
@@ -1744,6 +1732,7 @@ img, video { max-width: 100%; }
           See how to build her
         </a>
       </div>
+      <p class="cta-row-hint">Talk to Aiza for a live demo — or click her video to preview your configured Super Human.</p>
       <div class="live-chips">
         <span class="live-chip"><span class="pp"></span><span class="v">4,238</span>&nbsp;conversations today</span>
         <span class="live-chip"><span class="v">184</span>&nbsp;calls joined this week</span>
@@ -1755,24 +1744,19 @@ img, video { max-width: 100%; }
     <!-- Right: Aiza video -->
     <div class="hero-aiza-col">
       <div class="hero-aiza-glow"></div>
-      <div class="hero-aiza breath" id="hero-aiza" data-state="idle" data-launch-avatar data-launch-mode="builder" data-persona="default" role="button" tabindex="0" aria-label="Launch your configured Super Human">
+      <div class="hero-aiza breath" id="hero-aiza" data-launch-avatar data-launch-mode="builder" data-persona="default" role="button" tabindex="0" aria-label="Call Aiza — opens your configured Super Human">
         <video autoplay loop muted playsinline preload="auto" poster="">
           <source src="/static/aiza.mp4" type="video/mp4">
         </video>
-        <div class="hero-aiza-tag"><span class="pip"></span>Live · on air now</div>
-        <div class="hero-aiza-name">
-          Aiza <span class="role" id="hero-aiza-role">· idle</span>
-        </div>
-        <div class="hero-aiza-caption" id="hero-aiza-caption">
-          <span class="eq">
-            <span style="height:8px"></span>
-            <span style="height:14px"></span>
-            <span style="height:10px"></span>
-            <span style="height:16px"></span>
-          </span>
-          <span class="txt" id="hero-aiza-caption-text">Listening…</span>
+        <div class="hero-aiza-chip" id="hero-aiza-chip">Website Super Human · trained on yoursaas.com</div>
+        <div class="hero-aiza-cta">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          Call Aiza — she'll speak live
         </div>
       </div>
+      <p class="hero-aiza-hint"><strong>Preview your Super Human</strong> — click the video to call Aiza with your builder settings.</p>
     </div>
   </div>
 </section>
@@ -2053,51 +2037,6 @@ img, video { max-width: 100%; }
     };
     return `<svg ${common}>${PATHS[name] || ''}</svg>`;
   };
-
-  /* ═══════════ HERO STATE MACHINE ═══════════ */
-  const SCRIPT = [
-    { state: 'idle',       dur: 4200, captionAiza: "Hi, I'm Aiza. Not a chatbot — your Super Human." },
-    { state: 'listening',  dur: 4200, captionUser: "Where can I put you to work?" },
-    { state: 'speaking',   dur: 5500, captionAiza: "Three places. On your website, inside your product, and on Zoom calls. Let me show you who I'm talking to right now." },
-    { state: 'presenting', dur: 6500 },
-    { state: 'speaking',   dur: 5000, captionAiza: "All live, all today. I don't sleep, and I never miss a meeting." },
-  ];
-
-  const heroAiza  = $('#hero-aiza');
-  const heroRole  = $('#hero-aiza-role');
-  const heroCap   = $('#hero-aiza-caption');
-  const heroCapTx = $('#hero-aiza-caption-text');
-
-  let cursor = 0, beatStart = performance.now(), rafId = null;
-
-  function applyBeat(beat) {
-    const s = beat.state;
-    heroAiza.setAttribute('data-state', s);
-    heroRole.textContent = '· ' + s;
-    if (s === 'speaking' && beat.captionAiza) {
-      heroCapTx.textContent = beat.captionAiza;
-      heroCap.classList.add('shown');
-    } else if (s === 'listening' && beat.captionUser) {
-      heroCapTx.textContent = '"' + beat.captionUser + '"';
-      heroCap.classList.add('shown');
-    } else {
-      heroCap.classList.remove('shown');
-    }
-  }
-  applyBeat(SCRIPT[0]);
-
-  function tick() {
-    const now = performance.now();
-    const elapsed = now - beatStart;
-    const beat = SCRIPT[cursor];
-    if (elapsed >= beat.dur) {
-      cursor = (cursor + 1) % SCRIPT.length;
-      beatStart = now;
-      applyBeat(SCRIPT[cursor]);
-    }
-    rafId = requestAnimationFrame(tick);
-  }
-  if (!prefersReducedMotion) rafId = requestAnimationFrame(tick);
 
   /* ═══════════ DATA ═══════════ */
 
@@ -2606,6 +2545,13 @@ img, video { max-width: 100%; }
     `;
   }
 
+  function updateHeroBuilderChip() {
+    const chip = $('#hero-aiza-chip');
+    if (!chip) return;
+    const sh = SUPERHUMANS.find(s => s.id === builderState.picked);
+    chip.textContent = `${sh?.name || 'Super Human'} · trained on ${builderState.url}`;
+  }
+
   function renderBuilder() {
     renderTabs();
     let body = '';
@@ -2640,6 +2586,7 @@ img, video { max-width: 100%; }
         </div>` : ''}
     `;
     attachStageHandlers();
+    updateHeroBuilderChip();
   }
 
   function attachStageHandlers() {
@@ -2652,7 +2599,10 @@ img, video { max-width: 100%; }
     });
     // Step 2 inputs
     const urlInput = $('#train-url', stageHost);
-    if (urlInput) urlInput.addEventListener('input', (e) => { builderState.url = e.target.value; });
+    if (urlInput) urlInput.addEventListener('input', (e) => {
+      builderState.url = e.target.value;
+      updateHeroBuilderChip();
+    });
     $$('[data-crm]', stageHost).forEach((b) => {
       b.addEventListener('click', () => {
         const n = b.dataset.crm;
@@ -2926,7 +2876,7 @@ img, video { max-width: 100%; }
 
   function startPanelLoadWatch() {
     clearPanelLoadTimer();
-    setPanelLoadState('loading', 'Connecting to Aiza…');
+    setPanelLoadState('loading', 'Connecting to Aiza… Allow microphone when prompted.');
     panelLoadTimer = setTimeout(() => {
       panelLoadTimer = null;
       if (panelLoad && !panelLoad.classList.contains('hidden') && !panelLoad.classList.contains('error')) {
@@ -2986,7 +2936,7 @@ img, video { max-width: 100%; }
     panel.classList.remove('show');
     panel.classList.remove('presenting');
     panel.setAttribute('aria-hidden', 'true');
-    setPanelLoadState('loading', 'Connecting to Aiza…');
+    setPanelLoadState('loading', 'Connecting to Aiza… Allow microphone when prompted.');
     setTimeout(() => {
       panelIfr.src = 'about:blank';
       lastPanelSrc = '';
