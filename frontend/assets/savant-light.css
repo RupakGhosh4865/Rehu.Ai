@@ -1454,7 +1454,6 @@ body.modal-embed .avatar-idle-presence,
 body.modal-embed .transcript-empty,
 body.modal-embed .presenter-dock,
 body.modal-embed .lang-confirm,
-body.modal-embed #end-btn,
 body.modal-embed .cs-ctrl > .cbtn[title="Interrupt Aiza"],
 body.modal-embed .status-badge,
 body.modal-embed .call-error-banner {
@@ -1530,6 +1529,21 @@ body.modal-embed .cbtn:hover {
   transform: none !important;
 }
 body.modal-embed .cbtn svg { width: 17px; height: 17px; }
+body.modal-embed #end-btn {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  border-radius: 999px !important;
+  background: #DC2626 !important;
+  border: 0.5px solid rgba(255,255,255,0.12) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  flex-shrink: 0;
+}
+body.modal-embed #end-btn:hover {
+  background: #B91C1C !important;
+  transform: none !important;
+}
 
 /* Chat column = floating bubbles + slim input. No card, no label, no borders. */
 body.modal-embed .chat-col {
@@ -1633,6 +1647,31 @@ body.modal-embed .chat-send svg { width: 15px; height: 15px; }
 body.modal-embed #connect-overlay,
 body.modal-embed #cat-modal,
 body.modal-embed #overlay { display: none !important; }
+
+body.modal-embed #builder-ready-banner {
+  position: fixed;
+  top: 14px; left: 50%; transform: translateX(-50%) translateY(-8px);
+  z-index: 50;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(110, 231, 255, 0.35);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
+}
+body.modal-embed #builder-ready-banner.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+body.modal-embed #builder-ready-banner.fade {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-6px);
+}
 
 /* ── Modal side panel: 1mind-style presentation room ──
    Slide deck fills the left; Aiza video + chat stack on the right. */

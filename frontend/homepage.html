@@ -1438,6 +1438,35 @@ img, video { max-width: 100%; }
 .sidepanel.presenting {
   width: min(920px, calc(100vw - 32px));
 }
+.sidepanel--talk {
+  width: min(440px, calc(100vw - 32px));
+}
+.sidepanel--builder {
+  width: min(520px, calc(100vw - 32px));
+}
+.sidepanel--builder.presenting {
+  width: min(920px, calc(100vw - 32px));
+}
+.sp-builder-chip {
+  flex-shrink: 0;
+  padding: 10px 16px 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.4;
+}
+.sp-builder-chip.hidden { display: none; }
+.sp-builder-chip::before {
+  content: "";
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent-c);
+  box-shadow: 0 0 8px rgba(110,231,255,0.6);
+  margin-right: 8px;
+  vertical-align: middle;
+}
 .sp-frame {
   pointer-events: auto;
   position: relative; height: 100%;
@@ -1512,6 +1541,19 @@ img, video { max-width: 100%; }
   pointer-events: none; /* children opt in */
 }
 .sp-controls > * { pointer-events: auto; }
+.sp-end {
+  appearance: none; cursor: pointer;
+  height: 28px; padding: 0 12px; border-radius: 999px;
+  background: rgba(220, 38, 38, 0.88);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.06em; font-weight: 600;
+  color: #fff;
+  transition: background .2s, transform .2s;
+}
+.sp-end:hover { background: rgba(185, 28, 28, 0.95); transform: scale(1.04); }
 .sp-lang {
   appearance: none; cursor: pointer;
   height: 28px; padding: 0 11px; border-radius: 999px;
@@ -1544,7 +1586,28 @@ img, video { max-width: 100%; }
   pointer-events: none; z-index: 2;
   opacity: 1; transition: opacity .4s;
 }
-.sp-loading.hidden { opacity: 0; }
+.sp-loading.hidden { opacity: 0; pointer-events: none; }
+.sp-loading-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: 24px; text-align: center;
+}
+.sp-loading-msg {
+  margin: 0; font-size: 13px; color: rgba(255,255,255,0.62);
+  max-width: 220px; line-height: 1.45;
+}
+.sp-loading.error .sp-loading-orb { display: none; }
+.sp-loading.error { pointer-events: auto; }
+.sp-loading.error .sp-loading-msg { color: rgba(255,255,255,0.82); }
+.sp-retry {
+  appearance: none; cursor: pointer;
+  padding: 9px 18px; border-radius: 999px;
+  border: 0.5px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  color: #fff; font-size: 12.5px; font-weight: 600;
+  pointer-events: auto;
+}
+.sp-retry.hidden { display: none; }
+.sp-retry:hover { background: rgba(255,255,255,0.14); }
 .sp-loading-orb {
   width: 48px; height: 48px; border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, var(--accent-c), var(--accent-a) 60%, var(--accent-b));
@@ -1612,6 +1675,8 @@ img, video { max-width: 100%; }
 
   /* Side panel adapts to small screens but stays anchored to the right */
   .sidepanel { top: 12px; right: 12px; bottom: 12px; width: calc(100vw - 24px); }
+  .sidepanel--talk,
+  .sidepanel--builder,
   .sidepanel.presenting { width: calc(100vw - 24px); }
 
   .float-presenter { right: 14px; bottom: 14px; }
@@ -1648,7 +1713,7 @@ img, video { max-width: 100%; }
     <a href="#security">Security</a>
     <a href="#stories">Customers</a>
   </div>
-  <button class="btn btn-primary nav-cta" data-launch-avatar data-persona="default">
+  <button class="btn btn-primary nav-cta" data-launch-avatar data-launch-mode="talk" data-persona="default">
     <span class="dot"></span>
     Talk to Aiza
   </button>
@@ -1668,7 +1733,7 @@ img, video { max-width: 100%; }
         Meet your Super Human — she speaks, listens, understands, and books meetings like your best GTM rep. Drop her on your website, inside your product, or on a Zoom call.
       </p>
       <div class="cta-row">
-        <button class="btn btn-primary" data-launch-avatar data-persona="default">
+        <button class="btn btn-primary" data-launch-avatar data-launch-mode="talk" data-persona="default">
           <span class="dot"></span>
           Talk to Aiza
         </button>
@@ -1690,7 +1755,7 @@ img, video { max-width: 100%; }
     <!-- Right: Aiza video -->
     <div class="hero-aiza-col">
       <div class="hero-aiza-glow"></div>
-      <div class="hero-aiza breath" id="hero-aiza" data-state="idle" data-launch-avatar data-persona="default" role="button" tabindex="0" aria-label="Launch live Aiza session">
+      <div class="hero-aiza breath" id="hero-aiza" data-state="idle" data-launch-avatar data-launch-mode="builder" data-persona="default" role="button" tabindex="0" aria-label="Launch your configured Super Human">
         <video autoplay loop muted playsinline preload="auto" poster="">
           <source src="/static/aiza.mp4" type="video/mp4">
         </video>
@@ -1850,7 +1915,7 @@ img, video { max-width: 100%; }
     <div class="ring-glow r2"></div>
     <div class="ring-glow r3"></div>
 
-    <div class="final-cta-portrait" data-launch-avatar data-persona="default" role="button" tabindex="0" aria-label="Talk to Aiza">
+    <div class="final-cta-portrait" data-launch-avatar data-launch-mode="talk" data-persona="default" role="button" tabindex="0" aria-label="Talk to Aiza">
       <video autoplay loop muted playsinline preload="auto">
         <source src="/static/aiza.mp4" type="video/mp4">
       </video>
@@ -1866,7 +1931,7 @@ img, video { max-width: 100%; }
       Skip the form. Skip the demo. Skip the trial. Just say hello — she'll do the rest.
     </p>
     <div class="cta-row">
-      <button class="btn btn-primary" style="font-size:15px;padding:15px 24px;" data-launch-avatar data-persona="default">
+      <button class="btn btn-primary" style="font-size:15px;padding:15px 24px;" data-launch-avatar data-launch-mode="talk" data-persona="default">
         <span class="dot"></span>
         Talk to Aiza now
       </button>
@@ -1905,7 +1970,7 @@ img, video { max-width: 100%; }
     </div>
     <div class="fp-name">Meet Aiza</div>
     <div class="fp-sub">Real-time answers · ask anything</div>
-    <button class="fp-talk" data-launch-avatar data-persona="default" type="button">
+    <button class="fp-talk" data-launch-avatar data-launch-mode="talk" data-persona="default" type="button">
       <span class="dot"></span>
       Let's Talk
     </button>
@@ -1916,12 +1981,20 @@ img, video { max-width: 100%; }
      Slides in from the right. Never blocks the page. Page stays scrollable.
      Minimal chrome: a single floating close + tiny language pill. The
      live Aiza video and conversation are owned by /call inside the iframe. -->
-<aside class="sidepanel" id="sidepanel" role="complementary" aria-label="Aiza live AI companion" aria-hidden="true">
+<aside class="sidepanel sidepanel--talk" id="sidepanel" role="complementary" aria-label="Aiza live companion" aria-hidden="true">
   <div class="sp-frame">
+    <div class="sp-builder-chip hidden" id="sp-builder-chip" aria-live="polite"></div>
     <div class="sp-stage">
-      <div class="sp-loading" id="sp-loading"><div class="sp-loading-orb" aria-hidden="true"></div></div>
+      <div class="sp-loading" id="sp-loading">
+        <div class="sp-loading-inner">
+          <div class="sp-loading-orb" id="sp-loading-orb" aria-hidden="true"></div>
+          <p class="sp-loading-msg" id="sp-loading-msg">Connecting to Aiza…</p>
+          <button type="button" class="sp-retry hidden" id="sp-retry">Try again</button>
+        </div>
+      </div>
       <iframe id="sp-iframe" title="Live Aiza session" allow="camera; microphone; autoplay; clipboard-write" referrerpolicy="origin"></iframe>
       <div class="sp-controls">
+        <button type="button" class="sp-end" id="sp-end" title="End call" aria-label="End call">End</button>
         <button type="button" class="sp-lang" id="sp-lang" title="Language" aria-label="Select language">EN</button>
         <button type="button" class="sp-btn" id="sp-close" title="Close panel" aria-label="Close Aiza panel">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2494,7 +2567,7 @@ img, video { max-width: 100%; }
     const personaId = PERSONA_MAP[builderState.picked] || 'default';
     return `
       <div class="live-stage">
-        <div class="live-presenter" data-launch-avatar data-persona="${esc(personaId)}" role="button" tabindex="0" aria-label="Launch live Aiza session">
+        <div class="live-presenter" data-launch-avatar data-launch-mode="builder" data-persona="${esc(personaId)}" role="button" tabindex="0" aria-label="Launch your configured Super Human">
           <video autoplay loop muted playsinline preload="auto"><source src="/static/aiza.mp4" type="video/mp4"></video>
           <div class="live-tag-floating"><span class="pip"></span>Recording · 0:14</div>
           <div class="live-controls">
@@ -2523,7 +2596,7 @@ img, video { max-width: 100%; }
               <button class="live-action" type="button">${ICON('globe')}Switch lang</button>
               <button class="live-action" type="button">${ICON('sparkles')}Summarize</button>
             </div>
-            <button class="live-go-btn" type="button" data-launch-avatar data-persona="${esc(personaId)}">
+            <button class="live-go-btn" type="button" data-launch-avatar data-launch-mode="builder" data-persona="${esc(personaId)}">
               <span class="dot"></span>
               Talk to her live (60s · free)
             </button>
@@ -2716,7 +2789,7 @@ img, video { max-width: 100%; }
   function renderTeam() {
     $('#team-grid').innerHTML = TEAM.map((p)=>`
       <div class="team-card">
-        <div class="team-portrait" style="--ring:${p.accent};" data-launch-avatar data-persona="${esc(p.persona)}" role="button" tabindex="0" aria-label="Talk to ${esc(p.name)} live">
+        <div class="team-portrait" style="--ring:${p.accent};" data-launch-avatar data-launch-mode="talk" data-persona="${esc(p.persona)}" role="button" tabindex="0" aria-label="Talk to ${esc(p.name)} live">
           ${p.video
             ? `<video autoplay loop muted playsinline preload="auto"><source src="${esc(p.video)}" type="video/mp4"></video>`
             : `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy">`}
@@ -2726,7 +2799,7 @@ img, video { max-width: 100%; }
           <div class="team-name">Meet <em>${esc(p.name)}</em></div>
           <div class="team-role">${esc(p.role)}</div>
           <div class="team-desc">${esc(p.desc)}</div>
-          <button class="team-cta" type="button" data-launch-avatar data-persona="${esc(p.persona)}">
+          <button class="team-cta" type="button" data-launch-avatar data-launch-mode="talk" data-persona="${esc(p.persona)}">
             ${esc(p.cta)}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </button>
@@ -2762,45 +2835,161 @@ img, video { max-width: 100%; }
   const panel      = $('#sidepanel');
   const panelIfr   = $('#sp-iframe');
   const panelClose = $('#sp-close');
+  const panelEnd   = $('#sp-end');
   const panelLang  = $('#sp-lang');
   const panelLoad  = $('#sp-loading');
+  const panelLoadMsg = $('#sp-loading-msg');
+  const panelRetry = $('#sp-retry');
+  const panelBuilderChip = $('#sp-builder-chip');
 
   const LANGS = ['EN', 'ES', 'FR', 'DE', 'JA', 'HI'];
+  let panelLoadTimer = null;
+  let panelLoadTimerHard = null;
+  let lastPanelSrc = '';
 
-  function buildCallSrc(id) {
-    return `/call?persona=${encodeURIComponent(id)}&demo=1&timer=60&modal=1`;
+  function getBuilderCallContext() {
+    const picked = builderState.picked;
+    const sh = SUPERHUMANS.find(s => s.id === picked);
+    const persona = PERSONA_MAP[picked] || 'default';
+    const page = [
+      `Super Human type: ${sh?.name || picked}`,
+      `Site: ${builderState.url}`,
+      `Personality: ${builderState.personality}`,
+      `Language: ${builderState.language}`,
+      `Integrations: ${[...builderState.crm].join(', ')}`,
+    ].join('. ');
+    return {
+      mode: 'builder',
+      persona,
+      page,
+      greeting: GREETING_BY_CASE[picked] || GREETING_BY_CASE.website,
+      useCase: picked,
+      chipLabel: `${sh?.name || 'Super Human'} · trained on ${builderState.url}`,
+    };
   }
 
-  function openPanel(persona) {
-    const id = persona || 'default';
+  function buildCallSrc(id, opts = {}) {
+    const p = new URLSearchParams({
+      persona: id,
+      demo: '1',
+      timer: '60',
+      modal: '1',
+      flow: opts.mode || 'talk',
+    });
+    if (opts.mode === 'builder') {
+      if (opts.page) p.set('page', opts.page);
+      if (opts.greeting) p.set('opening', opts.greeting);
+      if (opts.useCase) p.set('user_stage', opts.useCase);
+    }
+    return `/call?${p.toString()}`;
+  }
 
-    // Already open → smoothly swap persona without re-mounting the panel.
+  function applyPanelMode(opts = {}) {
+    const mode = opts.mode || 'talk';
+    panel.classList.remove('sidepanel--talk', 'sidepanel--builder');
+    panel.classList.add(mode === 'builder' ? 'sidepanel--builder' : 'sidepanel--talk');
+    panel.dataset.flow = mode;
+    if (mode === 'builder' && panelBuilderChip) {
+      panelBuilderChip.textContent = opts.chipLabel || 'Your Super Human is ready';
+      panelBuilderChip.classList.remove('hidden');
+    } else if (panelBuilderChip) {
+      panelBuilderChip.classList.add('hidden');
+      panelBuilderChip.textContent = '';
+    }
+  }
+
+  function clearPanelLoadTimer() {
+    if (panelLoadTimer) {
+      clearTimeout(panelLoadTimer);
+      panelLoadTimer = null;
+    }
+    if (panelLoadTimerHard) {
+      clearTimeout(panelLoadTimerHard);
+      panelLoadTimerHard = null;
+    }
+  }
+
+  function setPanelLoadState(state, message) {
+    if (!panelLoad) return;
+    panelLoad.classList.remove('hidden', 'error');
+    panelRetry?.classList.add('hidden');
+    if (state === 'hidden') {
+      panelLoad.classList.add('hidden');
+      return;
+    }
+    if (state === 'error') {
+      panelLoad.classList.add('error');
+      panelRetry?.classList.remove('hidden');
+    }
+    if (panelLoadMsg && message) panelLoadMsg.textContent = message;
+  }
+
+  function startPanelLoadWatch() {
+    clearPanelLoadTimer();
+    setPanelLoadState('loading', 'Connecting to Aiza…');
+    panelLoadTimer = setTimeout(() => {
+      panelLoadTimer = null;
+      if (panelLoad && !panelLoad.classList.contains('hidden') && !panelLoad.classList.contains('error')) {
+        setPanelLoadState('loading', 'Still connecting…');
+      }
+    }, 15000);
+    panelLoadTimerHard = setTimeout(() => {
+      panelLoadTimerHard = null;
+      setPanelLoadState('error', 'Connection is taking longer than expected. Check your network and try again.');
+    }, 25000);
+  }
+
+  function resolveLaunchOpts(el) {
+    const mode = el.dataset.launchMode || 'talk';
+    if (mode === 'builder') {
+      const ctx = getBuilderCallContext();
+      return {
+        mode: 'builder',
+        persona: ctx.persona,
+        page: ctx.page,
+        greeting: ctx.greeting,
+        useCase: ctx.useCase,
+        chipLabel: ctx.chipLabel,
+      };
+    }
+    return { mode: 'talk', persona: el.dataset.persona || 'default' };
+  }
+
+  function openPanel(opts = {}) {
+    const id = opts.persona || 'default';
+    const mode = opts.mode || 'talk';
+    const src = buildCallSrc(id, opts);
+
+    applyPanelMode(opts);
+
     if (panel.classList.contains('show')) {
-      if (panel.dataset.persona !== id) {
+      if (panel.dataset.persona !== id || panel.dataset.flow !== mode || lastPanelSrc !== src) {
         panel.dataset.persona = id;
-        panelLoad.classList.remove('hidden');
-        panelIfr.src = buildCallSrc(id);
+        lastPanelSrc = src;
+        startPanelLoadWatch();
+        panelIfr.src = src;
       }
       return;
     }
 
     panel.dataset.persona = id;
-    panelLoad.classList.remove('hidden');
-    panelIfr.src = buildCallSrc(id);
+    lastPanelSrc = src;
+    startPanelLoadWatch();
+    panelIfr.src = src;
     panel.classList.add('show');
     panel.setAttribute('aria-hidden', 'false');
-    // NOTE: We deliberately do NOT lock body scroll — page must stay browsable.
   }
 
   function closePanel() {
     if (!panel.classList.contains('show')) return;
+    clearPanelLoadTimer();
     panel.classList.remove('show');
     panel.classList.remove('presenting');
     panel.setAttribute('aria-hidden', 'true');
-    // Release the iframe after the slide-out finishes so it doesn't keep the mic open.
+    setPanelLoadState('loading', 'Connecting to Aiza…');
     setTimeout(() => {
       panelIfr.src = 'about:blank';
-      panelLoad.classList.remove('hidden');
+      lastPanelSrc = '';
     }, 600);
   }
 
@@ -2828,28 +3017,28 @@ img, video { max-width: 100%; }
     } catch (_) {}
   }
 
-  panelIfr.addEventListener('load', () => {
-    if (panelIfr.src === 'about:blank') return;
-    // Small grace period so /call can paint before we fade the loader.
-    setTimeout(() => panelLoad.classList.add('hidden'), 450);
+  panelRetry?.addEventListener('click', () => {
+    if (!lastPanelSrc) return;
+    startPanelLoadWatch();
+    panelIfr.src = lastPanelSrc;
   });
 
   function bindLaunchHandlers(root) {
     $$('[data-launch-avatar]', root).forEach((el) => {
       if (el._launchBound) return;
       el._launchBound = true;
-      el.addEventListener('click', (e) => {
-        if (e.target.closest('[data-launch-avatar]') !== el) return;
-        e.preventDefault();
-        e.stopPropagation();
-        openPanel(el.dataset.persona || 'default');
-      });
+      const launch = (e) => {
+        if (e) {
+          if (e.target.closest('[data-launch-avatar]') !== el) return;
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        openPanel(resolveLaunchOpts(el));
+      };
+      el.addEventListener('click', launch);
       if (el.tagName !== 'BUTTON' && el.tagName !== 'A') {
         el.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openPanel(el.dataset.persona || 'default');
-          }
+          if (e.key === 'Enter' || e.key === ' ') launch(e);
         });
       }
     });
@@ -2857,6 +3046,11 @@ img, video { max-width: 100%; }
   bindLaunchHandlers(document);
 
   panelClose.addEventListener('click', closePanel);
+  panelEnd?.addEventListener('click', () => {
+    try {
+      panelIfr.contentWindow?.postMessage({ type: 'sh:end_call' }, '*');
+    } catch (_) {}
+  });
   panelLang.addEventListener('click', cycleLang);
 
   document.addEventListener('keydown', (e) => {
@@ -2869,9 +3063,13 @@ img, video { max-width: 100%; }
     const msg = e.data;
     if (!msg || typeof msg !== 'object') return;
     if (msg.type === 'sh:session_ended') {
-      panelLoad.classList.remove('hidden');
+      closePanel();
     } else if (msg.type === 'sh:session_started') {
-      panelLoad.classList.add('hidden');
+      clearPanelLoadTimer();
+      setPanelLoadState('hidden');
+    } else if (msg.type === 'sh:session_error') {
+      clearPanelLoadTimer();
+      setPanelLoadState('error', msg.message || 'Could not start the session. Check your connection and try again.');
     } else if (msg.type === 'sh:presenting') {
       togglePresentation(true);
     } else if (msg.type === 'sh:stopped_presenting') {

@@ -291,6 +291,8 @@ let micEnabled  = true;
 let personaId   = new URLSearchParams(location.search).get('persona') || 'default';
 const urlParams = new URLSearchParams(location.search);
 const isWidget  = urlParams.get('widget') === '1';
+const callFlow  = urlParams.get('flow') || 'talk';
+const urlOpening = urlParams.get('opening') || '';
 let personaName = 'Aiza';
 let companyName = 'our company';
 let selectedLanguage = urlParams.get('lang') || 'en';
@@ -389,14 +391,14 @@ window.addEventListener('load', async () => {
   // Live idle preview only on homepage — call page starts preview after session to avoid conflicts
 
   // When loaded inside the homepage docked panel, the user already clicked
-  // "Let's Talk" — auto-start the call (no landing screen, no Start button).
+  // "Let's Talk" or the builder — auto-start the call (no landing screen).
   if (isModalEmbed) {
     const consentCheck = document.getElementById('consent-check');
     if (consentCheck) consentCheck.checked = true;
+    if (callFlow === 'builder') showBuilderReadyBanner();
     setTimeout(() => {
       try { startCall(); } catch (e) { console.error('auto-start failed', e); }
-      try { window.parent?.postMessage({ type: 'sh:session_started' }, '*'); } catch (_) {}
-    }, 250);
+    }, callFlow === 'builder' ? 150 : 250);
   }
 });
 
@@ -412,6 +414,8 @@ window.addEventListener('message', (e) => {
       if (typeof switchCallLanguage === 'function') switchCallLanguage(code);
       else { selectedLanguage = code; applyLanguageChoice(); }
     }
+  } else if (msg.type === 'sh:end_call') {
+    if (sessionId && typeof endCall === 'function') endCall();
   }
 });
 
@@ -544,12 +548,39 @@ async function loadComplianceSettings() {
 }
 
 
+function showBuilderReadyBanner() {
+  if (document.getElementById('builder-ready-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'builder-ready-banner';
+  banner.textContent = 'Your Super Human is ready';
+  document.body.appendChild(banner);
+  requestAnimationFrame(() => banner.classList.add('show'));
+  setTimeout(() => banner.classList.add('fade'), 1800);
+  setTimeout(() => banner.remove(), 2400);
+}
+
 function hideCallError() {
   const b = document.getElementById('call-error-banner');
   if (b) b.classList.add('hidden');
 }
 
+function reportCallFailure(msg) {
+  if (!isModalEmbed) return;
+  try {
+    window.parent?.postMessage({
+      type: 'sh:session_error',
+      message: msg || 'Could not start the session. Check your connection and try again.',
+    }, '*');
+  } catch (_) {}
+}
+
 function showCallError(msg) {
+  if (isModalEmbed) {
+    reportCallFailure(msg);
+    if (window.RehuCall) RehuCall.hideConnectOverlay();
+    resetBtn();
+    return;
+  }
   const b = document.getElementById('call-error-banner');
   const m = document.getElementById('call-error-msg');
   if (m && msg) m.textContent = msg;
@@ -577,12 +608,14 @@ async function startCall() {
   btn.disabled = true;
   btn.innerHTML = `<div class="ph"><div class="spinner" style="width:22px;height:22px;border-width:2px;border-top-color:#fff;border-color:rgba(255,255,255,.3)"></div></div><span>Connecting…</span>`;
 
-  if (window.RehuPersonaLive) {
+  if (window.RehuPersonaLive && !isModalEmbed) {
     await RehuPersonaLive.stop();
     await new Promise((r) => setTimeout(r, 400));
   }
 
-  if (window.RehuCall) RehuCall.showConnectOverlay(personaName);
+  if (window.RehuCall && !isModalEmbed) {
+    RehuCall.showConnectOverlay(personaName);
+  }
   closePresentation();
   RehuCall?.transitionToCall();
   applyLanguageChoice();
@@ -605,6 +638,7 @@ async function startCall() {
         metadata: {
           widget: isWidget,
           widget_mode: isWidget,
+          flow: callFlow,
           source_page: location.href,
           user_agent: navigator.userAgent,
           user: {
@@ -622,8 +656,15 @@ async function startCall() {
         },
       }),
     });
-    if (!res.ok) throw new Error('HTTP '+res.status);
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status}${errBody ? ': ' + errBody.slice(0, 120) : ''}`);
+    }
     const data = await res.json();
+    const openingLine = urlOpening || data.opening_text || '';
+
+    if (isModalEmbed && window.RehuCall) RehuCall.hideConnectOverlay();
+    if (isModalEmbed && openingLine) scheduleOpeningFallback(openingLine);
 
     sessionId   = data.session_id;
     personaName = data.persona_name || personaName;
@@ -642,23 +683,29 @@ async function startCall() {
     if (sessionMode==='liveavatar' && data.livekit_url && data.livekit_client_token) {
       try {
         await connectLiveKit(data.livekit_url, data.livekit_client_token);
-        scheduleOpeningFallback(data.opening_text || '');
+        scheduleOpeningFallback(openingLine);
       } catch (lkErr) {
         console.error(lkErr);
         showCallError('Connection issue — retry or check microphone permissions.');
         return;
       }
     } else if (sessionMode === 'voice_only' && liveavatarKeySet) {
-      showCallError('Connection issue — could not start video session. Please try again.');
+      showCallError('Could not start video session. Please try again.');
       return;
     } else {
-      await connectVoiceWS(data.opening_text||'');
+      await connectVoiceWS(openingLine);
       if (window.RehuCall) RehuCall.hideConnectOverlay();
     }
     maybeStartDemoTimer();
+    if (isModalEmbed) {
+      try { window.parent?.postMessage({ type: 'sh:session_started' }, '*'); } catch (_) {}
+    }
   } catch(e) {
     console.error(e);
-    showCallError('Connection issue — retry or check microphone permissions.');
+    const detail = e?.message ? String(e.message) : '';
+    showCallError(detail.includes('HTTP')
+      ? `Connection failed (${detail}). Please try again.`
+      : 'Connection issue — retry or check microphone permissions.');
   }
 }
 
@@ -698,6 +745,7 @@ function attachAvatarAudio(track) {
   avatarAudioEl.muted = !speakerEnabled;
   avatarAudioEl.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0';
   document.body.appendChild(avatarAudioEl);
+  if (window.RehuCall) RehuCall.hideConnectOverlay();
   const playAudio = async () => {
     try {
       if (livekitRoom) await livekitRoom.startAudio();
@@ -773,7 +821,7 @@ async function connectLiveKit(lkUrl, lkToken) {
     if (window.RehuCall) RehuCall.hideConnectOverlay();
     const v = document.getElementById('av-video');
     if (v && v.style.opacity !== '1') {
-      showCallError('Connection issue — video did not load. Check microphone permissions and try again.');
+      showCallError('Video did not load. Check microphone permissions and try again.');
       if (livekitRoom) { try { livekitRoom.disconnect(); } catch (e) {} livekitRoom = null; }
     }
   }, 12000);
@@ -1318,11 +1366,13 @@ function scheduleOpeningFallback(openingText) {
   if (!openingText || !window.speechSynthesis) return;
   avatarSpeechSeen = false;
   if (openingFallbackTimer) clearTimeout(openingFallbackTimer);
+  const delay = isModalEmbed ? 2000 : 4500;
   openingFallbackTimer = setTimeout(() => {
     openingFallbackTimer = null;
-    if (!sessionId || avatarSpeechSeen || avatarAudioAttached || sessionMode === 'liveavatar' || !speakerEnabled) return;
+    if (!sessionId || avatarSpeechSeen || avatarAudioAttached || !speakerEnabled) return;
+    if (sessionMode === 'liveavatar' && !isModalEmbed) return;
     speakBrowserFallback(openingText);
-  }, 4500);
+  }, delay);
 }
 
 function speakBrowserFallback(text) {
@@ -1445,8 +1495,10 @@ async function endCall() {
   if (v) { try{v.srcObject=null;}catch(e){} v.style.opacity = '0'; }
   document.getElementById('call-screen').classList.remove('aiza-speaks');
   if (sid) fetch(`/api/sessions/${sid}`,{method:'DELETE'}).catch(()=>{});
-  document.getElementById('call-screen').style.display = 'none';
-  document.getElementById('landing').style.display     = 'grid';
+  if (!isModalEmbed) {
+    document.getElementById('call-screen').style.display = 'none';
+    document.getElementById('landing').style.display     = 'grid';
+  }
   document.getElementById('transcript').innerHTML = '<div class="transcript-empty" id="transcript-empty">Aiza will appear here when the conversation starts.</div>';
   Object.keys(partialTranscriptEls).forEach(k => partialTranscriptEls[k] = null);
   transcriptSeen.clear();
