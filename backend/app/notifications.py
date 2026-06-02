@@ -235,6 +235,18 @@ async def _push_to_hubspot_if_connected(payload: dict) -> None:
         logger.exception("HubSpot push failed for active tenant")
 
 
+async def _push_to_smartsheet_if_connected(payload: dict) -> None:
+    try:
+        from . import smartsheet as _smartsheet
+        active_id = tenants.active_tenant_id()
+        tenant = tenants.get_tenant(active_id)
+        if not tenant:
+            return
+        await _smartsheet.push_row_from_lead(tenant, payload)
+    except Exception:
+        logger.exception("Smartsheet push failed for active tenant")
+
+
 async def notify_lead_captured(payload: dict) -> None:
     """Fire-and-forget: send email + webhook + native CRM push when a lead is captured."""
     if not _enabled("lead_captured"):
@@ -247,6 +259,7 @@ async def notify_lead_captured(payload: dict) -> None:
         tasks.append(send_email(to, subject, text, html))
     tasks.append(send_webhook("lead_captured", payload))
     tasks.append(_push_to_hubspot_if_connected(payload))
+    tasks.append(_push_to_smartsheet_if_connected(payload))
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
@@ -261,6 +274,7 @@ async def notify_meeting_requested(meeting: dict) -> None:
         tasks.append(send_email(to, subject, text, html))
     tasks.append(send_webhook("meeting_requested", meeting))
     tasks.append(_push_to_hubspot_if_connected(meeting))
+    tasks.append(_push_to_smartsheet_if_connected(meeting))
     await asyncio.gather(*tasks, return_exceptions=True)
 
 

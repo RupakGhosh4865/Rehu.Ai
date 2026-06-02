@@ -25,10 +25,11 @@ from .models import (
     MeetingRequest, MeetingStatusRequest, ProductCardRequest, ComplianceSettingsRequest,
     SignupRequest, LoginRequest, TenantUpdateRequest, BillingCheckoutRequest, IntegrationConnectRequest,
     RideAlongJoinRequest, RideAlongSpeakRequest, LeadCaptureRequest,
+    StudioTrainRequest, SmartsheetConfigRequest,
 )
 from . import liveavatar, agent, knowledge, persona_templates, persona_experience, persona_store, auth
 from . import session_log_store, languages, product_cards, meeting_store
-from . import notifications, tenants, billing, hubspot, google_calendar
+from . import notifications, tenants, billing, hubspot, google_calendar, smartsheet
 from . import meeting_bot, ride_along_store
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s -- %(message)s")
@@ -285,6 +286,22 @@ if os.path.isdir(FRONTEND_DIR):
             app.mount(mount, StaticFiles(directory=d), name=subdir)
 
 
+async def _prune_idle_sessions(keep: int = 6) -> None:
+    """Drop oldest sessions so LiveAvatar sandbox limits are not exhausted."""
+    if len(_sessions) <= keep:
+        return
+    ordered = sorted(
+        _sessions.items(),
+        key=lambda item: (
+            0 if item[1].get("is_preview") else 1,
+            item[1].get("started_at") or "",
+        ),
+    )
+    for sid, _ in ordered[: len(_sessions) - keep]:
+        logger.info("Pruning idle session %s (pool size %d)", sid[:8], len(_sessions))
+        await _cleanup_session(sid)
+
+
 async def _cleanup_session(session_id: str):
     session = _sessions.pop(session_id, None)
     if not session:
@@ -526,20 +543,18 @@ async def create_preview_session(persona_id: str):
             opening_text="",
             display_name=f"{persona.persona_name} preview {session_id[:8]}",
         )
-        token_data = await liveavatar.create_session_token(
+        stream = await liveavatar.provision_stream(
             avatar_id=avatar_id,
             context_id=la_context_id,
             voice_id=voice_id,
             is_sandbox=settings.LIVEAVATAR_USE_SANDBOX,
         )
-        if token_data:
-            la_session_token = token_data["session_token"]
-            stream_avatar_id = token_data.get("avatar_id") or avatar_id
-            start_data = await liveavatar.start_session(la_session_token)
-            if start_data:
-                la_session_id = start_data["session_id"]
-                livekit_url = start_data["livekit_url"]
-                livekit_client_token = start_data["livekit_client_token"]
+        if stream:
+            la_session_token = stream["session_token"]
+            la_session_id = stream["la_session_id"]
+            livekit_url = stream["livekit_url"]
+            livekit_client_token = stream["livekit_client_token"]
+            stream_avatar_id = stream.get("stream_avatar_id") or avatar_id
 
     _sessions[session_id] = {
         "persona_id": persona_id,
@@ -611,6 +626,7 @@ async def get_solution(slug: str):
         raise HTTPException(404, f"Solution '{slug}' not found")
     data = t.to_api_dict()
     data["system_prompt_preview"] = t.system_prompt[:200] + "…"
+    data["system_prompt"] = t.system_prompt
     return data
 
 
@@ -741,6 +757,8 @@ async def create_session(req: CreateSessionRequest, request: Request):
 
     session_id = str(uuid.uuid4())
     try:
+        # Sandbox allows very few concurrent streams — free capacity before each call.
+        await _prune_idle_sessions(keep=0 if settings.LIVEAVATAR_USE_SANDBOX else 6)
         lang = languages.normalize_language(req.language)
 
         persona_name = persona.persona_name
@@ -769,6 +787,29 @@ async def create_session(req: CreateSessionRequest, request: Request):
         if req.persona_id != "default" and req.visitor_name and fallback:
             opening_text = fallback.replace("Hi,", f"Hi {req.visitor_name},").replace("Hello,", f"Hello {req.visitor_name},")
 
+        merged_metadata = dict(req.metadata or {})
+        flow = merged_metadata.get("flow") or ""
+        opening_override = (req.opening_override or merged_metadata.get("opening_override") or "").strip()
+        if opening_override:
+            opening_text = opening_override[:1200]
+        elif flow == "builder" or req.page_context:
+            studio_kb = await knowledge.query_knowledge(
+                req.persona_id,
+                f"{company_name} {req.page_context or ''} products services overview".strip()[:500],
+            )
+            pitch_ctx = studio_kb or knowledge_ctx
+            pitch_fallback = (
+                f"Hi — I'm {persona_name}, your {company_name} Superhuman. "
+                f"{'I help with ' + req.page_context.split('Product:')[-1].split('.')[0].strip() + '. ' if req.page_context and 'Product:' in req.page_context else ''}"
+                "Ask me anything about what we offer."
+            )
+            opening_text = await agent.generate_opening_pitch(
+                persona_name, company_name, pitch_ctx,
+                visitor_name=req.visitor_name,
+                role_hint="demo",
+                opening_fallback=pitch_fallback[:400],
+            )
+
         la_context_id = None
         la_session_token = ""
         la_session_id = ""
@@ -785,33 +826,35 @@ async def create_session(req: CreateSessionRequest, request: Request):
                 )
 
                 requested_avatar, stream_voice = _stream_avatar_and_voice(req.persona_id, persona)
-                token_data = await liveavatar.create_session_token(
+                stream = await liveavatar.provision_stream(
                     avatar_id=requested_avatar,
                     context_id=la_context_id,
                     voice_id=stream_voice,
                     language=lang,
                     is_sandbox=settings.LIVEAVATAR_USE_SANDBOX,
                 )
-
+                if not stream and "concurrency" in liveavatar.last_api_error().lower():
+                    logger.warning("LiveAvatar concurrency limit — retrying after cleanup")
+                    await _prune_idle_sessions(keep=0)
+                    await asyncio.sleep(2.5)
+                    stream = await liveavatar.provision_stream(
+                        avatar_id=requested_avatar,
+                        context_id=la_context_id,
+                        voice_id=stream_voice,
+                        language=lang,
+                        is_sandbox=settings.LIVEAVATAR_USE_SANDBOX,
+                    )
                 stream_avatar_id = requested_avatar
-                if token_data:
-                    la_session_token = token_data["session_token"]
-                    stream_avatar_id = token_data.get("avatar_id") or requested_avatar
-
-                    start_data = await liveavatar.start_session(la_session_token)
-                    if start_data:
-                        la_session_id        = start_data["session_id"]
-                        livekit_url          = start_data["livekit_url"]
-                        livekit_client_token = start_data["livekit_client_token"]
-                    elif la_session_token:
-                        logger.warning(
-                            "LiveAvatar start_session failed for %s (persona=%s); falling back to voice_only",
-                            session_id[:8], req.persona_id,
-                        )
+                if stream:
+                    la_session_token     = stream["session_token"]
+                    la_session_id        = stream["la_session_id"]
+                    livekit_url          = stream["livekit_url"]
+                    livekit_client_token = stream["livekit_client_token"]
+                    stream_avatar_id     = stream.get("stream_avatar_id") or requested_avatar
                 else:
-                    logger.warning(
-                        "LiveAvatar token failed for %s (persona=%s); falling back to voice_only",
-                        session_id[:8], req.persona_id,
+                    logger.error(
+                        "LiveAvatar provision failed for %s (persona=%s): %s",
+                        session_id[:8], req.persona_id, liveavatar.last_api_error(),
                     )
             except Exception as e:
                 logger.warning(
@@ -819,7 +862,6 @@ async def create_session(req: CreateSessionRequest, request: Request):
                     session_id[:8], req.persona_id, e,
                 )
 
-        merged_metadata = dict(req.metadata or {})
         user_block = {
             "user_id":      req.user_id or merged_metadata.get("user_id"),
             "user_plan":    req.user_plan or merged_metadata.get("user_plan"),
@@ -860,6 +902,23 @@ async def create_session(req: CreateSessionRequest, request: Request):
         if la_session_id:
             _sessions[session_id]["keepalive_task"] = asyncio.create_task(_liveavatar_keepalive_loop(session_id))
 
+        if not livekit_url or not livekit_client_token:
+            _sessions.pop(session_id, None)
+            if not settings.LIVEAVATAR_API_KEY:
+                raise HTTPException(
+                    503,
+                    "LiveAvatar is not configured. Set LIVEAVATAR_API_KEY to start a session.",
+                )
+            err = liveavatar.last_api_error() or ""
+            if "concurrency" in err.lower():
+                detail = (
+                    "LiveAvatar sandbox allows one active call at a time. "
+                    "End any open call, wait a few seconds, and try again."
+                )
+            else:
+                detail = err or "LiveAvatar session could not start. Please try again in a moment."
+            raise HTTPException(502, detail)
+
         return {
             "session_id":           session_id,
             "persona_id":           req.persona_id,
@@ -871,8 +930,8 @@ async def create_session(req: CreateSessionRequest, request: Request):
             "livekit_client_token": livekit_client_token,
             "la_session_id":        la_session_id,
             "opening_text":         opening_text,
-            "mode":                 "liveavatar" if livekit_url else "voice_only",
-            "stream_avatar_id":     stream_avatar_id if livekit_url else None,
+            "mode":                 "liveavatar",
+            "stream_avatar_id":     stream_avatar_id,
             "sandbox_stream":       settings.LIVEAVATAR_USE_SANDBOX,
         }
     except HTTPException:
@@ -1112,6 +1171,44 @@ async def hubspot_disconnect(request: Request):
     return {"status": "disconnected"}
 
 
+# ── Integrations: Smartsheet ─────────────────────────────────────────────────
+
+@app.get("/api/integrations/smartsheet/status", tags=["Integrations"])
+async def smartsheet_status(request: Request):
+    tenant = tenants.require_tenant(request)
+    ss = (tenant.get("integrations") or {}).get("smartsheet") or {}
+    env_ok = bool(settings.SMARTSHEET_ACCESS_TOKEN and settings.SMARTSHEET_SHEET_ID)
+    tenant_ok = smartsheet.is_configured(tenant)
+    return {
+        "configured_on_server": env_ok,
+        "connected": tenant_ok,
+        "enabled": ss.get("enabled", True) if ss else env_ok,
+        "sheet_id": smartsheet._sheet_id(tenant) if tenant_ok else (ss.get("sheet_id") or settings.SMARTSHEET_SHEET_ID or ""),
+        "uses_env_fallback": env_ok and not ss.get("access_token"),
+    }
+
+
+@app.put("/api/integrations/smartsheet", tags=["Integrations"])
+async def smartsheet_save(request: Request, body: SmartsheetConfigRequest):
+    tenant = tenants.require_tenant(request)
+    if not body.sheet_id.strip() and not settings.SMARTSHEET_SHEET_ID:
+        raise HTTPException(400, "Sheet ID is required")
+    smartsheet.save_config_for_tenant(
+        tenant["tenant_id"],
+        enabled=body.enabled,
+        sheet_id=body.sheet_id.strip() or settings.SMARTSHEET_SHEET_ID,
+        access_token=(body.access_token or "").strip(),
+    )
+    return {"status": "saved"}
+
+
+@app.delete("/api/integrations/smartsheet", tags=["Integrations"])
+async def smartsheet_disconnect(request: Request):
+    tenant = tenants.require_tenant(request)
+    smartsheet.disconnect_for_tenant(tenant["tenant_id"])
+    return {"status": "disconnected"}
+
+
 # ── Integrations: Google Calendar ────────────────────────────────────────────
 
 @app.get("/api/integrations/google-calendar/status", tags=["Integrations"])
@@ -1308,7 +1405,7 @@ async def list_leads(_user: str = Depends(auth.verify_admin)):
 async def capture_lead(req: LeadCaptureRequest):
     """Public inbound lead from the homepage. Persists the record so it appears in the
     admin Leads page, then fires the existing notification pipeline (email + webhook +
-    HubSpot) so the customer is notified within seconds."""
+    HubSpot + Smartsheet) so the customer is notified within seconds."""
     started_at = datetime.now(timezone.utc).isoformat()
     payload = {
         "session_id": f"inbound-{uuid.uuid4().hex[:12]}",
@@ -1580,6 +1677,77 @@ async def avatar_list():
 
 
 # ── Knowledge Base ────────────────────────────────────────────────────────────
+
+@app.post("/api/studio/train", tags=["Knowledge"])
+async def studio_train(req: StudioTrainRequest):
+    """Public homepage studio training — indexes URL + product text for a persona."""
+    persona_id = (req.persona_id or "default").strip()
+    company = (req.company or "your company").strip()
+    total_chunks = 0
+
+    if req.url and req.url.strip():
+        try:
+            total_chunks += await knowledge.add_knowledge_from_url(
+                persona_id, req.url.strip(), title=f"{company} Website",
+            )
+        except Exception as e:
+            logger.warning("Studio URL crawl failed: %s", e)
+            raise HTTPException(400, f"Could not read website: {e}")
+
+    parts = [f"Company name: {company}"]
+    if req.product and req.product.strip():
+        parts.append(f"Products and services: {req.product.strip()}")
+    if req.lang and req.lang.strip():
+        parts.append(f"Preferred language: {req.lang.strip()}")
+    total_chunks += await knowledge.add_knowledge(
+        persona_id, "\n".join(parts), title=f"{company} Overview", tags=["studio"],
+    )
+
+    if total_chunks:
+        product_cards.seed_from_studio_training(persona_id, company)
+        personas = _get_personas()
+        persona_name = "Aiza"
+        if persona_id in personas:
+            cfg = personas[persona_id]
+            persona_name = cfg.persona_name
+            if company and cfg.company_name in ("our company", "your company", "Savant.ai"):
+                updated = cfg.model_copy(update={"company_name": company})
+                personas[persona_id] = updated
+                persona_store.save_all(personas)
+                _invalidate_tenant_persona_cache()
+                company_name = company
+            else:
+                company_name = cfg.company_name
+        else:
+            company_name = company
+    else:
+        company_name = company
+        persona_name = "Aiza"
+
+    knowledge_ctx = await knowledge.query_knowledge(
+        persona_id,
+        f"{company} {req.product or ''} overview products services".strip(),
+    )
+    product_line = (req.product or "").strip()
+    pitch_fallback = (
+        f"Hi — I'm {persona_name}, your {company} Superhuman. "
+        f"{product_line + '. ' if product_line else ''}"
+        "I've just learned about your business — ask me anything or tell me what you'd like to explore."
+    )
+    opening_text = await agent.generate_opening_pitch(
+        persona_name, company_name if total_chunks else company, knowledge_ctx,
+        role_hint="demo",
+        opening_fallback=pitch_fallback,
+    )
+
+    return {
+        "status": "indexed",
+        "persona_id": persona_id,
+        "chunks_stored": total_chunks,
+        "company_name": company,
+        "opening_text": opening_text,
+    }
+
 
 @app.post("/api/knowledge/add", tags=["Knowledge"])
 async def add_knowledge(req: AddKnowledgeRequest, _user: str = Depends(auth.verify_admin)):

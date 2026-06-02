@@ -28,8 +28,8 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 # Copy application code
 COPY . .
 
-# Copy frontend (served as static files by FastAPI)
-COPY ../frontend /app/../frontend
+# Copy frontend when building from backend/ context (local docker-compose)
+COPY frontend/ /app/frontend
 
 # Expose port (Railway uses PORT env var)
 EXPOSE 8000

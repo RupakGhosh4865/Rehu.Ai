@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/static/savant-icon.svg"/>
 <!-- LiveKit Web SDK — handles mic + avatar video in LiveAvatar FULL mode -->
 <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
-<link rel="stylesheet" href="/static/savant-light.css"/>
+<link rel="stylesheet" href="/static/savant-light.css?v=20260602"/>
 <script>
   /* Apply the minimal "modal-embed" mode as early as possible so the
      dashboard chrome (top bar, labels, helper text, idle-badge, end-call
@@ -17,7 +17,14 @@
   (function () {
     try {
       var p = new URLSearchParams(location.search);
-      if (p.get('modal') === '1') {
+      if (p.get('embed') === 'inline') {
+        document.documentElement.classList.add('inline-embed');
+        document.addEventListener('DOMContentLoaded', function () {
+          document.body.classList.add('inline-embed');
+          document.querySelector('.privacy-notice')?.remove();
+          document.querySelector('.chat-col')?.remove();
+        });
+      } else if (p.get('modal') === '1') {
         document.documentElement.classList.add('modal-embed');
         document.addEventListener('DOMContentLoaded', function () {
           document.body.classList.add('modal-embed');
@@ -297,11 +304,9 @@ let personaName = 'Aiza';
 let companyName = 'our company';
 let selectedLanguage = urlParams.get('lang') || 'en';
 let speakerEnabled = true;
-let openingFallbackTimer = null;
-let avatarSpeechSeen = false;
 let avatarAudioAttached = false;
 let micAutoPaused = false;
-let fallbackTtsActive = false;
+let avatarSpeakResumeTimer = null;
 let suppressVisitorAudioUntil = 0;
 let endingCall = false;
 let reconnectingAvatar = false;
@@ -309,7 +314,7 @@ let avatarReconnectAttempts = 0;
 let livekitConnectSerial = 0;
 let demoTimerHandle = null;
 let demoTimerStarted = false;
-const fallbackAudioEls = new Set();
+let videoSyncTimer = null;
 const partialTranscriptEls = {};
 const transcriptSeen = new Set();
 let complianceSettings = null;
@@ -366,12 +371,32 @@ const PERSONA_SUBS = {
 };
 let roleTitle = 'Savant.ai Business Expert';
 let transcriptPending = null;
-let mediaRec    = null;
-let isRecording = false;
 let liveavatarKeySet = false;
 
 // ═══════════════ INIT ═══════════════
+const isInlineEmbed = urlParams.get('embed') === 'inline';
 const isModalEmbed = urlParams.get('modal') === '1';
+const isHostedEmbed = isModalEmbed || isInlineEmbed;
+const embedSlot = urlParams.get('slot') || '';
+const embedDebug = urlParams.get('debug') === '1';
+const embedTimings = { start: 0 };
+
+function logEmbedTiming(milestone) {
+  if (!embedDebug || !isInlineEmbed) return;
+  if (!embedTimings.start) embedTimings.start = performance.now();
+  const ms = Math.round(performance.now() - embedTimings.start);
+  console.log(`[Aiza embed] ${milestone} +${ms}ms`);
+}
+
+function postEmbedMessage(msg) {
+  if (!isHostedEmbed) return;
+  try { window.parent?.postMessage(msg, '*'); } catch (_) {}
+}
+
+function postTranscriptToParent(role, text, partial) {
+  if (!isInlineEmbed || !text) return;
+  postEmbedMessage({ type: 'sh:transcript', role, text, partial: !!partial });
+}
 
 window.addEventListener('load', async () => {
   if (isWidget) {
@@ -390,15 +415,19 @@ window.addEventListener('load', async () => {
   if (window.RehuCall) RehuCall.initAlivePersona('.av-frame');
   // Live idle preview only on homepage — call page starts preview after session to avoid conflicts
 
-  // When loaded inside the homepage docked panel, the user already clicked
-  // "Let's Talk" or the builder — auto-start the call (no landing screen).
-  if (isModalEmbed) {
+  // When loaded inside the homepage panel or an inline mock tile — auto-start.
+  if (isHostedEmbed) {
     const consentCheck = document.getElementById('consent-check');
     if (consentCheck) consentCheck.checked = true;
     if (callFlow === 'builder') showBuilderReadyBanner();
-    setTimeout(() => {
+    if (isInlineEmbed) {
+      if (embedDebug) embedTimings.start = performance.now();
       try { startCall(); } catch (e) { console.error('auto-start failed', e); }
-    }, callFlow === 'builder' ? 150 : 250);
+    } else {
+      setTimeout(() => {
+        try { startCall(); } catch (e) { console.error('auto-start failed', e); }
+      }, callFlow === 'builder' ? 150 : 250);
+    }
   }
 });
 
@@ -565,13 +594,12 @@ function hideCallError() {
 }
 
 function reportCallFailure(msg) {
-  if (!isModalEmbed) return;
-  try {
-    window.parent?.postMessage({
-      type: 'sh:session_error',
-      message: msg || 'Could not start the session. Check your connection and try again.',
-    }, '*');
-  } catch (_) {}
+  if (!isHostedEmbed) return;
+  postEmbedMessage({
+    type: 'sh:session_error',
+    slot: embedSlot,
+    message: msg || 'Could not start the session. Check your connection and try again.',
+  });
 }
 
 function parseSessionApiError(status, errBody) {
@@ -584,7 +612,7 @@ function parseSessionApiError(status, errBody) {
           : Array.isArray(parsed.detail)
             ? parsed.detail.map((d) => d.msg || d).join('; ')
             : String(parsed.detail);
-        return `Connection failed (${detail})`;
+        return detail;
       }
     } catch (_) {}
     const snippet = errBody.trim().slice(0, 160);
@@ -596,10 +624,8 @@ function parseSessionApiError(status, errBody) {
 }
 
 function showCallError(msg) {
-  if (isModalEmbed) {
-    reportCallFailure(msg);
-    if (window.RehuCall) RehuCall.hideConnectOverlay();
-    resetBtn();
+  if (isHostedEmbed) {
+    abortCallSetup(msg);
     return;
   }
   const b = document.getElementById('call-error-banner');
@@ -609,6 +635,31 @@ function showCallError(msg) {
   if (window.RehuCall) RehuCall.hideConnectOverlay();
   document.getElementById('call-screen').style.display = 'none';
   document.getElementById('landing').style.display = 'grid';
+  resetBtn();
+}
+
+async function abortCallSetup(msg) {
+  const sid = sessionId;
+  sessionId = null;
+  endingCall = true;
+  reconnectingAvatar = false;
+  if (videoSyncTimer) { clearInterval(videoSyncTimer); videoSyncTimer = null; }
+  if (livekitRoom) { try { await livekitRoom.disconnect(); } catch (e) {} livekitRoom = null; }
+  if (sid) fetch(`/api/sessions/${sid}`, { method: 'DELETE' }).catch(() => {});
+  clearInlineVideoMask();
+  if (isInlineEmbed) {
+    const call = document.getElementById('call-screen');
+    const landing = document.getElementById('landing');
+    if (call) call.style.display = 'none';
+    if (landing) landing.style.display = 'none';
+    const poster = document.getElementById('call-poster');
+    if (poster) poster.classList.remove('hidden');
+    const stage = document.getElementById('avatar-stage');
+    if (stage) stage.classList.remove('avatar-connecting');
+  }
+  endingCall = false;
+  reportCallFailure(msg);
+  if (window.RehuCall) RehuCall.hideConnectOverlay();
   resetBtn();
 }
 
@@ -629,17 +680,33 @@ async function startCall() {
   btn.disabled = true;
   btn.innerHTML = `<div class="ph"><div class="spinner" style="width:22px;height:22px;border-width:2px;border-top-color:#fff;border-color:rgba(255,255,255,.3)"></div></div><span>Connecting…</span>`;
 
-  if (window.RehuPersonaLive && !isModalEmbed) {
+  if (window.RehuPersonaLive && !isHostedEmbed) {
     await RehuPersonaLive.stop();
     await new Promise((r) => setTimeout(r, 400));
   }
 
-  if (window.RehuCall && !isModalEmbed) {
+  if (window.RehuCall && !isHostedEmbed) {
     RehuCall.showConnectOverlay(personaName);
   }
   closePresentation();
-  RehuCall?.transitionToCall();
+  if (isInlineEmbed) {
+    postEmbedMessage({ type: 'sh:connecting', slot: embedSlot });
+    const poster = document.getElementById('call-poster');
+    if (poster) poster.classList.remove('hidden');
+    const landing = document.getElementById('landing');
+    const call = document.getElementById('call-screen');
+    if (landing) landing.style.display = 'none';
+    if (call) {
+      call.style.display = 'block';
+      call.classList.remove('fade-in');
+    }
+    const stage = document.getElementById('avatar-stage');
+    if (stage) stage.classList.add('avatar-connecting');
+  } else {
+    RehuCall?.transitionToCall();
+  }
   applyLanguageChoice();
+  if (isInlineEmbed && embedDebug) logEmbedTiming('embed_start');
 
   try {
     const urlUserId    = urlParams.get('user_id') || '';
@@ -647,36 +714,45 @@ async function startCall() {
     const urlUserStage = urlParams.get('user_stage') || '';
     const urlPage      = urlParams.get('page') || '';
 
-    const res = await fetch('/api/sessions', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        persona_id: personaId,
-        language: selectedLanguage,
-        user_id:      urlUserId    || undefined,
-        user_plan:    urlUserPlan  || undefined,
-        user_stage:   urlUserStage || undefined,
-        page_context: urlPage      || undefined,
-        metadata: {
-          widget: isWidget,
-          widget_mode: isWidget,
-          flow: callFlow,
-          source_page: location.href,
-          user_agent: navigator.userAgent,
-          user: {
-            id:    urlUserId    || undefined,
-            plan:  urlUserPlan  || undefined,
-            stage: urlUserStage || undefined,
-            page:  urlPage      || undefined,
-          },
-          consent: {
-            accepted: !!consentCheck?.checked,
-            text: document.getElementById('consent-copy')?.textContent || '',
-            accepted_at: new Date().toISOString(),
-            store_audio: !!complianceSettings?.store_audio,
-          },
+    const sessionBody = JSON.stringify({
+      persona_id: personaId,
+      language: selectedLanguage,
+      opening_override: urlOpening || undefined,
+      user_id:      urlUserId    || undefined,
+      user_plan:    urlUserPlan  || undefined,
+      user_stage:   urlUserStage || undefined,
+      page_context: urlPage      || undefined,
+      metadata: {
+        widget: isWidget,
+        widget_mode: isWidget,
+        flow: callFlow,
+        source_page: location.href,
+        user_agent: navigator.userAgent,
+        user: {
+          id:    urlUserId    || undefined,
+          plan:  urlUserPlan  || undefined,
+          stage: urlUserStage || undefined,
+          page:  urlPage      || undefined,
         },
-      }),
+        consent: {
+          accepted: !!consentCheck?.checked,
+          text: document.getElementById('consent-copy')?.textContent || '',
+          accepted_at: new Date().toISOString(),
+          store_audio: !!complianceSettings?.store_audio,
+        },
+      },
     });
+
+    let res = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: sessionBody,
+      });
+      if (res.ok || ![502, 503, 429].includes(res.status) || attempt === 2) break;
+      await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
+    }
     if (!res.ok) {
       const errBody = await res.text().catch(() => '');
       throw new Error(parseSessionApiError(res.status, errBody));
@@ -684,14 +760,14 @@ async function startCall() {
     const data = await res.json();
     const openingLine = urlOpening || data.opening_text || '';
 
-    if (isModalEmbed && window.RehuCall) RehuCall.hideConnectOverlay();
-    if (isModalEmbed && openingLine) scheduleOpeningFallback(openingLine);
+    if (isHostedEmbed && window.RehuCall) RehuCall.hideConnectOverlay();
 
     sessionId   = data.session_id;
     personaName = data.persona_name || personaName;
-    sessionMode = data.mode || 'voice_only';
+    sessionMode = data.mode || 'liveavatar';
     selectedLanguage = data.language || selectedLanguage;
     applyLanguageChoice();
+    if (isInlineEmbed && embedDebug) logEmbedTiming('session_created');
 
     setNames(personaName);
     document.getElementById('cs-co').textContent = roleSubtitle();
@@ -701,49 +777,95 @@ async function startCall() {
       chip.dataset.demo = '1';
     }
 
-    if (sessionMode==='liveavatar' && data.livekit_url && data.livekit_client_token) {
+    if (sessionMode === 'liveavatar' && data.livekit_url && data.livekit_client_token) {
       try {
         await connectLiveKit(data.livekit_url, data.livekit_client_token);
-        scheduleOpeningFallback(openingLine);
       } catch (lkErr) {
         console.error(lkErr);
-        showCallError('Connection issue — retry or check microphone permissions.');
+        await abortCallSetup('LiveAvatar could not connect. Please try again.');
         return;
       }
-    } else if (sessionMode === 'voice_only' && liveavatarKeySet) {
-      console.warn('LiveAvatar unavailable; falling back to voice mode');
-      await connectVoiceWS(openingLine);
-      if (window.RehuCall) RehuCall.hideConnectOverlay();
     } else {
-      await connectVoiceWS(openingLine);
-      if (window.RehuCall) RehuCall.hideConnectOverlay();
+      const msg = data.detail
+        || 'LiveAvatar could not start. Check your API key and try again.';
+      await abortCallSetup(msg);
+      return;
     }
     maybeStartDemoTimer();
-    if (isModalEmbed) {
-      try { window.parent?.postMessage({ type: 'sh:session_started' }, '*'); } catch (_) {}
+    if (isHostedEmbed) {
+      if (isInlineEmbed) clearInlineVideoMask();
+      postEmbedMessage({ type: 'sh:session_started', slot: embedSlot });
     }
   } catch(e) {
     console.error(e);
     const detail = e?.message ? String(e.message) : '';
-    showCallError(detail || 'Connection issue — retry or check microphone permissions.');
+    await abortCallSetup(detail || 'Connection issue — retry or check microphone permissions.');
   }
 }
 
 // ═══════════════ LIVEKIT (LiveAvatar FULL mode) ═══════════════
+function clearInlineVideoMask() {
+  document.getElementById('avatar-stage')?.classList.remove('avatar-connecting');
+  document.querySelector('.privacy-notice')?.remove();
+}
+
+function syncAttachAllVideoTracks() {
+  if (!livekitRoom) return false;
+  let sawVideo = false;
+  for (const participant of livekitRoom.remoteParticipants.values()) {
+    const pubs = participant.videoTrackPublications
+      ? [...participant.videoTrackPublications.values()]
+      : [...participant.trackPublications.values()].filter((p) => p.kind === 'video');
+    for (const pub of pubs) {
+      if (pub.track) {
+        attachAvatarVideo(pub.track);
+        sawVideo = true;
+      } else if (typeof pub.setSubscribed === 'function') {
+        try { pub.setSubscribed(true); } catch (_) {}
+      }
+    }
+  }
+  const v = document.getElementById('av-video');
+  return sawVideo || !!(v && v.videoWidth > 0);
+}
+
+function startVideoSyncLoop() {
+  if (videoSyncTimer) clearInterval(videoSyncTimer);
+  let attempts = 0;
+  videoSyncTimer = setInterval(() => {
+    if (!sessionId || endingCall) {
+      clearInterval(videoSyncTimer);
+      videoSyncTimer = null;
+      return;
+    }
+    if (syncAttachAllVideoTracks() || ++attempts > 50) {
+      clearInterval(videoSyncTimer);
+      videoSyncTimer = null;
+    }
+  }, 400);
+}
+
 function attachAvatarVideo(track) {
   if (!track || track.kind !== 'video') return;
   const v = document.getElementById('av-video');
   if (!v) return;
+  try { track.detach(v); } catch (_) {}
   track.attach(v);
   v.style.opacity = '1';
   v.style.display = 'block';
+  v.muted = true;
   const poster = document.getElementById('call-poster');
   if (poster) poster.classList.add('hidden');
   v.play().catch(() => {});
   reconnectingAvatar = false;
+  clearInlineVideoMask();
   setAvatarPresence('ready');
   setChip('listening');
   if (window.RehuCall) RehuCall.hideConnectOverlay();
+  if (isInlineEmbed) {
+    postEmbedMessage({ type: 'sh:video_ready', slot: embedSlot });
+  }
+  if (isInlineEmbed && embedDebug) logEmbedTiming('video_ready');
 }
 
 function attachAvatarAudio(track) {
@@ -755,16 +877,13 @@ function attachAvatarAudio(track) {
   }
   avatarAudioEl = track.attach();
   avatarAudioAttached = true;
-  if (openingFallbackTimer) {
-    clearTimeout(openingFallbackTimer);
-    openingFallbackTimer = null;
-  }
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   avatarAudioEl.autoplay = true;
   avatarAudioEl.playsInline = true;
   avatarAudioEl.muted = !speakerEnabled;
   avatarAudioEl.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0';
   document.body.appendChild(avatarAudioEl);
+  if (isInlineEmbed) clearInlineVideoMask();
   if (window.RehuCall) RehuCall.hideConnectOverlay();
   const playAudio = async () => {
     try {
@@ -803,6 +922,13 @@ async function connectLiveKit(lkUrl, lkToken) {
     if (track.kind === 'audio') attachAvatarAudio(track);
   });
 
+  livekitRoom.on(LC.RoomEvent.TrackPublished, (pub, participant) => {
+    if (pub?.kind === 'video' && pub.track) attachAvatarVideo(pub.track);
+    else if (pub?.kind === 'video' && typeof pub.setSubscribed === 'function') {
+      try { pub.setSubscribed(true); } catch (_) {}
+    }
+  });
+
   livekitRoom.on(LC.RoomEvent.TrackUnsubscribed, (track) => {
     if (track?.kind === 'video' && sessionId && !endingCall) {
       handleAvatarDisconnect('avatar_video_unsubscribed');
@@ -825,8 +951,13 @@ async function connectLiveKit(lkUrl, lkToken) {
 
   await livekitRoom.connect(lkUrl, lkToken, { autoSubscribe: true });
   console.log('✓ LiveKit connected, room state:', livekitRoom.state);
+  if (isInlineEmbed && embedDebug) logEmbedTiming('livekit_connected');
 
   attachRemoteTracks(livekitRoom, LC);
+  if (isInlineEmbed) {
+    clearInlineVideoMask();
+    startVideoSyncLoop();
+  }
 
   try {
     await livekitRoom.startAudio();
@@ -835,16 +966,23 @@ async function connectLiveKit(lkUrl, lkToken) {
   }
 
   await enableMic();
+  syncAttachAllVideoTracks();
 
   setTimeout(() => {
     if (connectSerial !== livekitConnectSerial || !sessionId) return;
+    syncAttachAllVideoTracks();
     if (window.RehuCall) RehuCall.hideConnectOverlay();
     const v = document.getElementById('av-video');
-    if (v && v.style.opacity !== '1') {
-      showCallError('Video did not load. Check microphone permissions and try again.');
-      if (livekitRoom) { try { livekitRoom.disconnect(); } catch (e) {} livekitRoom = null; }
+    const hasVideo = v && v.videoWidth > 0;
+    if (!hasVideo && !avatarAudioAttached) {
+      const msg = 'Video did not load. Check your connection and try again.';
+      abortCallSetup(msg);
+      return;
     }
-  }, 12000);
+    if (!hasVideo && avatarAudioAttached) {
+      startVideoSyncLoop();
+    }
+  }, 18000);
 }
 
 function setAvatarPresence(state, message = '') {
@@ -928,9 +1066,20 @@ async function enableMic() {
     updateMicUI();
     if (window.RehuCall) RehuCall.hideConnectOverlay();
     console.log('✓ Mic published — real-time conversation active');
+    if (isInlineEmbed) {
+      postEmbedMessage({ type: 'sh:mic_ready', slot: embedSlot });
+    }
+    if (isInlineEmbed && embedDebug) logEmbedTiming('mic_ready');
   } catch(e) {
     console.warn('Mic access denied:', e);
     if (window.RehuCall) RehuCall.hideConnectOverlay();
+    if (isInlineEmbed) {
+      postEmbedMessage({
+        type: 'sh:mic_denied',
+        slot: embedSlot,
+        message: 'Allow microphone to talk to Aiza.',
+      });
+    }
   }
 }
 
@@ -944,11 +1093,6 @@ function handleAgentEvt(evt) {
   }
   switch(evt.event_type) {
     case 'avatar.speak_started':
-      avatarSpeechSeen = true;
-      if (openingFallbackTimer) {
-        clearTimeout(openingFallbackTimer);
-        openingFallbackTimer = null;
-      }
       autoPauseMicForAiza();
       setChip('speaking'); cs.classList.add('aiza-speaks'); break;
     case 'avatar.speak_ended':
@@ -981,6 +1125,7 @@ function normalizeTranscriptEvent(evt) {
 }
 
 function updatePartialTranscript(role, text) {
+  postTranscriptToParent(role, text, true);
   const w = document.getElementById('transcript');
   if (!w || !text) return;
   hideTranscriptEmpty();
@@ -997,6 +1142,7 @@ function updatePartialTranscript(role, text) {
 }
 
 function finalizeTranscript(role, text) {
+  postTranscriptToParent(role, text, false);
   const partial = partialTranscriptEls[role];
   if (partial?.isConnected) partial.remove();
   partialTranscriptEls[role] = null;
@@ -1036,23 +1182,30 @@ function interrupt() {
 async function autoPauseMicForAiza() {
   if (!micEnabled || micAutoPaused) return;
   micAutoPaused = true;
-  suppressVisitorAudioUntil = Date.now() + 1200;
+  suppressVisitorAudioUntil = Date.now() + 600;
   if (livekitRoom) {
     try { await livekitRoom.localParticipant.setMicrophoneEnabled(false); } catch(e){}
-  } else {
-    stopVoiceRec();
   }
+  if (avatarSpeakResumeTimer) clearTimeout(avatarSpeakResumeTimer);
+  avatarSpeakResumeTimer = setTimeout(() => {
+    avatarSpeakResumeTimer = null;
+    resumeMicAfterAiza();
+    setChip('listening');
+    document.getElementById('call-screen')?.classList.remove('aiza-speaks');
+  }, 5000);
 }
 
 async function resumeMicAfterAiza() {
+  if (avatarSpeakResumeTimer) {
+    clearTimeout(avatarSpeakResumeTimer);
+    avatarSpeakResumeTimer = null;
+  }
   if (!micAutoPaused) return;
   micAutoPaused = false;
-  suppressVisitorAudioUntil = Date.now() + 900;
+  suppressVisitorAudioUntil = Date.now() + 400;
   if (!micEnabled) return;
   if (livekitRoom) {
     try { await livekitRoom.localParticipant.setMicrophoneEnabled(true); } catch(e){}
-  } else if (!fallbackTtsActive) {
-    startVoiceRec();
   }
 }
 
@@ -1073,7 +1226,6 @@ function updateSpeakerUI() {
   if (off) off.style.display = speakerEnabled ? 'none' : '';
   if (btn) btn.classList.toggle('muted', !speakerEnabled);
   if (avatarAudioEl) avatarAudioEl.muted = !speakerEnabled;
-  fallbackAudioEls.forEach((audio) => { audio.muted = !speakerEnabled; });
   if (!speakerEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
@@ -1081,9 +1233,6 @@ async function toggleMute() {
   micEnabled = !micEnabled;
   if (livekitRoom) {
     try { await livekitRoom.localParticipant.setMicrophoneEnabled(micEnabled && !micAutoPaused); } catch(e){}
-  } else {
-    // voice-only fallback
-    micEnabled ? startVoiceRec() : stopVoiceRec();
   }
   updateMicUI();
 }
@@ -1382,103 +1531,6 @@ async function saveLeadCapture() {
   } catch(e) {}
 }
 
-function scheduleOpeningFallback(openingText) {
-  if (!openingText || !window.speechSynthesis) return;
-  avatarSpeechSeen = false;
-  if (openingFallbackTimer) clearTimeout(openingFallbackTimer);
-  const delay = isModalEmbed ? 2000 : 4500;
-  openingFallbackTimer = setTimeout(() => {
-    openingFallbackTimer = null;
-    if (!sessionId || avatarSpeechSeen || avatarAudioAttached || !speakerEnabled) return;
-    if (sessionMode === 'liveavatar' && !isModalEmbed) return;
-    speakBrowserFallback(openingText);
-  }, delay);
-}
-
-function speakBrowserFallback(text) {
-  if (!text || !window.speechSynthesis || !speakerEnabled) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = SPEECH_LANGS[selectedLanguage] || 'en-US';
-  utterance.rate = selectedLanguage === 'zh' ? 0.92 : 0.96;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-}
-
-// ═══════════════ VOICE-ONLY FALLBACK ═══════════════
-async function connectVoiceWS(openingText) {
-  const proto = location.protocol==='https:'?'wss:':'ws:';
-  wsConn = new WebSocket(`${proto}//${location.host}/ws/voice/${sessionId}`);
-  wsConn.onopen = () => {
-    setTimeout(()=>wsConn?.readyState===1 && wsConn.send(JSON.stringify({type:'start_demo'})), 400);
-    setChip('listening');
-    startVoiceRec(); // auto-start continuous mic
-  };
-  wsConn.onmessage = e => {
-    const m = JSON.parse(e.data);
-    if (m.type==='transcript') {
-      const role = m.role==='assistant'?'ai':'me';
-      if (role === 'me') {
-        if (shouldSuppressVisitorTranscript()) return;
-        addMsg(role, m.text, { persist: true });
-        maybeShowProductCard(m.text || '');
-        maybePromptMeeting(m.text || '');
-        captureLeadDetails(m.text || '');
-      } else if (m.text !== openingText) {
-        addMsg('ai', m.text || '', { persist: false });
-        persistTranscriptLine('ai', m.text || '');
-        if (isPresentationCue(m.text)) maybeShowProductCard(lastUserIntentText || m.text, { fromAssistant: true, cueText: m.text });
-      }
-    }
-    else if (m.type==='audio') playAudio(m.data);
-    else if (m.type==='status') {
-      const s = (m.message||'').toLowerCase();
-      setChip(s.includes('speak')?'speaking':s.includes('think')?'thinking':'listening');
-    }
-  };
-  wsConn.onclose = () => { if(sessionId) endCall(); };
-}
-
-async function startVoiceRec() {
-  if (isRecording) return;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-    mediaRec = new MediaRecorder(stream, {mimeType:'audio/webm'});
-    mediaRec.ondataavailable = e => {
-      if (e.data.size>0 && wsConn?.readyState===1 && micEnabled) {
-        const rd = new FileReader();
-        rd.onloadend = () => wsConn.send(JSON.stringify({type:'audio',data:rd.result.split(',')[1]}));
-        rd.readAsDataURL(e.data);
-      }
-    };
-    mediaRec.start(300);
-    isRecording = true;
-  } catch(e) { console.warn('Mic denied for voice mode'); }
-}
-
-function stopVoiceRec() {
-  if (!isRecording||!mediaRec) return;
-  mediaRec.stop(); mediaRec.stream?.getTracks().forEach(t=>t.stop()); isRecording=false;
-}
-
-function playAudio(b64) {
-  fallbackTtsActive = true;
-  autoPauseMicForAiza();
-  const url = URL.createObjectURL(new Blob([Uint8Array.from(atob(b64),c=>c.charCodeAt(0))],{type:'audio/mpeg'}));
-  const a   = new Audio(url);
-  a.muted = !speakerEnabled;
-  fallbackAudioEls.add(a);
-  a.onended = () => {
-    URL.revokeObjectURL(url);
-    fallbackAudioEls.delete(a);
-    fallbackTtsActive = false;
-    resumeMicAfterAiza();
-  };
-  a.play().catch(()=>{
-    fallbackTtsActive = false;
-    resumeMicAfterAiza();
-  });
-}
-
 // ═══════════════ DEMO TIMER (homepage round-trip) ═══════════════
 function maybeStartDemoTimer() {
   if (demoTimerStarted) return;
@@ -1500,22 +1552,18 @@ async function endCall() {
   const sid = sessionId; sessionId = null;
   endingCall = true;
   reconnectingAvatar = false;
+  if (videoSyncTimer) { clearInterval(videoSyncTimer); videoSyncTimer = null; }
   if (livekitRoom) { try{await livekitRoom.disconnect();}catch(e){} livekitRoom=null; }
-  if (wsConn)      { try{wsConn.send(JSON.stringify({type:'end'}));wsConn.close();}catch(e){} wsConn=null; }
-  stopVoiceRec();
-  if (openingFallbackTimer) { clearTimeout(openingFallbackTimer); openingFallbackTimer = null; }
+  if (wsConn)      { try{wsConn.close();}catch(e){} wsConn=null; }
   if (window.speechSynthesis) window.speechSynthesis.cancel();
-  fallbackAudioEls.forEach((audio) => { try { audio.pause(); } catch(e) {} });
-  fallbackAudioEls.clear();
   if (avatarAudioEl) { avatarAudioEl.remove(); avatarAudioEl = null; }
   avatarAudioAttached = false;
   micAutoPaused = false;
-  fallbackTtsActive = false;
   const v = document.getElementById('av-video');
   if (v) { try{v.srcObject=null;}catch(e){} v.style.opacity = '0'; }
   document.getElementById('call-screen').classList.remove('aiza-speaks');
   if (sid) fetch(`/api/sessions/${sid}`,{method:'DELETE'}).catch(()=>{});
-  if (!isModalEmbed) {
+  if (!isHostedEmbed) {
     document.getElementById('call-screen').style.display = 'none';
     document.getElementById('landing').style.display     = 'grid';
   }
@@ -1553,8 +1601,8 @@ async function endCall() {
   if (demoTimerHandle) { clearTimeout(demoTimerHandle); demoTimerHandle = null; }
   if (isWidget) {
     window.parent.postMessage({ type: 'sh:session_ended' }, '*');
-  } else if (urlParams.get('modal') === '1') {
-    try { window.parent?.postMessage({ type: 'sh:session_ended' }, '*'); } catch (_) {}
+  } else if (isHostedEmbed) {
+    postEmbedMessage({ type: 'sh:session_ended', slot: embedSlot });
     return;
   } else if (urlParams.get('demo') === '1') {
     const nm = urlParams.get('name') || '';

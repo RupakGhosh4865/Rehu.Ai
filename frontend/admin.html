@@ -546,6 +546,25 @@
             <button class="btn btn-ghost" onclick="disconnectGcal()" id="gc-disconnect-btn" style="display:none;">Disconnect</button>
           </div>
         </div>
+        <div class="card">
+          <h3 style="margin-bottom:6px;">Smartsheet</h3>
+          <p class="text-sm text-muted">Append every new lead and meeting as a row in your Smartsheet.</p>
+          <div id="ss-status" style="margin:14px 0;font-weight:600;">Loading…</div>
+          <div class="form-group">
+            <label class="form-label">Sheet ID</label>
+            <input class="form-input" id="ss-sheet-id" placeholder="From Smartsheet URL: /sheets/1234567890"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">API access token (optional if set in server .env)</label>
+            <input class="form-input" id="ss-access-token" type="password" placeholder="Leave blank to keep existing"/>
+          </div>
+          <label style="display:block;margin:8px 0 14px;"><input type="checkbox" id="ss-enabled" checked/> Enable Smartsheet sync</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="saveSmartsheet()">Save Smartsheet</button>
+            <button class="btn btn-ghost" onclick="disconnectSmartsheet()" id="ss-disconnect-btn">Disconnect</button>
+          </div>
+          <div class="text-sm text-muted" style="margin-top:10px;">Expected columns: Name, Email, Company, Source, Lead Score, Session ID, Notes, Created At</div>
+        </div>
       </div>
     </div>
 
@@ -633,6 +652,11 @@
       <label class="form-label">Notification email (optional)</label>
       <input type="email" id="modal-notify-email" class="form-input" placeholder="sales@yourcompany.com" />
       <div class="text-sm text-muted" style="margin-top:4px;">Override the default notification address for this persona.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">System prompt (optional)</label>
+      <textarea id="modal-system-prompt" class="form-textarea" style="min-height:140px;" placeholder="Custom instructions for this persona. Leave blank to use the default template prompt."></textarea>
+      <div class="text-sm text-muted" style="margin-top:4px;">Controls demo structure, tone rules, and lead capture behavior. Knowledge base content is appended automatically.</div>
     </div>
     <div style="display:flex;gap:12px;margin-top:8px;">
       <button class="btn btn-primary flex-1" onclick="savePersona()">Save Persona</button>
@@ -1002,6 +1026,8 @@ function applyTemplate() {
         document.getElementById('modal-id').value = s.persona_id + '-copy';
         document.getElementById('modal-name').value = s.persona_name;
       }
+      const sp = document.getElementById('modal-system-prompt');
+      if (sp && s.system_prompt) sp.value = s.system_prompt;
       toast(`Template "${s.title}" applied — customize ID and company`, '');
     });
 }
@@ -1064,6 +1090,7 @@ function openPersonaModal(personaId = null) {
   document.getElementById('modal-tone').value = 'professional';
   const cal = document.getElementById('modal-calendly'); if (cal) cal.value = '';
   const nem = document.getElementById('modal-notify-email'); if (nem) nem.value = '';
+  const sp = document.getElementById('modal-system-prompt'); if (sp) sp.value = '';
   if (document.getElementById('modal-template')) document.getElementById('modal-template').value = '';
   document.getElementById('modal-persona-id').value = personaId || '';
   document.getElementById('modal-title').textContent = personaId ? 'Edit Persona' : 'Create Persona';
@@ -1084,6 +1111,7 @@ async function editPersona(personaId) {
   document.getElementById('modal-tone').value = p.tone || 'professional';
   const cal = document.getElementById('modal-calendly'); if (cal) cal.value = p.calendly_url || '';
   const nem = document.getElementById('modal-notify-email'); if (nem) nem.value = p.notification_email || '';
+  const sp = document.getElementById('modal-system-prompt'); if (sp) sp.value = p.system_prompt_override || '';
   document.getElementById('modal-title').textContent = 'Edit Persona';
   document.getElementById('persona-modal').style.display = 'flex';
 }
@@ -1100,6 +1128,7 @@ async function savePersona() {
     tone: document.getElementById('modal-tone').value,
     calendly_url: (document.getElementById('modal-calendly')?.value || '').trim() || null,
     notification_email: (document.getElementById('modal-notify-email')?.value || '').trim() || null,
+    system_prompt_override: (document.getElementById('modal-system-prompt')?.value || '').trim() || null,
   };
 
   const method = existing ? 'PUT' : 'POST';
@@ -1284,7 +1313,7 @@ async function sendTestNotification(){
 
 // ── Integrations ──────────────────────────────────────────────────────────
 async function loadIntegrations(){
-  await Promise.all([loadHubspotStatus(), loadGcalStatus()]);
+  await Promise.all([loadHubspotStatus(), loadGcalStatus(), loadSmartsheetStatus()]);
 }
 
 async function loadHubspotStatus(){
@@ -1357,6 +1386,53 @@ async function disconnectGcal(){
   if(!confirm('Disconnect Google Calendar?')) return;
   await fetch(`${API_BASE}/api/integrations/google-calendar`, {method:'DELETE', headers:_authHeaders()});
   loadGcalStatus();
+}
+
+async function loadSmartsheetStatus(){
+  const el = document.getElementById('ss-status');
+  try{
+    const r = await fetch(`${API_BASE}/api/integrations/smartsheet/status`, {headers:_authHeaders()});
+    if(!r.ok){ el.textContent = 'Sign in to manage integrations'; return; }
+    const s = await r.json();
+    document.getElementById('ss-sheet-id').value = s.sheet_id || '';
+    document.getElementById('ss-enabled').checked = s.enabled !== false;
+    if(s.connected){
+      el.innerHTML = '<span style="color:#047857;">Connected. Leads append to your sheet automatically.</span>';
+    } else if(s.configured_on_server){
+      el.innerHTML = '<span style="color:var(--gray-600);">Server .env configured — save Sheet ID below or set SMARTSHEET_SHEET_ID.</span>';
+    } else {
+      el.innerHTML = '<span style="color:var(--gray-600);">Not configured. Add Sheet ID and API token below.</span>';
+    }
+  }catch(e){ el.textContent = 'Error loading status'; }
+}
+
+async function saveSmartsheet(){
+  const payload = {
+    enabled: document.getElementById('ss-enabled').checked,
+    sheet_id: document.getElementById('ss-sheet-id').value.trim(),
+    access_token: document.getElementById('ss-access-token').value.trim() || null,
+  };
+  const r = await fetch(`${API_BASE}/api/integrations/smartsheet`, {
+    method:'PUT',
+    headers:_authHeaders({'Content-Type':'application/json'}),
+    body: JSON.stringify(payload),
+  });
+  if(r.ok){
+    toast('Smartsheet settings saved', 'success');
+    document.getElementById('ss-access-token').value = '';
+    loadSmartsheetStatus();
+  } else {
+    toast('Could not save Smartsheet settings', 'error');
+  }
+}
+
+async function disconnectSmartsheet(){
+  if(!confirm('Disconnect Smartsheet?')) return;
+  await fetch(`${API_BASE}/api/integrations/smartsheet`, {method:'DELETE', headers:_authHeaders()});
+  document.getElementById('ss-sheet-id').value = '';
+  document.getElementById('ss-access-token').value = '';
+  loadSmartsheetStatus();
+  toast('Smartsheet disconnected');
 }
 
 // ── Billing ───────────────────────────────────────────────────────────────

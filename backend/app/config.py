@@ -83,6 +83,10 @@ class Settings(BaseSettings):
     HUBSPOT_CLIENT_SECRET: str = ""
     HUBSPOT_REDIRECT_URI:  str = ""
 
+    # ── Smartsheet CRM (append leads as rows) ─────────────────────────────────
+    SMARTSHEET_ACCESS_TOKEN: str = ""
+    SMARTSHEET_SHEET_ID:     str = ""
+
     # ── Google Calendar integration ────────────────────────────────────────────
     GOOGLE_CLIENT_ID:     str = ""
     GOOGLE_CLIENT_SECRET: str = ""

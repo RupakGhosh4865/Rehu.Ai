@@ -40,6 +40,7 @@ class CreateSessionRequest(BaseModel):
     user_plan: Optional[str] = Field(None, description="Visitor's current plan: free | pro | enterprise …")
     user_stage: Optional[str] = Field(None, description="Lifecycle stage: trial | active | churning …")
     page_context: Optional[str] = Field(None, description="Human-readable context of the page (e.g. 'Pricing page')")
+    opening_override: Optional[str] = Field(None, description="Custom spoken opening for LiveAvatar (studio train flow)")
 
 
 class SessionEventRequest(BaseModel):
@@ -139,6 +140,21 @@ class LeadCaptureRequest(BaseModel):
     message: Optional[str] = None
     product_context: Optional[str] = Field(None, description="What the visitor told Aiza about their product")
     source: Optional[str] = Field(default="homepage", description="hero_ended | contact_form | homepage")
+
+
+class StudioTrainRequest(BaseModel):
+    """Public homepage studio training — indexes company URL and product copy."""
+    company: Optional[str] = None
+    url: Optional[str] = None
+    product: Optional[str] = None
+    lang: Optional[str] = None
+    persona_id: str = Field(default="default")
+
+
+class SmartsheetConfigRequest(BaseModel):
+    enabled: bool = True
+    sheet_id: str = ""
+    access_token: Optional[str] = Field(None, description="Leave blank to keep existing token")
 
 
 class ComplianceSettingsRequest(BaseModel):
