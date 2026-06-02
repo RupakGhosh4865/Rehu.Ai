@@ -3,11 +3,14 @@ Savant.ai -- Knowledge Base (RAG)
 Pure Python BM25 implementation -- no GPU, no heavy ML libraries.
 Works on Python 3.14+.
 """
+import ipaddress
 import json
 import logging
 import re
+import socket
 from pathlib import Path
 from typing import List, Optional
+from urllib.parse import urlparse
 
 from rank_bm25 import BM25Okapi
 
@@ -15,6 +18,10 @@ from .config import settings
 from . import tenants
 
 logger = logging.getLogger(__name__)
+
+# Cap on bytes pulled from a remote page during knowledge ingestion.
+_URL_FETCH_MAX_BYTES = 5 * 1024 * 1024
+_URL_FETCH_MAX_REDIRECTS = 5
 
 # -- In-memory store per (tenant, persona) ------------------------------------
 _stores: dict[tuple[str, str], dict] = {}
@@ -105,13 +112,57 @@ async def add_knowledge(
     return len(chunks)
 
 
-async def add_knowledge_from_url(persona_id: str, url: str, title: Optional[str] = None) -> int:
+def _assert_public_url(url: str) -> None:
+    """Reject anything that is not a public http(s) URL.
+
+    Blocks SSRF: an attacker-supplied URL (e.g. via /api/studio/train) must not be
+    able to make the server reach loopback, link-local (cloud metadata), private,
+    or otherwise reserved address space. We resolve DNS and check every record so
+    a public hostname cannot smuggle in a private A/AAAA answer.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError("Only http(s) URLs are allowed")
+    host = parsed.hostname
+    if not host:
+        raise ValueError("URL has no host")
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    try:
+        infos = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
+    except socket.gaierror as e:
+        raise ValueError(f"Could not resolve host: {e}")
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast
+                or ip.is_reserved or ip.is_unspecified):
+            raise ValueError("URL resolves to a non-public address and was blocked")
+
+
+async def _safe_get(url: str):
+    """GET a URL with SSRF guards: validate each hop, no auto-redirects, size cap."""
     import httpx
+
+    async with httpx.AsyncClient(timeout=30, follow_redirects=False) as client:
+        for _ in range(_URL_FETCH_MAX_REDIRECTS + 1):
+            _assert_public_url(url)
+            resp = await client.get(url, headers={"User-Agent": "SavantBot/1.0"})
+            if resp.is_redirect:
+                location = resp.headers.get("location")
+                if not location:
+                    break
+                url = str(httpx.URL(url).join(location))
+                continue
+            resp.raise_for_status()
+            if len(resp.content) > _URL_FETCH_MAX_BYTES:
+                raise ValueError("Remote page is too large to ingest")
+            return resp
+        raise ValueError("Too many redirects")
+
+
+async def add_knowledge_from_url(persona_id: str, url: str, title: Optional[str] = None) -> int:
     from bs4 import BeautifulSoup
 
-    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
-        resp = await client.get(url)
-        resp.raise_for_status()
+    resp = await _safe_get(url)
 
     soup = BeautifulSoup(resp.text, "html.parser")
     for tag in soup(["script", "style", "nav", "footer", "header"]):

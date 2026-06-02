@@ -30,7 +30,7 @@ from .models import (
 from . import liveavatar, agent, knowledge, persona_templates, persona_experience, persona_store, auth
 from . import session_log_store, languages, product_cards, meeting_store
 from . import notifications, tenants, billing, hubspot, google_calendar, smartsheet
-from . import meeting_bot, ride_along_store
+from . import meeting_bot, ride_along_store, ratelimit
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s -- %(message)s")
 logger = logging.getLogger(__name__)
@@ -39,6 +39,46 @@ _sessions: dict[str, dict] = {}
 _avatar_cache: list = []
 _default_template = persona_templates.get_template("sales-demo")
 KEEPALIVE_INTERVAL_SECONDS = 25
+
+# Insecure factory defaults that must never run in production.
+_INSECURE_DEFAULTS = {
+    "JWT_SECRET":  "change-me-jwt-secret",
+    "SECRET_KEY":  "change-me-in-production",
+}
+
+
+def _enforce_security_config() -> None:
+    """Refuse to boot with insecure defaults unless DEBUG mode is explicitly on.
+
+    Closes three critical issues at once:
+      - admin panel / write APIs open because ADMIN_PASSWORD is empty
+      - tenant JWTs forgeable because JWT_SECRET is the shipped default
+      - session encryption secret left at its placeholder
+    In DEBUG mode these are downgraded to warnings so local dev still works.
+    """
+    problems: list[str] = []
+    if not settings.ADMIN_PASSWORD:
+        problems.append(
+            "ADMIN_PASSWORD is empty — the admin panel and all write APIs would be unauthenticated. "
+            "Set ADMIN_PASSWORD to a strong value."
+        )
+    for name, insecure in _INSECURE_DEFAULTS.items():
+        if getattr(settings, name, "") == insecure:
+            problems.append(
+                f"{name} is still the shipped default — set it to a random secret "
+                f"(e.g. `python -c \"import secrets; print(secrets.token_urlsafe(48))\"`)."
+            )
+    if not problems:
+        return
+    if settings.DEBUG:
+        for p in problems:
+            logger.warning("INSECURE CONFIG (allowed because DEBUG=true): %s", p)
+        return
+    raise RuntimeError(
+        "Refusing to start with insecure configuration:\n  - "
+        + "\n  - ".join(problems)
+        + "\n\nFix these in your .env, or set DEBUG=true for local development only."
+    )
 
 
 def _seed_personas() -> dict[str, PersonaConfig]:
@@ -233,6 +273,7 @@ def _build_lead_summary(session: dict) -> dict:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
+    _enforce_security_config()
     logger.info("LiveAvatar API key set: %s", bool(settings.LIVEAVATAR_API_KEY))
     logger.info("Sandbox mode: %s", settings.LIVEAVATAR_USE_SANDBOX)
     global _avatar_cache, _personas
@@ -265,6 +306,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request, call_next):
+    """Throttle public, cost-bearing endpoints per client IP (see ratelimit.py)."""
+    if not ratelimit.check(request):
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Too many requests. Please slow down and try again shortly."},
+        )
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -373,6 +425,23 @@ async def _liveavatar_keepalive_loop(session_id: str):
                 logger.warning("LiveAvatar keep-alive failed for app session %s", session_id)
     except asyncio.CancelledError:
         raise
+
+
+def _owned_session(session_id: str) -> Optional[dict]:
+    """Return the session only if it belongs to the active tenant.
+
+    Returns None both when the session is missing and when it belongs to another
+    tenant, so callers raise an identical 404 and never reveal cross-tenant
+    existence. This closes the unauthenticated cross-tenant access on the
+    /api/sessions/{id}/* routes.
+    """
+    session = _sessions.get(session_id)
+    if not session:
+        return None
+    owner = session.get("tenant_id") or tenants.DEFAULT_TENANT_ID
+    if owner != tenants.active_tenant_id():
+        return None
+    return session
 
 
 def _append_transcript(session_id: str, role: str, text: str, event_type: str = "transcript") -> bool:
@@ -566,6 +635,7 @@ async def create_preview_session(persona_id: str):
         "la_context_id": la_context_id,
         "opening_text": "",
         "is_preview": True,
+        "tenant_id": tenants.active_tenant_id(),
     }
 
     if la_session_id:
@@ -664,7 +734,7 @@ async def list_languages():
 
 @app.patch("/api/sessions/{session_id}/language", tags=["Sessions"])
 async def update_session_language(session_id: str, req: UpdateSessionLanguageRequest):
-    session = _sessions.get(session_id)
+    session = _owned_session(session_id)
     if not session:
         raise HTTPException(404, "Session not found")
     lang = languages.normalize_language(req.language)
@@ -1095,7 +1165,11 @@ async def billing_portal(request: Request):
 async def billing_webhook(request: Request):
     payload = await request.body()
     sig = request.headers.get("stripe-signature") or ""
-    if settings.STRIPE_WEBHOOK_SECRET and not _verify_stripe_signature(payload, sig):
+    # Fail closed: an unconfigured secret means we cannot trust the event, so we
+    # must reject it rather than apply attacker-controlled plan changes.
+    if not settings.STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(503, "Billing webhook is not configured (STRIPE_WEBHOOK_SECRET unset)")
+    if not _verify_stripe_signature(payload, sig):
         raise HTTPException(400, "Invalid Stripe signature")
     try:
         event = await request.json()
@@ -1115,7 +1189,7 @@ def _verify_stripe_signature(payload: bytes, sig_header: str) -> bool:
     import hmac as _hmac
     import hashlib as _hashlib
     if not sig_header or not settings.STRIPE_WEBHOOK_SECRET:
-        return True
+        return False
     try:
         parts = dict(p.split("=", 1) for p in sig_header.split(",") if "=" in p)
     except Exception:
@@ -1505,7 +1579,7 @@ async def update_meeting_request(
 
 @app.post("/api/sessions/{session_id}/events", tags=["Sessions"])
 async def append_session_event(session_id: str, req: SessionEventRequest):
-    if session_id not in _sessions:
+    if not _owned_session(session_id):
         raise HTTPException(404, "Session not found")
     role = "user" if req.role in ("user", "me") else "assistant"
     _append_transcript(session_id, role, req.text.strip(), req.event_type)
@@ -1514,7 +1588,7 @@ async def append_session_event(session_id: str, req: SessionEventRequest):
 
 @app.patch("/api/sessions/{session_id}/visitor", tags=["Sessions"])
 async def update_session_visitor(session_id: str, req: UpdateVisitorRequest):
-    session = _sessions.get(session_id)
+    session = _owned_session(session_id)
     if not session:
         raise HTTPException(404, "Session not found")
     if req.visitor_name is not None:
@@ -1530,7 +1604,7 @@ async def update_session_visitor(session_id: str, req: UpdateVisitorRequest):
 
 @app.get("/api/sessions/{session_id}/visual", tags=["Sessions"])
 async def session_visual(session_id: str, topic: str = ""):
-    session = _sessions.get(session_id)
+    session = _owned_session(session_id)
     if not session:
         raise HTTPException(404, "Session not found")
     card = product_cards.match_product_card(session["persona_id"], topic)
@@ -1543,7 +1617,7 @@ async def session_visual(session_id: str, topic: str = ""):
 
 @app.post("/api/sessions/{session_id}/liveavatar/reconnect", tags=["Sessions"])
 async def reconnect_liveavatar_session(session_id: str):
-    session = _sessions.get(session_id)
+    session = _owned_session(session_id)
     if not session:
         raise HTTPException(404, "Session not found")
     if not settings.LIVEAVATAR_API_KEY:
@@ -1615,7 +1689,7 @@ async def reconnect_liveavatar_session(session_id: str):
 @app.post("/api/sessions/{session_id}/message", tags=["Sessions"])
 async def session_text_message(session_id: str, req: SessionMessageRequest):
     """Log typed messages; LiveAvatar delivery happens client-side via LiveKit."""
-    if session_id not in _sessions:
+    if not _owned_session(session_id):
         raise HTTPException(404, "Session not found")
     text = req.text.strip()
     if not text:
@@ -1626,17 +1700,21 @@ async def session_text_message(session_id: str, req: SessionMessageRequest):
 
 @app.delete("/api/sessions/{session_id}", tags=["Sessions"])
 async def end_session(session_id: str):
-    if session_id not in _sessions:
+    if not _owned_session(session_id):
         raise HTTPException(404, "Session not found")
     await _cleanup_session(session_id)
     return {"session_id": session_id, "status": "ended"}
 
 
 @app.get("/api/sessions", tags=["Sessions"])
-async def list_sessions():
+async def list_sessions(_user: str = Depends(auth.verify_admin)):
+    # Admin-only, and scoped to the active tenant so one tenant cannot enumerate
+    # another tenant's live sessions or visitor PII.
     hidden = {"la_session_token", "keepalive_task"}
+    active = tenants.active_tenant_id()
     return {"sessions": [{"session_id": sid, **{k: v for k, v in d.items() if k not in hidden}}
-                         for sid, d in _sessions.items()]}
+                         for sid, d in _sessions.items()
+                         if (d.get("tenant_id") or tenants.DEFAULT_TENANT_ID) == active]}
 
 
 # ── Voice WebSocket (fallback for voice-only mode) ────────────────────────────
