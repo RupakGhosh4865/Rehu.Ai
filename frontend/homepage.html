@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;450;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/savant-home.css?v=20260601">
+<link rel="stylesheet" href="/static/savant-home.css?v=20260605">
 </head>
 <body>
 
@@ -27,114 +27,122 @@
     <a href="#industries">Industries</a>
     <a href="#meet-aiza">Meet Aiza</a>
   </div>
-  <button class="btn btn-primary nav-cta" type="button" data-launch-avatar data-launch-mode="talk" data-embed-slot="hero" data-persona="default">
+  <button class="btn btn-primary nav-cta" type="button" id="nav-talk-btn">
     <span class="dot"></span>
     Talk to Aiza
   </button>
 </nav>
 
-<!-- Hero2 + Training Studio -->
-<section class="hero2" id="hero">
-  <div class="hero2-inner">
-    <div class="hero2-copy">
-      <h1 class="hero2-title">
-        Build Your <em>Superhuman.</em><br>
-        Train. Test. Talk.
-      </h1>
-      <p class="hero2-sub">
-        Turn your website, product, documents, and know-how into an AI Superhuman that talks, sells, supports, and joins meetings on your behalf — trained in minutes.
-      </p>
-    </div>
-    <div class="hero2-aiza">
-      <div class="hero2-ring r1"></div>
-      <div class="hero2-ring r2"></div>
-      <div class="hero2-glow"></div>
-      <div class="hero2-wave left" id="hero-wave-l"></div>
-      <div class="hero2-wave right" id="hero-wave-r"></div>
-      <div class="hero2-portrait" id="hero-portrait" data-launch-avatar data-launch-mode="builder" data-launch-context="studio" data-embed-slot="hero" role="button" tabindex="0" aria-label="Call Aiza with your trained Superhuman">
-        <video autoplay loop muted playsinline preload="auto"><source src="/static/aiza.mp4" type="video/mp4"></video>
-      </div>
-      <div class="hero2-card">
-        <div class="hero2-card-dot"><span></span></div>
-        <div>
-          <div class="hero2-card-t" id="hero-card-title">AI Superhuman</div>
-          <div class="hero2-card-s" id="hero-card-sub">Always-on. Always learning. Always here to help.</div>
-        </div>
-      </div>
-    </div>
+<!-- Unified Train + Talk -->
+<section class="hero2" id="train">
+  <div class="hero2-header">
+    <h1 class="hero2-title">
+      Build Your <em>Superhuman.</em><br>
+      Train. Test. Talk.
+    </h1>
+    <p class="hero2-sub">
+      Turn your website, product, documents, and know-how into an AI Superhuman that talks, sells, supports, and joins meetings on your behalf — trained in minutes.
+    </p>
   </div>
 
-  <div class="studio" id="train">
-    <div class="studio-card">
-      <div class="studio-card-head">
-        <div class="studio-card-intro">
-          <span class="studio-eyebrow"><span class="tag-dot"></span>Try it live · 2-minute demo</span>
-          <h3 class="studio-card-title">Give Aiza your business.<br>She learns it in minutes.</h3>
+  <div class="studio-unified studio-card is-idle" id="studio-unified">
+    <div class="studio-unified-grid">
+      <div class="studio-unified-form">
+        <div class="studio-card-head">
+          <div class="studio-card-intro">
+            <span class="studio-eyebrow"><span class="tag-dot"></span>Try it live · 2-minute demo</span>
+            <h3 class="studio-card-title">Give Aiza your business.<br>She learns it — then speaks live.</h3>
+          </div>
+          <div class="studio-card-learns">
+            <div class="scl-row"><span class="scl-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></span>Reads your live website</div>
+            <div class="scl-row"><span class="scl-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></span>Ingests docs, FAQs &amp; SOPs</div>
+            <div class="scl-row"><span class="scl-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Matches your tone &amp; policy</div>
+          </div>
         </div>
-        <div class="studio-card-learns">
-          <div class="scl-row"><span class="scl-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></span>Reads your live website</div>
-          <div class="scl-row"><span class="scl-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></span>Ingests docs, FAQs &amp; SOPs</div>
-          <div class="scl-row"><span class="scl-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Matches your tone &amp; policy</div>
+
+        <div id="studio-form-fields">
+          <div class="studio-grid">
+            <label class="studio-box">
+              <span class="studio-label">Company name</span>
+              <input class="studio-input" id="studio-company" value="Savant.ai" placeholder="Your company">
+            </label>
+            <label class="studio-box">
+              <span class="studio-label">Company website</span>
+              <input class="studio-input" id="studio-url" value="" placeholder="https://yourcompany.com">
+            </label>
+            <label class="studio-box wide">
+              <span class="studio-label">Product or service</span>
+              <input class="studio-input" id="studio-product" value="AI Superhumans for websites, applications, and meetings." placeholder="In one line, what your business does">
+            </label>
+            <label class="studio-box">
+              <span class="studio-label">Primary language</span>
+              <select class="studio-select" id="studio-lang">
+                <option value="en" selected>English</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="ja">日本語</option>
+                <option value="zh">中文</option>
+                <option value="ar">العربية</option>
+                <option value="pt">Português</option>
+              </select>
+            </label>
+            <div class="studio-cta-cell">
+              <button class="studio-train" id="studio-train-btn" type="button">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.9.7-2.2-.1-3a2.1 2.1 0 0 0-2.9 0z"/><path d="M12 15l-3-3a14 14 0 0 1 3-6.6A8.5 8.5 0 0 1 19 3a8.5 8.5 0 0 1-2.4 7A14 14 0 0 1 12 15z"/></svg>
+                Train &amp; Talk to Aiza
+              </button>
+            </div>
+          </div>
+          <div class="studio-foot-note" id="studio-foot-note">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            Train on your info — Aiza speaks right here
+          </div>
         </div>
-      </div>
-      <div class="studio-grid">
-        <label class="studio-box">
-          <span class="studio-label">Company name</span>
-          <input class="studio-input" id="studio-company" value="Savant.ai" placeholder="Your company">
-        </label>
-        <label class="studio-box">
-          <span class="studio-label">Company website</span>
-          <input class="studio-input" id="studio-url" value="https://savant.ai" placeholder="https://…">
-        </label>
-        <label class="studio-box wide">
-          <span class="studio-label">Product or service</span>
-          <input class="studio-input" id="studio-product" value="AI Superhumans for websites, applications, and meetings." placeholder="In one line, what your business does">
-        </label>
-        <label class="studio-box">
-          <span class="studio-label">Primary language</span>
-          <select class="studio-select" id="studio-lang">
-            <option>English</option><option>Español</option><option>Français</option><option>Deutsch</option>
-            <option>日本語</option><option>中文</option><option>العربية</option><option>Português</option>
-          </select>
-        </label>
-        <div class="studio-cta-cell">
-          <button class="studio-train" id="studio-train-btn" type="button">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.9.7-2.2-.1-3a2.1 2.1 0 0 0-2.9 0z"/><path d="M12 15l-3-3a14 14 0 0 1 3-6.6A8.5 8.5 0 0 1 19 3a8.5 8.5 0 0 1-2.4 7A14 14 0 0 1 12 15z"/></svg>
-            Train &amp; Talk to Aiza
-          </button>
+
+        <div class="studio-summary hidden" id="studio-summary">
+          <div class="studio-summary-chips" id="studio-summary-chips"></div>
+          <p class="studio-url-note hidden" id="studio-url-note"></p>
+          <div class="studio-live-toolbar">
+            <button class="btn btn-ghost studio-edit-btn" type="button" id="studio-edit-btn">Edit details</button>
+            <button class="btn btn-ghost studio-retrain-btn" type="button" id="studio-retrain-btn">Retrain &amp; Talk</button>
+          </div>
         </div>
-      </div>
-      <div class="studio-foot-note" id="studio-foot-note">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        Trains on your site, then Aiza speaks live in the portrait above
-      </div>
-    </div>
-    <div class="studio-live-status hidden" id="studio-live-status">
-      <span class="dot"></span>
-      Aiza is live above — ask her about your business
-    </div>
-    <div class="studio-progress hidden" id="studio-progress">
-      <span class="lab" id="studio-stage-lab">Reading your site…</span>
-      <span class="bar"><i id="studio-bar" style="width:0%"></i></span>
-      <span class="pct" id="studio-pct">0%</span>
-    </div>
-    <div class="studio-test hidden" id="studio-ready">
-      <div class="studio-test-h">
-        Test Your Superhuman
-        <span class="ready"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-12"/></svg>Ready</span>
-      </div>
-      <div class="studio-test-sub">Choose how you'd like to interact with your trained Superhuman.</div>
-      <div class="studio-tabs" id="studio-tabs">
-        <button class="studio-tab on" type="button" data-tab="chat">Chat with AI</button>
-        <button class="studio-tab" type="button" data-tab="human">Talk to Human</button>
-        <button class="studio-tab" type="button" data-tab="knowledge">Test Knowledge</button>
-      </div>
-      <div class="studio-chat" id="studio-chat-preview"></div>
-      <div class="studio-talk-row">
-        <button class="studio-talk-btn" type="button" id="studio-talk-btn" data-launch-avatar data-launch-mode="builder" data-launch-context="studio" data-embed-slot="studio">
+
+        <div class="studio-progress hidden" id="studio-progress">
+          <span class="lab" id="studio-stage-lab">Reading your site…</span>
+          <span class="bar"><i id="studio-bar" style="width:0%"></i></span>
+          <span class="pct" id="studio-pct">0%</span>
+        </div>
+        <div class="studio-live-status hidden" id="studio-live-status">
           <span class="dot"></span>
-          Talk to Aiza
-        </button>
+          <span id="studio-live-status-text">Aiza is live — ask her about your business</span>
+        </div>
+      </div>
+
+      <div class="studio-unified-aiza">
+        <div class="hero2-aiza hero2-aiza--compact">
+          <div class="hero2-ring r1"></div>
+          <div class="hero2-ring r2"></div>
+          <div class="hero2-glow"></div>
+          <div class="hero2-wave left" id="hero-wave-l"></div>
+          <div class="hero2-wave right" id="hero-wave-r"></div>
+          <div class="hero2-portrait" id="hero-portrait" data-launch-avatar data-launch-mode="builder" data-launch-context="studio" data-embed-slot="hero" role="button" tabindex="0" aria-label="Call Aiza with your trained Superhuman">
+            <video autoplay loop muted playsinline preload="auto"><source src="/static/aiza.mp4" type="video/mp4"></video>
+            <button class="embed-portrait-end hidden" type="button" id="hero-embed-end" aria-label="End call">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5l18 14M21 5L3 19"/></svg>
+              End call
+            </button>
+          </div>
+          <div class="hero2-card">
+            <div class="hero2-card-dot"><span></span></div>
+            <div>
+              <div class="hero2-card-t" id="hero-card-title">AI Superhuman</div>
+              <div class="hero2-card-s" id="hero-card-sub">Waiting for your business details</div>
+            </div>
+          </div>
+        </div>
+        <p class="studio-aiza-caption" id="studio-aiza-caption">Enter your business, then Train &amp; Talk</p>
       </div>
     </div>
   </div>
@@ -499,7 +507,51 @@
   fillWaves('#hero-wave-r');
 
   /* ── Studio state ── */
-  const studioState = { company: 'Savant.ai', product: '', url: '', lang: 'English', phase: 'idle', progress: 0, tab: 'chat', openingText: '' };
+  const studioState = { company: 'Savant.ai', product: '', url: '', lang: 'en', phase: 'idle', progress: 0, openingText: '' };
+
+  function setStudioUnifiedState(state) {
+    const root = $('#studio-unified');
+    if (!root) return;
+    root.classList.remove('is-idle', 'is-training', 'is-live');
+    root.classList.add(`is-${state}`);
+  }
+
+  function showStudioForm() {
+    $('#studio-form-fields')?.classList.remove('hidden');
+    $('#studio-summary')?.classList.add('hidden');
+    $('#studio-foot-note')?.classList.remove('hidden');
+  }
+
+  function showStudioSummary() {
+    renderStudioSummary();
+    $('#studio-form-fields')?.classList.add('hidden');
+    $('#studio-summary')?.classList.remove('hidden');
+    $('#studio-foot-note')?.classList.add('hidden');
+  }
+
+  function renderStudioSummary() {
+    const chips = $('#studio-summary-chips');
+    if (!chips) return;
+    const product = studioState.product || 'Your product';
+    const productShort = product.length > 48 ? product.slice(0, 45) + '…' : product;
+    chips.innerHTML = `
+      <span class="studio-chip">${studioState.company}</span>
+      <span class="studio-chip">${productShort}</span>`;
+  }
+
+  function updateStudioCaption(state) {
+    const cap = $('#studio-aiza-caption');
+    if (!cap) return;
+    if (state === 'training') {
+      cap.textContent = `Learning ${studioState.company}…`;
+    } else if (state === 'live') {
+      cap.textContent = 'Live — ask Aiza about your business';
+    } else if (state === 'ready') {
+      cap.textContent = `Ready to speak about ${studioState.company}`;
+    } else {
+      cap.textContent = 'Enter your business, then Train & Talk';
+    }
+  }
 
   function updateHeroStudioCard(state) {
     const title = $('#hero-card-title');
@@ -518,58 +570,29 @@
       portrait?.classList.add('hero-live');
     } else if (state === 'ready') {
       title.textContent = `${studioState.company} Superhuman`;
-      sub.textContent = 'Online · trained on your business';
-      portrait?.classList.remove('hero-training');
+      sub.textContent = `Ready to speak about ${studioState.company}`;
+      portrait?.classList.remove('hero-training', 'hero-live');
     } else {
       title.textContent = 'AI Superhuman';
-      sub.textContent = 'Always-on. Always learning. Always here to help.';
+      sub.textContent = 'Waiting for your business details';
       portrait?.classList.remove('hero-training', 'hero-live');
     }
+    updateStudioCaption(state);
   }
 
   function launchStudioCall() {
     if (EmbeddedCall.active === 'hero') return;
     const opts = getStudioCallContext();
-    $('#hero-portrait')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => launchEmbedded('hero', opts), 400);
+    launchEmbedded('hero', opts);
   }
-
-  const STUDIO_TABS = {
-    chat: [
-      { who: 'her', t: "Hi! I'm your Savant.ai Superhuman. Ask me anything about our platform, deployment options, or how to get started." },
-      { who: 'you', t: 'What can Aiza do on my website?' },
-      { who: 'her', t: "She greets every visitor, qualifies them in voice or chat, handles objections, and books meetings — 24/7 in 28+ languages. Want a live demo?" },
-    ],
-    human: [
-      { who: 'her', t: 'Connecting you with a human specialist from Savant.ai…' },
-      { who: 'her', t: "While you wait — I've noted your interest. I'll brief them so you don't repeat yourself." },
-    ],
-    knowledge: [
-      { who: 'you', t: 'How long does training take?' },
-      { who: 'her', t: 'Typically 2–5 minutes on your live site plus any docs you upload. She indexes pages, learns tone, and is ready to test immediately.' },
-    ],
-  };
 
   const TRAIN_STAGES = ['Reading your site…', 'Indexing pages…', 'Learning your tone…', 'Modeling edge cases…', 'Aiza is ready.'];
 
   function syncStudioFromForm() {
     studioState.company = $('#studio-company')?.value.trim() || 'Savant.ai';
-    studioState.url = $('#studio-url')?.value.trim() || 'https://savant.ai';
+    studioState.url = $('#studio-url')?.value.trim() || '';
     studioState.product = $('#studio-product')?.value.trim() || '';
-    studioState.lang = $('#studio-lang')?.value || 'English';
-  }
-
-  function renderStudioChat() {
-    const host = $('#studio-chat-preview');
-    if (!host) return;
-    const msgs = STUDIO_TABS[studioState.tab] || STUDIO_TABS.chat;
-    host.innerHTML = `
-      <div class="studio-chat-head">
-        <div class="av"><video autoplay loop muted playsinline preload="auto"><source src="/static/aiza.mp4" type="video/mp4"></video></div>
-        <div><div class="nm">${studioState.company} Superhuman</div><div class="on">Online · ${studioState.lang}</div></div>
-      </div>
-      ${msgs.map((m) => `<div class="studio-bubble ${m.who}">${m.t}</div>`).join('')}
-      <div class="studio-input-row">Type your message…<span class="send"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span></div>`;
+    studioState.lang = $('#studio-lang')?.value || 'en';
   }
 
   function startTraining() {
@@ -577,11 +600,11 @@
     studioState.phase = 'training';
     studioState.progress = 0;
     studioState.openingText = '';
+    setStudioUnifiedState('training');
+    showStudioForm();
     updateHeroStudioCard('training');
-    $('#studio-foot-note')?.classList.add('hidden');
     $('#studio-live-status')?.classList.add('hidden');
     $('#studio-progress')?.classList.remove('hidden');
-    $('#studio-ready')?.classList.add('hidden');
     const btn = $('#studio-train-btn');
     if (btn) {
       btn.disabled = true;
@@ -617,29 +640,41 @@
       studioState.openingText = data.opening_text || '';
       if (data.company_name) studioState.company = data.company_name;
       studioState.progress = 100;
+      studioState.phase = 'ready';
       $('#studio-stage-lab').textContent = 'Starting Aiza…';
       $('#studio-bar').style.width = '100%';
       $('#studio-pct').textContent = '100%';
       updateHeroStudioCard('ready');
-      setTimeout(() => {
-        studioState.phase = 'ready';
-        $('#studio-progress')?.classList.add('hidden');
-        $('#studio-live-status')?.classList.remove('hidden');
-        $('#studio-ready')?.classList.remove('hidden');
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 4v4h4"/></svg>Retrain &amp; Talk';
+      $('#studio-progress')?.classList.add('hidden');
+      $('#studio-live-status')?.classList.remove('hidden');
+      setStudioUnifiedState('live');
+      showStudioSummary();
+      if (data.url_warning) {
+        const note = $('#studio-url-note');
+        if (note) {
+          note.textContent = 'Website could not be read — Aiza trained on your product description instead.';
+          note.classList.remove('hidden');
         }
-        renderStudioChat();
-        launchStudioCall();
-      }, 500);
+      } else {
+        $('#studio-url-note')?.classList.add('hidden');
+      }
+      const liveStatusText = $('#studio-live-status-text');
+      if (liveStatusText) {
+        liveStatusText.textContent = 'Aiza is live — ask her about your business';
+      }
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 4v4h4"/></svg>Retrain &amp; Talk';
+      }
+      launchStudioCall();
     }).catch((err) => {
       clearInterval(tick);
       studioState.phase = 'idle';
       studioState.progress = 0;
+      setStudioUnifiedState('idle');
+      showStudioForm();
       updateHeroStudioCard('idle');
       $('#studio-progress')?.classList.add('hidden');
-      $('#studio-foot-note')?.classList.remove('hidden');
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.9.7-2.2-.1-3a2.1 2.1 0 0 0-2.9 0z"/><path d="M12 15l-3-3a14 14 0 0 1 3-6.6A8.5 8.5 0 0 1 19 3a8.5 8.5 0 0 1-2.4 7A14 14 0 0 1 12 15z"/></svg>Train &amp; Talk to Aiza';
@@ -648,22 +683,58 @@
     });
   }
 
+  function resetStudioToIdle() {
+    setStudioUnifiedState('idle');
+    showStudioForm();
+    $('#studio-progress')?.classList.add('hidden');
+    $('#studio-live-status')?.classList.add('hidden');
+    if (studioState.openingText) {
+      studioState.phase = 'ready';
+      updateHeroStudioCard('ready');
+    } else {
+      studioState.phase = 'idle';
+      updateHeroStudioCard('idle');
+    }
+  }
+
   $('#studio-train-btn')?.addEventListener('click', () => {
     if (studioState.phase === 'training') return;
     startTraining();
   });
-  $$('#studio-tabs .studio-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      studioState.tab = tab.dataset.tab;
-      $$('#studio-tabs .studio-tab').forEach((t) => t.classList.toggle('on', t === tab));
-      renderStudioChat();
-    });
+  $('#studio-edit-btn')?.addEventListener('click', () => {
+    EmbeddedCall.stop('hero', true);
+    studioState.phase = 'idle';
+    studioState.openingText = '';
+    setStudioUnifiedState('idle');
+    showStudioForm();
+    updateHeroStudioCard('idle');
+    $('#studio-live-status')?.classList.add('hidden');
+    $('#studio-company')?.focus();
+  });
+  $('#studio-retrain-btn')?.addEventListener('click', () => {
+    EmbeddedCall.stop('hero', true);
+    startTraining();
+  });
+  $('#hero-embed-end')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    EmbeddedCall.stop('hero');
+  });
+  $('#nav-talk-btn')?.addEventListener('click', () => {
+    if (studioState.openingText && (studioState.phase === 'ready' || studioState.phase === 'live')) {
+      launchStudioCall();
+      return;
+    }
+    $('#train')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => $('#studio-company')?.focus(), 400);
   });
   ['studio-company', 'studio-url', 'studio-product', 'studio-lang'].forEach((id) => {
     $('#' + id)?.addEventListener('input', syncStudioFromForm);
     $('#' + id)?.addEventListener('change', syncStudioFromForm);
   });
   syncStudioFromForm();
+  setStudioUnifiedState('idle');
+  updateHeroStudioCard('idle');
 
   /* ── Deploy caption cycles (cosmetic) ── */
   function cycleCaptions(root, lines, interval = 3600) {
@@ -956,12 +1027,13 @@
       page,
       greeting,
       useCase: 'website',
+      lang: studioState.lang || 'en',
       chipLabel: `${studioState.company} Superhuman · trained on ${studioState.url}`,
     };
   }
 
   function buildCallSrc(id, opts = {}) {
-    const p = new URLSearchParams({ persona: id, demo: '1', timer: '60', modal: '1', flow: opts.mode || 'talk', lang: 'en' });
+    const p = new URLSearchParams({ persona: id, demo: '1', timer: '60', modal: '1', flow: opts.mode || 'talk', lang: opts.lang || 'en' });
     if (opts.page) p.set('page', opts.page);
     if (opts.greeting) p.set('opening', opts.greeting);
     if (opts.mode === 'builder' && opts.useCase) p.set('user_stage', opts.useCase);
@@ -976,7 +1048,7 @@
       embed: 'inline',
       slot,
       flow: opts.mode || 'talk',
-      lang: 'en',
+      lang: opts.lang || 'en',
     });
     if (opts.page) p.set('page', opts.page);
     if (opts.greeting) p.set('opening', opts.greeting);
@@ -1170,6 +1242,12 @@
     container.classList.add('embed-active');
   }
 
+  function setEmbedPortraitEnd(slot, visible) {
+    if (slot === 'hero' || slot === 'studio') {
+      $('#hero-embed-end')?.classList.toggle('hidden', !visible);
+    }
+  }
+
   const EmbeddedCall = {
     active: null,
     iframes: {},
@@ -1190,6 +1268,7 @@
       pauseCaptionCycles(slot);
       setPresenceCallState(slot, true);
       showEmbedConnecting(slot);
+      setEmbedPortraitEnd(slot, true);
 
       let iframe = container.querySelector('.embed-call-frame');
       if (!iframe) {
@@ -1228,11 +1307,12 @@
         }, silent ? 0 : 350);
       }
       if (container) {
-        container.classList.remove('embed-loading', 'embed-active');
+        container.classList.remove('embed-loading', 'embed-active', 'embed-streaming');
         container.querySelectorAll('video:not(#meet-user-video)').forEach((v) => v.classList.remove('hidden'));
         clearEmbedError(slot);
         hideEmbedConnecting(slot);
       }
+      setEmbedPortraitEnd(slot, false);
       setPresenceCallState(slot, false);
       delete this.lastOpts[slot];
       if (this.active === slot) {
@@ -1254,7 +1334,7 @@
     if (el.closest('#presence-website')) return 'website';
     if (el.closest('#presence-app')) return 'app';
     if (el.closest('#ind-dock')) return 'industries';
-    if (el.dataset.launchContext === 'studio' || el.closest('#studio-ready')) return 'studio';
+    if (el.dataset.launchContext === 'studio' || el.closest('#studio-unified')) return 'studio';
     return 'hero';
   }
 
@@ -1282,14 +1362,19 @@
     hideEmbedConnecting(slot);
     hideEmbedPlaceholder(slot);
     clearEmbedError(slot);
-    if (slot === 'hero' || slot === 'studio') updateHeroStudioCard('live');
+    if (slot === 'hero' || slot === 'studio') {
+      studioState.phase = 'live';
+      setStudioUnifiedState('live');
+      showStudioSummary();
+      updateHeroStudioCard('live');
+    }
   }
 
   function onEmbedSessionEnded(slot) {
     embedCooldownUntil = Date.now() + 3500;
     if (slot === 'hero' || slot === 'studio') {
       $('#hero-portrait')?.classList.remove('hero-live');
-      if (studioState.phase === 'ready') updateHeroStudioCard('ready');
+      resetStudioToIdle();
     }
     EmbeddedCall.stop(slot || EmbeddedCall.active, true);
     if (slot === 'meet' && meetMockApi?.isLive?.()) meetMockApi.endFromEmbed();

@@ -49,8 +49,6 @@ def build_system_prompt(
     lang_label = language_name(lang_code)
     lang_instruction = (
         f"Respond entirely in {lang_label}. Do not switch languages unless the visitor explicitly asks."
-        if lang_code != "en"
-        else ""
     )
     lead_instruction = (
         "After initial rapport, if you do not know the visitor's name or email, ask naturally for both "
@@ -102,6 +100,7 @@ async def generate_opening_pitch(
     visitor_name: Optional[str] = None,
     role_hint: str = "sales",
     opening_fallback: Optional[str] = None,
+    language: str = "en",
 ) -> str:
     """
     Generate a compelling 60-second spoken auto-demo pitch from the knowledge base.
@@ -154,10 +153,13 @@ async def generate_opening_pitch(
             f"5. Ends with an open invitation like 'What would you like to know more about?'"
         ),
     )
+    from .languages import language_name, normalize_language
+    lang_label = language_name(normalize_language(language))
     prompt = (
         f"You are {persona_name} representing {company_name}.\n"
         f"Based on this knowledge:\n{knowledge_context[:2500]}\n\n"
         f"{instructions}\n\n"
+        f"Write the response entirely in {lang_label}. Do not use any other language.\n"
         f"ONLY the spoken words. No stage directions. Natural speech rhythm."
     )
 

@@ -1684,7 +1684,9 @@ async def studio_train(req: StudioTrainRequest):
     persona_id = (req.persona_id or "default").strip()
     company = (req.company or "your company").strip()
     total_chunks = 0
+    lang_code = languages.normalize_language(req.lang)
 
+    url_warning: Optional[str] = None
     if req.url and req.url.strip():
         try:
             total_chunks += await knowledge.add_knowledge_from_url(
@@ -1692,13 +1694,12 @@ async def studio_train(req: StudioTrainRequest):
             )
         except Exception as e:
             logger.warning("Studio URL crawl failed: %s", e)
-            raise HTTPException(400, f"Could not read website: {e}")
+            url_warning = f"Could not read website ({e}). Trained on your product description instead."
 
     parts = [f"Company name: {company}"]
     if req.product and req.product.strip():
         parts.append(f"Products and services: {req.product.strip()}")
-    if req.lang and req.lang.strip():
-        parts.append(f"Preferred language: {req.lang.strip()}")
+    parts.append(f"Preferred language: {languages.language_name(lang_code)}")
     total_chunks += await knowledge.add_knowledge(
         persona_id, "\n".join(parts), title=f"{company} Overview", tags=["studio"],
     )
@@ -1738,6 +1739,7 @@ async def studio_train(req: StudioTrainRequest):
         persona_name, company_name if total_chunks else company, knowledge_ctx,
         role_hint="demo",
         opening_fallback=pitch_fallback,
+        language=lang_code,
     )
 
     return {
@@ -1746,6 +1748,7 @@ async def studio_train(req: StudioTrainRequest):
         "chunks_stored": total_chunks,
         "company_name": company,
         "opening_text": opening_text,
+        "url_warning": url_warning,
     }
 
 

@@ -1953,3 +1953,31 @@ body.inline-embed #call-screen {
   z-index: 1 !important;
 }
 body.inline-embed #call-screen .call-shell { height: 100% !important; }
+
+.inline-embed-end {
+  display: none;
+}
+body.inline-embed .inline-embed-end {
+  display: inline-flex !important;
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(220, 38, 38, 0.92);
+  box-shadow: 0 4px 16px rgba(0,0,0,.45);
+  pointer-events: auto;
+}
+body.inline-embed .inline-embed-end:hover {
+  background: #b91c1c;
+}

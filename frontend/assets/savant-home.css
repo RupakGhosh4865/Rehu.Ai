@@ -1974,7 +1974,12 @@ image-slot { color: rgba(255,255,255,.55); }
 .hero2 {
   position: relative; z-index: 1;
   max-width: 1240px; margin: 0 auto;
-  padding: 150px 40px 0;
+  padding: 150px 40px 80px;
+}
+.hero2-header {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 40px;
 }
 .hero2-inner {
   display: grid; grid-template-columns: 1.05fr 0.95fr;
@@ -1993,8 +1998,116 @@ image-slot { color: rgba(255,255,255,.55); }
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .hero2-sub {
-  margin-top: 22px; max-width: 440px;
+  margin-top: 22px; max-width: 560px; margin-left: auto; margin-right: auto;
   font-size: 16.5px; line-height: 1.5; color: var(--ink-1);
+}
+
+/* Unified Train + Talk card */
+.studio-unified {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.studio-unified-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 32px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+.studio-unified-form {
+  min-width: 0;
+}
+.studio-unified-aiza {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.hero2-aiza--compact {
+  height: 380px;
+  width: 100%;
+}
+.hero2-aiza--compact .hero2-portrait {
+  width: 260px;
+  height: 260px;
+}
+.hero2-aiza--compact .hero2-ring.r1,
+.hero2-aiza--compact .hero2-ring.r2 {
+  width: 310px;
+  height: 310px;
+}
+.hero2-aiza--compact .hero2-glow {
+  width: 320px;
+  height: 320px;
+}
+.hero2-aiza--compact .hero2-card {
+  bottom: 24px;
+  right: 50%;
+  transform: translateX(calc(50% - 20px));
+  max-width: 210px;
+}
+.studio-aiza-caption {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  text-align: center;
+}
+.studio-summary {
+  margin-top: 8px;
+}
+.studio-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.studio-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--ink-0);
+  background: rgba(255,255,255,.04);
+  border: 0.5px solid var(--line-2);
+}
+.studio-live-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.studio-unified.is-live .studio-live-toolbar {
+  display: none;
+}
+.studio-url-note {
+  margin: 0 0 12px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+.studio-unified.is-live .studio-url-note {
+  display: none !important;
+}
+.studio-live-toolbar .btn {
+  font-size: 12.5px;
+  padding: 9px 16px;
+}
+.studio-unified.is-training .studio-input,
+.studio-unified.is-training .studio-select {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.studio-unified.is-training .studio-train:not(:disabled) {
+  opacity: 0.85;
+}
+.studio-unified.is-live .studio-card-head {
+  margin-bottom: 16px;
+}
+.studio-unified.is-live .studio-card-learns {
+  display: none;
 }
 
 /* Aiza ring portrait */
@@ -2689,6 +2802,38 @@ image-slot { color: rgba(255,255,255,.55); }
   border: 0;
   background: #050509;
 }
+.embed-portrait-end {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(220, 38, 38, 0.92);
+  box-shadow: 0 4px 18px rgba(0,0,0,.5);
+  pointer-events: auto;
+  transition: background .15s, transform .15s;
+}
+.embed-portrait-end:hover {
+  background: #b91c1c;
+  transform: translateX(-50%) scale(1.03);
+}
+.embed-portrait-end.hidden { display: none !important; }
+.hero2-portrait.embed-loading,
+.hero2-portrait.embed-active,
+.hero2-portrait.embed-streaming {
+  pointer-events: none;
+}
 .embed-active > video:not(#meet-user-video) { opacity: 0; pointer-events: none; }
 .embed-loading::after {
   content: none;
@@ -2770,12 +2915,18 @@ body.live-embed-active .float-presenter .fp-talk { display: none !important; }
 /* Pause decorative hero animations while a live embed session is active */
 body.live-embed-active .hero2-ring,
 body.live-embed-active .hero2-wave,
-body.live-embed-active .hero2-glow {
-  animation-play-state: paused !important;
-  opacity: 0.35;
+body.live-embed-active .hero2-glow,
+body.live-embed-active .studio-unified-aiza .hero2-ring,
+body.live-embed-active .studio-unified-aiza .hero2-wave,
+body.live-embed-active .studio-unified-aiza .hero2-glow {
+  display: none !important;
 }
 body.live-embed-active .hero2-portrait {
   animation: none !important;
+}
+body.live-embed-active .studio-unified-aiza .hero2-card {
+  opacity: 0.5;
+  pointer-events: none;
 }
 .meet-sandbox-note {
   font-size: 11px;
@@ -3147,6 +3298,8 @@ a.meet-submit { text-decoration: none; }
   .hero2-sub { max-width: 520px; }
   .hero2-aiza { height: 380px; }
   .hero2-card { right: 50%; transform: translateX(50%); bottom: 20px; }
+  .studio-unified-grid { grid-template-columns: 1fr; gap: 28px; }
+  .studio-unified-aiza { order: -1; }
   .studio-grid { grid-template-columns: 1fr; }
   .studio-cta-cell { grid-column: 1 / -1; }
   .deploy-card, .deploy-card.flip { grid-template-columns: 1fr; }
@@ -3154,6 +3307,15 @@ a.meet-submit { text-decoration: none; }
   .why-grid { grid-template-columns: 1fr; }
   .meet-panel { grid-template-columns: 1fr; padding: 32px 24px; }
   .foot2-top { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 900px) {
+  .studio-unified-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .studio-unified-aiza { order: -1; }
+  .hero2-aiza--compact { height: 340px; }
 }
 
 @media (max-width: 960px) {

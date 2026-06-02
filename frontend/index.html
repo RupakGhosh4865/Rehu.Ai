@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/static/savant-icon.svg"/>
 <!-- LiveKit Web SDK — handles mic + avatar video in LiveAvatar FULL mode -->
 <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
-<link rel="stylesheet" href="/static/savant-light.css?v=20260602"/>
+<link rel="stylesheet" href="/static/savant-light.css?v=20260603"/>
 <script>
   /* Apply the minimal "modal-embed" mode as early as possible so the
      dashboard chrome (top bar, labels, helper text, idle-badge, end-call
@@ -154,6 +154,10 @@
             <span class="presenter-pulse"></span>
             <span>Aiza is presenting live</span>
           </div>
+          <button type="button" id="inline-embed-end" class="inline-embed-end" onclick="event.stopPropagation(); endCall();" aria-label="End call">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5l18 14M21 5L3 19"/></svg>
+            End call
+          </button>
           <div class="avatar-idle-presence" aria-hidden="true">
             <span class="idle-orb"></span>
             <span id="avatar-presence-label">Ask me anything</span>
@@ -832,17 +836,19 @@ function syncAttachAllVideoTracks() {
 function startVideoSyncLoop() {
   if (videoSyncTimer) clearInterval(videoSyncTimer);
   let attempts = 0;
+  const intervalMs = isInlineEmbed ? 600 : 400;
+  const maxAttempts = isInlineEmbed ? 40 : 50;
   videoSyncTimer = setInterval(() => {
     if (!sessionId || endingCall) {
       clearInterval(videoSyncTimer);
       videoSyncTimer = null;
       return;
     }
-    if (syncAttachAllVideoTracks() || ++attempts > 50) {
+    if (syncAttachAllVideoTracks() || ++attempts > maxAttempts) {
       clearInterval(videoSyncTimer);
       videoSyncTimer = null;
     }
-  }, 400);
+  }, intervalMs);
 }
 
 function attachAvatarVideo(track) {
