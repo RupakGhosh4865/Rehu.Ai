@@ -26,12 +26,65 @@ def _headers() -> dict:
     }
 
 
+# Plans we sell self-serve today. Order matters only for display elsewhere.
+PUBLIC_PLANS = ("growth", "scale", "enterprise")
+# Legacy plans kept for back-compat with older Stripe products / tenant rows.
+LEGACY_PLANS = ("pilot", "professional", "business")
+
+
 def price_id_for_plan(plan: str) -> Optional[str]:
+    """Map an internal plan id -> its configured Stripe price id (or "" if unset)."""
     return {
+        # Public plans (the ones we actually sell).
+        "growth": settings.STRIPE_PRICE_GROWTH,
+        "scale": settings.STRIPE_PRICE_SCALE,
+        "enterprise": settings.STRIPE_PRICE_ENTERPRISE,
+        # Legacy aliases — preserved so existing subscriptions keep resolving.
         "pilot": settings.STRIPE_PRICE_PILOT,
         "professional": settings.STRIPE_PRICE_PROFESSIONAL,
         "business": settings.STRIPE_PRICE_BUSINESS,
     }.get(plan or "")
+
+
+def plan_for_price_id(price_id: str) -> Optional[str]:
+    """Reverse map a Stripe price id -> internal plan id. Public plans win over
+    legacy aliases if both happen to share a price id. Returns None if unknown."""
+    if not price_id:
+        return None
+    for plan in (*PUBLIC_PLANS, *LEGACY_PLANS):
+        configured = price_id_for_plan(plan)
+        if configured and configured == price_id:
+            return plan
+    return None
+
+
+# Stripe subscription statuses that mean the customer is NOT entitled to a paid
+# plan — we drop them back to trial.
+_INACTIVE_STATUSES = {"canceled", "incomplete_expired", "unpaid", "past_due"}
+
+
+def reconcile_subscription_plan(subscription: dict) -> tuple[Optional[str], Optional[str]]:
+    """Given a Stripe subscription object, return (plan, problem).
+
+    - plan: the internal plan id the tenant should be on, or None if it can't be
+      determined (caller should NOT silently downgrade — see apply_subscription_event).
+    - problem: a human-readable reason when the price id maps to no known plan, so
+      the caller can alert instead of failing silently. None when all is well.
+    """
+    status = (subscription or {}).get("status") or ""
+    if status in _INACTIVE_STATUSES:
+        return "trial", None
+    items = (subscription.get("items") or {}).get("data") or []
+    price_id = ""
+    if items:
+        price_id = (items[0].get("price") or {}).get("id") or ""
+    plan = plan_for_price_id(price_id)
+    if plan is None:
+        return None, (
+            f"Stripe price id '{price_id or '(missing)'}' maps to no known plan. "
+            f"Set STRIPE_PRICE_GROWTH/SCALE/ENTERPRISE to match your Stripe products."
+        )
+    return plan, None
 
 
 def stripe_configured() -> bool:
@@ -117,7 +170,13 @@ async def create_portal_session(tenant: dict, return_url: str) -> dict:
 
 
 def apply_subscription_event(event: dict) -> Optional[dict]:
-    """Map a Stripe subscription event payload onto the tenant's plan."""
+    """Map a Stripe subscription event payload onto the tenant's plan.
+
+    Fails LOUD on an unrecognised price id: we log an error and raise an alert
+    rather than silently downgrading a paying customer to trial (the original
+    bug). A genuinely cancelled/unpaid subscription DOES drop to trial — that's
+    the correct entitlement, handled by reconcile_subscription_plan.
+    """
     obj = (event.get("data") or {}).get("object") or {}
     metadata = obj.get("metadata") or {}
     tenant_id = metadata.get("tenant_id")
@@ -133,18 +192,20 @@ def apply_subscription_event(event: dict) -> Optional[dict]:
     if not tenant_id:
         return None
 
-    status = obj.get("status") or ""
-    items = (obj.get("items") or {}).get("data") or []
-    price_id = ""
-    if items:
-        price_id = (items[0].get("price") or {}).get("id") or ""
-    plan = "trial"
-    for candidate in ("pilot", "professional", "business"):
-        if price_id_for_plan(candidate) and price_id == price_id_for_plan(candidate):
-            plan = candidate
-            break
-    if status in {"canceled", "incomplete_expired", "unpaid"}:
-        plan = "trial"
+    plan, problem = reconcile_subscription_plan(obj)
+    if problem:
+        # An active subscription whose price we can't map. Do NOT downgrade — that
+        # would silently strip a paying customer of their plan. Alert and bail.
+        logger.error("Stripe webhook: %s (tenant=%s, subscription=%s)",
+                     problem, tenant_id, obj.get("id"))
+        try:
+            from . import audit
+            audit.record("billing.unmapped_price", actor="stripe", tenant=tenant_id,
+                         target=str(obj.get("id") or ""), meta={"problem": problem})
+        except Exception:
+            pass
+        return None
+
     patch = {
         "stripe_subscription_id": obj.get("id") or "",
         "plan": plan,
