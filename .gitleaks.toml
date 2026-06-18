@@ -1,0 +1,22 @@
+# gitleaks config for Savant.ai. Extends the default rules and allowlists the
+# documentation placeholders so example files don't trip the secret scanner.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Docs, examples, and placeholder tokens are not real secrets."
+paths = [
+    '''\.env\.example$''',
+    '''\.env\.production\.example$''',
+    '''FRONTEND_DEPLOYMENT\.md$''',
+    '''README\.md$''',
+]
+# Placeholder forms used in docs: sk-..., sk-proj-..., sk_..., whsec_..., price_...
+regexes = [
+    '''sk-\.\.\.''',
+    '''sk-proj-\.\.\.''',
+    '''sk_\.\.\.''',
+    '''sk_live_\.\.\.''',
+    '''whsec_\.\.\.''',
+    '''change-(me|this)[-a-z0-9]*''',
+]

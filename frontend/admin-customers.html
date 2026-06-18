@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex"/>
+<title>Savant.ai — Owner Console</title>
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 system-ui,Segoe UI,sans-serif;background:#0b0b14;color:#e6e4f0;padding:24px 28px}
+  h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#8b87a3;margin-bottom:18px;font-size:13px}
+  a{color:#93c5fd}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+  .c{background:#13121f;border:1px solid #232136;border-radius:12px;padding:14px 16px}
+  .c .lbl{color:#8b87a3;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  .c .val{font-size:1.5rem;font-weight:800;margin-top:4px}
+  .c.burn{border-color:#7f1d1d;background:#1b1118}
+  .c.burn .val{color:#fca5a5}
+  .c.mrr .val{color:#6ee7b7}
+
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  input,select,button{font:inherit;color:#e6e4f0;background:#181628;border:1px solid #2c2942;border-radius:8px;padding:8px 10px}
+  button{cursor:pointer;background:#232136}
+  button.primary{background:#2563eb;border-color:#2563eb}
+  button:hover{filter:brightness(1.15)}
+  input[type=search]{min-width:240px}
+
+  .wrap{overflow-x:auto;border:1px solid #232136;border-radius:12px}
+  table{width:100%;border-collapse:collapse;background:#13121f;font-size:13px}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid #232136;white-space:nowrap}
+  th{background:#181628;color:#8b87a3;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.04em;cursor:pointer;user-select:none;position:sticky;top:0}
+  th.sorted::after{content:' ▾'}th.sorted.asc::after{content:' ▴'}
+  tr:hover td{background:#181628}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;background:#232136}
+  .pill.enterprise{background:#3b2f66;color:#c4b5fd}
+  .pill.trial{background:#1e3a2f;color:#6ee7b7}
+  .pill.growth,.pill.scale,.pill.professional,.pill.business,.pill.pilot{background:#1e2f4d;color:#93c5fd}
+  .warn{color:#fbbf24}.bad{color:#f87171}.ok{color:#6ee7b7}.muted{color:#8b87a3}
+  .yes{color:#6ee7b7;font-weight:700}.no{color:#8b87a3}
+  .err{padding:24px;background:#2d1620;border:1px solid #7f1d1d;border-radius:12px;color:#fca5a5}
+  td.editp{display:flex;gap:6px;align-items:center}
+  td.editp select{padding:4px 6px;font-size:12px}
+  td.editp button{padding:4px 8px;font-size:12px}
+</style>
+</head>
+<body>
+<h1>Owner console</h1>
+<div class="sub">Every customer, what they use, and what they cost us. Admin only — signed in over HTTP Basic auth.</div>
+
+<div id="cards" class="cards"></div>
+
+<div class="controls">
+  <input id="q" type="search" placeholder="Search company, email, plan…" oninput="render()"/>
+  <select id="planFilter" onchange="render()">
+    <option value="">All plans</option>
+    <option value="trial">Trial (free)</option>
+    <option value="paying">Paying only</option>
+  </select>
+  <button onclick="load()">↻ Refresh</button>
+  <button onclick="exportCsv()">⤓ Export CSV</button>
+  <span id="status" class="muted"></span>
+</div>
+
+<div id="out">Loading…</div>
+
+<script>
+let DATA = null;
+let SORT = { key: 'last_session_at', asc: false };
+
+const INR = n => '₹' + Math.round(n || 0).toLocaleString('en-IN');
+const USD = n => '$' + Math.round(n || 0).toLocaleString('en-US');
+const fmtTs = v => v ? new Date(v * 1000).toLocaleString() : '—';           // unix seconds
+const fmtIso = v => v ? String(v).replace('T', ' ').slice(0, 16) : '—';     // ISO string
+
+async function load() {
+  const out = document.getElementById('out');
+  document.getElementById('status').textContent = 'loading…';
+  try {
+    const r = await fetch('/api/admin/tenants', { headers: { 'Accept': 'application/json' } });
+    if (r.status === 401) { out.innerHTML = '<div class="err">Admin sign-in required. Reload the page and enter the admin username / password when the browser prompts.</div>'; return; }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    DATA = await r.json();
+    document.getElementById('status').textContent = `${DATA.count} customers · cost basis ₹${DATA.cost_per_min_inr}/min · refreshed ${new Date().toLocaleTimeString()}`;
+    renderCards();
+    render();
+    loadHealth();
+  } catch (e) {
+    out.innerHTML = '<div class="err">Could not load customers: ' + e.message + '</div>';
+  }
+}
+
+function renderCards() {
+  const t = DATA.totals || {};
+  const mrrByPlan = t.mrr_by_plan || {};
+  const mrrBreak = Object.keys(mrrByPlan).length
+    ? Object.entries(mrrByPlan).map(([p, v]) => `${p}: ${USD(v)}`).join(' · ') : '—';
+  const cards = [
+    { lbl: 'Customers', val: t.customers ?? 0 },
+    { lbl: 'Paying', val: t.paying ?? 0, cls: 'mrr' },
+    { lbl: 'Free (trial)', val: t.free ?? 0 },
+    { lbl: 'Est. MRR', val: USD(t.mrr_usd), cls: 'mrr' },
+    { lbl: 'Trial → paid conversion', val: (t.trial_to_paid_conversion_pct ?? 0) + '%', cls: 'mrr' },
+    { lbl: 'MRR by plan', val: mrrBreak },
+    { lbl: 'Avatar minutes used', val: (t.minutes_used ?? 0).toLocaleString() },
+    { lbl: 'Our avatar cost (period)', val: INR(t.cost_inr_total) },
+    { lbl: 'Free-tier burn (our cost of trials)', val: INR(t.trial_burn_inr), cls: 'burn' },
+  ];
+  document.getElementById('cards').innerHTML = cards.map(c =>
+    `<div class="c ${c.cls || ''}"><div class="lbl">${c.lbl}</div><div class="val">${c.val}</div></div>`).join('');
+}
+
+async function loadHealth() {
+  try {
+    const r = await fetch('/api/admin/health', { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) return;
+    const h = await r.json();
+    const el = document.getElementById('status');
+    el.textContent += ` · ${h.active_sessions} active · ${h.session_backend} · errors: ${h.error_monitoring} · db: ${h.db_healthy ? 'ok' : 'down'}`;
+  } catch (e) {}
+}
+
+const COLS = [
+  { key: 'company_name', label: 'Customer' },
+  { key: 'plan', label: 'Plan' },
+  { key: 'is_paying', label: 'Paying' },
+  { key: 'minutes_used', label: 'Minutes' },
+  { key: 'cost_inr', label: 'Our cost' },
+  { key: 'monthly_price_usd', label: 'Revenue/mo' },
+  { key: 'sessions', label: 'Sessions' },
+  { key: 'login_count', label: 'Logins' },
+  { key: 'last_login', label: 'Last login' },
+  { key: 'last_session_at', label: 'Last activity' },
+  { key: 'created_at', label: 'Joined' },
+  { key: '_edit', label: 'Set plan' },
+];
+
+function filtered() {
+  let rows = (DATA.tenants || []).slice();
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const pf = document.getElementById('planFilter').value;
+  if (q) rows = rows.filter(t => `${t.company_name} ${t.email} ${t.name} ${t.plan}`.toLowerCase().includes(q));
+  if (pf === 'trial') rows = rows.filter(t => t.plan === 'trial');
+  else if (pf === 'paying') rows = rows.filter(t => t.is_paying);
+  const k = SORT.key, dir = SORT.asc ? 1 : -1;
+  rows.sort((a, b) => {
+    let x = a[k], y = b[k];
+    if (x == null) x = -Infinity; if (y == null) y = -Infinity;
+    if (typeof x === 'string' || typeof y === 'string') { x = String(x); y = String(y); return x < y ? -dir : x > y ? dir : 0; }
+    return (x - y) * dir;
+  });
+  return rows;
+}
+
+function render() {
+  if (!DATA) return;
+  const rows = filtered();
+  const head = COLS.map(c => {
+    const s = c.key === SORT.key ? `sorted ${SORT.asc ? 'asc' : ''}` : '';
+    const onclick = c.key === '_edit' ? '' : `onclick="sortBy('${c.key}')"`;
+    return `<th class="${s}" ${onclick}>${c.label}</th>`;
+  }).join('');
+  const body = rows.map(t => {
+    const cap = t.minutes_cap == null ? '∞' : t.minutes_cap;
+    const cls = t.usage_status === 'exhausted' ? 'bad' : t.usage_status === 'warning' ? 'warn' : 'ok';
+    return `<tr>
+      <td><div>${t.company_name || '—'}</div><div class="muted">${t.email || ''}</div></td>
+      <td><span class="pill ${t.plan || ''}">${t.plan_label || t.plan || '—'}</span></td>
+      <td>${t.is_paying ? '<span class="yes">Yes</span>' : '<span class="no">Free</span>'}</td>
+      <td class="${cls}">${t.minutes_used ?? 0} / ${cap}</td>
+      <td>${INR(t.cost_inr)}</td>
+      <td class="muted">${t.monthly_price_usd != null ? USD(t.monthly_price_usd) : (t.plan === 'enterprise' ? 'custom' : '—')}</td>
+      <td>${t.sessions ?? 0}</td>
+      <td>${t.login_count ?? 0}</td>
+      <td class="muted">${fmtTs(t.last_login)}</td>
+      <td class="muted">${fmtIso(t.last_session_at)}</td>
+      <td class="muted">${fmtTs(t.created_at)}</td>
+      <td class="editp">
+        <select id="plan-${t.tenant_id}">
+          ${['trial','growth','scale','professional','business','pilot','enterprise']
+            .map(p => `<option value="${p}" ${p === t.plan ? 'selected' : ''}>${p}</option>`).join('')}
+        </select>
+        <button onclick="setPlan('${t.email}','${t.tenant_id}')">Apply</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('out').innerHTML =
+    `<div class="wrap"><table><thead><tr>${head}</tr></thead>
+     <tbody>${body || `<tr><td colspan="${COLS.length}" class="muted">No customers match.</td></tr>`}</tbody></table></div>
+     <p class="muted" style="margin-top:10px">${rows.length} shown of ${DATA.count}.</p>`;
+}
+
+function sortBy(key) {
+  if (SORT.key === key) SORT.asc = !SORT.asc; else { SORT.key = key; SORT.asc = false; }
+  render();
+}
+
+async function setPlan(email, tid) {
+  const plan = document.getElementById('plan-' + tid).value;
+  if (!confirm(`Set ${email} to "${plan}"? This resets their usage period to 0.`)) return;
+  try {
+    const r = await fetch('/api/admin/tenant-plan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, plan }),
+    });
+    if (!r.ok) { alert('Failed: HTTP ' + r.status); return; }
+    await load();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+function exportCsv() {
+  if (!DATA) return;
+  const cols = ['company_name','email','name','slug','plan','is_paying','minutes_used','minutes_cap','cost_inr','monthly_price_usd','sessions','login_count','last_login','last_session_at','created_at'];
+  const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = [cols.join(',')];
+  for (const t of (DATA.tenants || [])) {
+    lines.push(cols.map(c => {
+      let v = t[c];
+      if (c === 'last_login' || c === 'created_at') v = v ? new Date(v * 1000).toISOString() : '';
+      return esc(v);
+    }).join(','));
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'savant-customers-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+}
+
+load();
+</script>
+</body>
+</html>

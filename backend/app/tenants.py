@@ -23,6 +23,7 @@ from typing import Optional
 from fastapi import Header, HTTPException, Request, Depends, Cookie
 
 from .config import settings
+from . import db
 
 _active_tenant_id: contextvars.ContextVar[str] = contextvars.ContextVar(
     "active_tenant_id", default="default"
@@ -43,43 +44,78 @@ DEFAULT_TENANT_ID = "default"
 TENANTS_FILE = Path(settings.CHROMA_PERSIST_DIR).parent / "tenants.json"
 TENANTS_DIR = Path(settings.CHROMA_PERSIST_DIR).parent / "tenants"
 
+# `minute_limit` is the monthly AVATAR-minute pool (the metered, costly unit).
+# Text + voice are effectively unlimited (near-zero cost to serve). `public`
+# plans are the two we sell self-serve; the rest are trial + legacy aliases kept
+# so existing Stripe wiring and older tenant rows keep working.
 PLAN_DEFAULTS = {
     "trial": {
-        "minute_limit": 60,
-        "persona_limit": 1,
-        "knowledge_mb_limit": 5,
-        "production_avatar": False,
-        "label": "Trial",
-    },
-    "pilot": {
-        "minute_limit": 250,
+        # Every signup gets a SMALL pool of REAL avatar minutes — enough to feel
+        # the product, scarce enough to convert. When it runs out the experience
+        # degrades to chat (never goes dark) until they buy a plan.
+        "minute_limit": 5,
         "persona_limit": 1,
         "knowledge_mb_limit": 25,
-        "production_avatar": False,
-        "label": "Pilot",
+        "production_avatar": True,
+        "avatar_choice": False,   # trial is locked to the default avatar
+        "label": "Trial",
+        "price_inr": 0,
+        "price_usd": 0,
+        "public": False,
+        "tagline": "5 free avatar minutes to try your Superhuman.",
     },
-    "professional": {
+    "growth": {
         "minute_limit": 500,
-        "persona_limit": 1,
-        "knowledge_mb_limit": 200,
-        "production_avatar": True,
-        "label": "Professional",
-    },
-    "business": {
-        "minute_limit": 2000,
         "persona_limit": 3,
-        "knowledge_mb_limit": 1000,
+        "knowledge_mb_limit": 500,
         "production_avatar": True,
-        "label": "Business",
+        "avatar_choice": True,
+        "label": "Growth",
+        "price_inr": 24999,
+        "price_usd": 299,
+        "public": True,
+        "tagline": "500 avatar minutes/mo — for teams getting started.",
+    },
+    "scale": {
+        "minute_limit": 1000,
+        "persona_limit": 10,
+        "knowledge_mb_limit": 2000,
+        "production_avatar": True,
+        "avatar_choice": True,
+        "label": "Scale",
+        "price_inr": 44999,
+        "price_usd": 529,
+        "public": True,
+        "tagline": "1,000 avatar minutes/mo — for growing demand.",
     },
     "enterprise": {
-        "minute_limit": None,
+        "minute_limit": None,         # negotiated pool; no hard cap
         "persona_limit": None,
         "knowledge_mb_limit": None,
         "production_avatar": True,
+        "avatar_choice": True,
         "label": "Enterprise",
+        "price_inr": None,            # custom, from ₹75,000/mo
+        "price_usd": None,
+        "public": True,
+        "tagline": "Custom minute pool, isolation, SSO & SLA.",
     },
+    # ── Legacy aliases (not shown publicly; preserved for back-compat) ──────────
+    "pilot":        {"minute_limit": 250,  "persona_limit": 1, "knowledge_mb_limit": 25,   "production_avatar": False, "avatar_choice": False, "label": "Pilot",        "public": False},
+    "professional": {"minute_limit": 500,  "persona_limit": 3, "knowledge_mb_limit": 500,  "production_avatar": True,  "avatar_choice": True,  "label": "Professional", "public": False},
+    "business":     {"minute_limit": 1000, "persona_limit": 10,"knowledge_mb_limit": 2000, "production_avatar": True,  "avatar_choice": True,  "label": "Business",     "public": False},
 }
+
+
+def public_plans() -> list[dict]:
+    """The plans we sell self-serve, in display order (for the pricing page/API)."""
+    order = ["growth", "scale", "enterprise"]
+    out = []
+    for key in order:
+        p = PLAN_DEFAULTS.get(key)
+        if p and p.get("public"):
+            out.append({"id": key, **p})
+    return out
 
 
 # ─────────────────────────── Storage ─────────────────────────────────────────
@@ -90,22 +126,12 @@ def _ensure_dir() -> None:
 
 
 def _load_all() -> dict:
-    _ensure_dir()
-    if not TENANTS_FILE.exists():
-        return {}
-    try:
-        with open(TENANTS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f) or {}
-        return data if isinstance(data, dict) else {}
-    except Exception as e:
-        logger.warning("Could not load tenants: %s", e)
-        return {}
+    """Tenant registry, now in the DB (one row per tenant)."""
+    return db.accounts_load_all()
 
 
 def _save_all(data: dict) -> None:
-    _ensure_dir()
-    with open(TENANTS_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    db.accounts_save_all(data)
 
 
 def list_tenants() -> list[dict]:
@@ -177,6 +203,7 @@ def create_tenant(
     password: str,
     company_name: str = "",
     plan: str = "trial",
+    name: str = "",
 ) -> dict:
     if get_tenant_by_email(email):
         raise ValueError("Email is already registered")
@@ -185,6 +212,7 @@ def create_tenant(
     slug = _unique_slug(company_name or email.split("@")[0])
     record = {
         "tenant_id": tenant_id,
+        "name": name.strip(),
         "email": email.strip().lower(),
         "company_name": company_name.strip() or slug.title(),
         "slug": slug,
@@ -198,6 +226,11 @@ def create_tenant(
         "integrations": {},
         "created_at": time.time(),
         "is_admin": False,
+        # Server-side onboarding flag (Prompt 1.2). localStorage is only a UX hint;
+        # this is the source of truth that gates /onboarding vs /dashboard.
+        "onboarding_completed": False,
+        # Per-tenant feature flags, toggled by the global admin (Prompt 1.6).
+        "feature_flags": {},
     }
     tenants = _load_all()
     tenants[tenant_id] = record
@@ -212,8 +245,9 @@ def update_tenant(tenant_id: str, patch: dict) -> Optional[dict]:
         return None
     tenant = tenants[tenant_id]
     safe_keys = {
-        "company_name", "slug", "plan", "stripe_customer_id", "stripe_subscription_id",
+        "name", "company_name", "slug", "plan", "stripe_customer_id", "stripe_subscription_id",
         "minutes_used", "minutes_period_start", "integrations", "is_admin",
+        "last_login", "login_count", "onboarding_completed", "feature_flags",
     }
     for k, v in (patch or {}).items():
         if k in safe_keys:
@@ -243,6 +277,79 @@ def authenticate(email: str, password: str) -> Optional[dict]:
     return t
 
 
+# ─────────────────────────── RBAC: roles & members ──────────────────────────
+# Role hierarchy (higher number = more privilege). Legacy tokens (no role) are
+# treated as 'owner' so existing single-user accounts keep full access.
+ROLE_LEVELS = {"viewer": 1, "editor": 2, "admin": 3, "owner": 4}
+ASSIGNABLE_ROLES = {"viewer", "editor", "admin"}  # owner is the account holder
+
+
+def list_members(tenant_id: str) -> list[dict]:
+    """All users in the org: the owner plus invited members (no secrets)."""
+    t = _load_all().get(tenant_id)
+    if not t:
+        return []
+    members = [{"email": t.get("email"), "role": "owner"}]
+    for m in (t.get("members") or []):
+        members.append({"email": m.get("email"), "role": m.get("role"),
+                        "added_at": m.get("added_at")})
+    return members
+
+
+def add_member(tenant_id: str, email: str, password: str, role: str) -> dict:
+    if role not in ASSIGNABLE_ROLES:
+        raise ValueError(f"Role must be one of {sorted(ASSIGNABLE_ROLES)}")
+    email = (email or "").strip().lower()
+    if not email or not password:
+        raise ValueError("Email and password are required")
+    tenants = _load_all()
+    t = tenants.get(tenant_id)
+    if not t:
+        raise ValueError("Organization not found")
+    if email == (t.get("email") or "").lower():
+        raise ValueError("That email is the account owner")
+    members = t.get("members") or []
+    if any((m.get("email") or "").lower() == email for m in members):
+        raise ValueError("A member with that email already exists")
+    pw_hash, salt = _hash_password(password)
+    members.append({"email": email, "role": role, "password_hash": pw_hash,
+                    "password_salt": salt, "added_at": time.time()})
+    t["members"] = members
+    tenants[tenant_id] = t
+    _save_all(tenants)
+    return {"email": email, "role": role}
+
+
+def remove_member(tenant_id: str, email: str) -> bool:
+    email = (email or "").strip().lower()
+    tenants = _load_all()
+    t = tenants.get(tenant_id)
+    if not t:
+        return False
+    members = t.get("members") or []
+    kept = [m for m in members if (m.get("email") or "").lower() != email]
+    if len(kept) == len(members):
+        return False
+    t["members"] = kept
+    tenants[tenant_id] = t
+    _save_all(tenants)
+    return True
+
+
+def authenticate_user(email: str, password: str) -> Optional[dict]:
+    """Authenticate an owner OR an invited member. Returns {tenant, role, email}."""
+    email = (email or "").strip().lower()
+    owner = get_tenant_by_email(email)
+    if owner and _verify_password(password, owner.get("password_hash", ""), owner.get("password_salt", "")):
+        return {"tenant": owner, "role": "owner", "email": email}
+    for t in _load_all().values():
+        for m in (t.get("members") or []):
+            if (m.get("email") or "").lower() == email and _verify_password(
+                password, m.get("password_hash", ""), m.get("password_salt", "")):
+                return {"tenant": t, "role": m.get("role", "viewer"), "email": email}
+    return None
+
+
 # ─────────────────────────── JWT (HS256) ────────────────────────────────────
 
 def _b64url(data: bytes) -> str:
@@ -254,11 +361,14 @@ def _b64url_decode(value: str) -> bytes:
     return base64.urlsafe_b64decode((value + padding).encode("ascii"))
 
 
-def issue_token(tenant_id: str, *, ttl_hours: Optional[int] = None) -> str:
+def issue_token(tenant_id: str, *, role: str = "owner", actor: Optional[str] = None,
+                ttl_hours: Optional[int] = None) -> str:
     ttl = (ttl_hours or settings.JWT_TTL_HOURS) * 3600
     header = {"alg": "HS256", "typ": "JWT"}
     payload = {
         "sub": tenant_id,
+        "role": role if role in ROLE_LEVELS else "viewer",
+        "actor": actor,
         "iat": int(time.time()),
         "exp": int(time.time()) + ttl,
     }
@@ -289,6 +399,29 @@ def verify_token(token: str) -> Optional[dict]:
     if payload.get("exp") and payload["exp"] < time.time():
         return None
     return payload
+
+
+# ─────────────────────────── Password-reset tokens ──────────────────────────
+
+def _sign(payload: dict) -> str:
+    header_b64 = _b64url(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(",", ":")).encode("utf-8"))
+    payload_b64 = _b64url(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
+    signing_input = f"{header_b64}.{payload_b64}".encode("ascii")
+    sig = hmac.new(settings.JWT_SECRET.encode("utf-8"), signing_input, hashlib.sha256).digest()
+    return f"{header_b64}.{payload_b64}.{_b64url(sig)}"
+
+
+def issue_reset_token(email: str, ttl_minutes: int = 60) -> str:
+    now = int(time.time())
+    return _sign({"email": (email or "").strip().lower(), "purpose": "pwreset",
+                  "iat": now, "exp": now + ttl_minutes * 60})
+
+
+def verify_reset_token(token: str) -> Optional[str]:
+    payload = verify_token(token)
+    if payload and payload.get("purpose") == "pwreset":
+        return payload.get("email")
+    return None
 
 
 # ─────────────────────────── Tenant data directory ──────────────────────────

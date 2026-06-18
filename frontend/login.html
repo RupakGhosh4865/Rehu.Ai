@@ -37,6 +37,10 @@
       <button type="submit">Sign in</button>
       <div class="error" id="error"></div>
     </form>
+    <a id="google-btn" href="/api/auth/google/login?next=/dashboard" style="display:none;margin-top:12px;align-items:center;justify-content:center;gap:8px;padding:11px;border:1px solid rgba(0,0,0,.15);border-radius:10px;text-decoration:none;color:#1A1815;font-weight:600;font-size:14px;">
+      <img src="https://www.google.com/favicon.ico" width="16" height="16" alt=""/> Continue with Google
+    </a>
+    <div class="swap" style="margin-top:10px;"><a href="#" onclick="forgotPassword();return false;">Forgot password?</a></div>
     <div class="swap">New here? <a href="/signup">Create a workspace</a></div>
   </div>
 <script>
@@ -51,10 +55,23 @@ async function login(e){
     if(!r.ok){const data=await r.json().catch(()=>({detail:'Error'}));throw new Error(data.detail||'Login failed');}
     const data = await r.json();
     localStorage.setItem('savant_token', data.token);
-    document.cookie = `savant_token=${data.token}; path=/; max-age=${60*60*24*7}; SameSite=Lax`;
-    location.href = '/admin';
+    // The session cookie is set HttpOnly by the server (XSS-safe); no JS cookie needed.
+    // Route first-time users through onboarding; returning users to the dashboard.
+    // The flag is keyed per-account so each workspace sees onboarding exactly once.
+    const acctKey = 'savant_onboarded_' + email.toLowerCase();
+    const done = localStorage.getItem(acctKey) === '1' || localStorage.getItem('savant_onboarded') === '1';
+    location.href = done ? '/dashboard' : '/onboarding';
   }catch(ex){err.textContent=ex.message;err.style.display='block';}
 }
+async function forgotPassword(){
+  const email = (document.getElementById('email').value || prompt('Enter your account email:') || '').trim();
+  if(!email) return;
+  try{
+    await fetch('/api/auth/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    alert('If that email exists, a reset link has been sent.');
+  }catch(_){ alert('If that email exists, a reset link has been sent.'); }
+}
+fetch('/api/auth/providers').then(r=>r.json()).then(p=>{ if(p.google){ document.getElementById('google-btn').style.display='flex'; } }).catch(()=>{});
 </script>
 </body>
 </html>
